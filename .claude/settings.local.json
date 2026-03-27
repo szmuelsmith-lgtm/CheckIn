@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /Users/samuelsmith/.claude/skills)",
+      "Bash(git clone:*)",
+      "Bash(bun --version)",
+      "Bash(curl -fsSL https://bun.sh/install)",
+      "Bash(bash)",
+      "Bash(export BUN_INSTALL=\"$HOME/.bun\")",
+      "Bash(export PATH=\"$BUN_INSTALL/bin:$PATH\")",
+      "Bash(./setup)",
+      "Skill(office-hours)",
+      "Skill(office-hours:*)",
+      "Bash(npx shadcn@latest init -d)"
+    ]
+  }
+}
