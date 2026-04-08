@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Check-In</string>
+    <string name="title_activity_main">Check-In</string>
+    <string name="package_name">com.athleteanchor.checkin</string>
+    <string name="custom_url_scheme">com.athleteanchor.checkin</string>
+</resources>

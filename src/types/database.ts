@@ -1,0 +1,130 @@
+export type UserRole = "athlete" | "coach" | "support" | "admin";
+export type RiskLevel = "green" | "yellow" | "red";
+export type AlertSeverity = "yellow" | "red";
+export type AlertStatus = "open" | "acknowledged" | "resolved";
+export type FollowupStatus = "open" | "in_progress" | "completed";
+export type ResourceCategory = "crisis" | "counseling" | "academic" | "wellness" | "other";
+
+export interface Organization {
+  id: string;
+  name: string;
+  type: string;
+  reminder_day: number;
+  created_at: string;
+}
+
+export interface Team {
+  id: string;
+  organization_id: string;
+  name: string;
+  sport: string;
+  created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  auth_user_id: string;
+  full_name: string;
+  email: string;
+  role: UserRole;
+  organization_id: string | null;
+  team_id: string | null;
+  onboarded: boolean;
+  created_at: string;
+}
+
+export interface AthletePreferences {
+  id: string;
+  athlete_id: string;
+  wants_faith_support: boolean;
+  wants_family_checkins: boolean;
+  wants_peer_support: boolean;
+  opt_out_reminders: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Checkin {
+  id: string;
+  athlete_id: string;
+  team_id: string | null;
+  mood_score: number;
+  stress_score: number;
+  sleep_score: number;
+  support_score: number;
+  family_score: number | null;
+  social_score: number | null;
+  spiritual_score: number | null;
+  academic_score: number | null;
+  athletic_confidence_score: number | null;
+  wants_followup: boolean;
+  notes_private: string | null;
+  risk_level: RiskLevel;
+  completed_at: string;
+}
+
+export interface Journal {
+  id: string;
+  athlete_id: string;
+  title: string;
+  body: string;
+  created_at: string;
+}
+
+export interface Alert {
+  id: string;
+  athlete_id: string;
+  checkin_id: string;
+  severity: AlertSeverity;
+  trigger_type: string;
+  status: AlertStatus;
+  assigned_to_profile_id: string | null;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface Followup {
+  id: string;
+  athlete_id: string;
+  alert_id: string;
+  assigned_to_profile_id: string | null;
+  assigned_by_profile_id: string | null;
+  reason: string;
+  status: FollowupStatus;
+  due_date: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface Resource {
+  id: string;
+  organization_id: string | null;
+  title: string;
+  description: string;
+  category: ResourceCategory;
+  url: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  actor_profile_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface InviteCode {
+  id: string;
+  organization_id: string;
+  team_id: string | null;
+  code: string;
+  role: UserRole;
+  created_by: string | null;
+  uses_remaining: number | null;
+  expires_at: string | null;
+  created_at: string;
+}
