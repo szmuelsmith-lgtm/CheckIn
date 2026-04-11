@@ -4,9 +4,10 @@ import { UserRole } from "@/types/database";
 
 // Which roles are allowed on which path prefixes
 const ROLE_ROUTES: { prefix: string; roles: UserRole[] }[] = [
-  { prefix: "/athlete",  roles: ["athlete"] },
-  { prefix: "/coach",    roles: ["coach"] },
-  { prefix: "/admin",    roles: ["admin", "support"] },
+  { prefix: "/athlete",      roles: ["athlete"] },
+  { prefix: "/coach",        roles: ["coach"] },
+  { prefix: "/admin",        roles: ["admin", "support"] },
+  { prefix: "/psychiatrist", roles: ["psychiatrist", "trusted_adult"] },
 ];
 
 export async function updateSession(request: NextRequest) {
@@ -73,6 +74,7 @@ export async function updateSession(request: NextRequest) {
         if (role === "athlete")       url.pathname = "/athlete/dashboard";
         else if (role === "coach")    url.pathname = "/coach/dashboard";
         else if (role === "admin" || role === "support") url.pathname = "/admin/dashboard";
+        else if (role === "psychiatrist" || role === "trusted_adult") url.pathname = "/psychiatrist/dashboard";
         else                          url.pathname = "/login";
         return NextResponse.redirect(url);
       }

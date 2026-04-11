@@ -49,6 +49,8 @@ export default function LoginPage() {
           coach: "/coach/dashboard",
           admin: "/admin/dashboard",
           support: "/admin/dashboard",
+          psychiatrist: "/psychiatrist/dashboard",
+          trusted_adult: "/psychiatrist/dashboard",
         };
         router.push(redirectMap[profile.role] || "/athlete/dashboard");
         return;

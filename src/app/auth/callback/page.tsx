@@ -41,6 +41,8 @@ export default function AuthCallbackPage() {
             coach: "/coach/dashboard",
             admin: "/admin/dashboard",
             support: "/admin/dashboard",
+            psychiatrist: "/psychiatrist/dashboard",
+            trusted_adult: "/psychiatrist/dashboard",
           };
           router.replace(redirectMap[profile.role] || "/athlete/dashboard");
           return;

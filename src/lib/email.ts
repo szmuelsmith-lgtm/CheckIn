@@ -58,6 +58,22 @@ export async function sendRedAlertEmail({
   }
 }
 
+export async function sendSupportRequestEmail({
+  to,
+  scope,
+}: {
+  to: string;
+  scope: 'psychiatrist' | 'trusted_adult';
+}): Promise<void> {
+  const roleLabel = scope === 'psychiatrist' ? 'counselor' : 'trusted adult';
+  await getResend().emails.send({
+    from: process.env.EMAIL_FROM ?? 'Check-In <notifications@athleteanchor.com>',
+    to,
+    subject: 'An athlete has requested support',
+    text: `An athlete in your program has requested to connect with you as their ${roleLabel} through Check-In.\n\nPlease log in to see their shared check-in when you are available.\n\nNo scores or personal details are included in this email to protect athlete privacy.`,
+  });
+}
+
 export async function sendWeeklyReminderEmail({
   to,
   athleteName,

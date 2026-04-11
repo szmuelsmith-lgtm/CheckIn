@@ -19,6 +19,7 @@ import {
   X,
   LogOut,
   Shield,
+  Lock,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -38,6 +39,7 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Trends", href: "/athlete/trends", icon: <TrendingUp className="h-5 w-5" /> },
     { label: "Resources", href: "/athlete/resources", icon: <Heart className="h-5 w-5" /> },
     { label: "Preferences", href: "/athlete/preferences", icon: <Settings className="h-5 w-5" /> },
+    { label: "Privacy & Sharing", href: "/athlete/privacy", icon: <Lock className="h-5 w-5" /> },
   ],
   coach: [
     { label: "Dashboard", href: "/coach/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -56,6 +58,12 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
     { label: "Alerts", href: "/admin/alerts", icon: <AlertTriangle className="h-5 w-5" /> },
     { label: "Follow-ups", href: "/admin/followups", icon: <ListChecks className="h-5 w-5" /> },
+  ],
+  psychiatrist: [
+    { label: "Dashboard", href: "/psychiatrist/dashboard", icon: <Users className="h-5 w-5" /> },
+  ],
+  trusted_adult: [
+    { label: "Dashboard", href: "/psychiatrist/dashboard", icon: <Users className="h-5 w-5" /> },
   ],
 };
 
@@ -79,7 +87,9 @@ export function Sidebar({ role, userName }: SidebarProps) {
   const roleLabel =
     role === "athlete" ? "Athlete" :
     role === "coach" ? "Coach" :
-    role === "admin" ? "Admin" : "Support";
+    role === "admin" ? "Admin" :
+    role === "psychiatrist" ? "Counselor" :
+    role === "trusted_adult" ? "Trusted Adult" : "Support";
 
   const nav = (
     <nav className="flex flex-col h-full">

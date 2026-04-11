@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorState } from "@/components/ui/error-state";
 import Link from "next/link";
-import { AlertTriangle, Users, ClipboardCheck, TrendingUp } from "lucide-react";
+import { AlertTriangle, Users, ClipboardCheck, TrendingUp, CalendarCheck, PlayCircle, StopCircle } from "lucide-react";
 
 interface DashboardStats {
   totalAthletes: number;
@@ -20,9 +21,16 @@ interface DashboardStats {
   redCount: number;
 }
 
+interface OrgData {
+  id: string;
+  screening_active: boolean;
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
+  const [orgData, setOrgData] = useState<OrgData | null>(null);
+  const [screeningLoading, setScreeningLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -41,6 +49,16 @@ export default function AdminDashboard() {
         .single();
 
       if (prof) setProfile(prof);
+
+      // Get org screening state
+      if (prof?.organization_id) {
+        const { data: org } = await supabase
+          .from("organizations")
+          .select("id, screening_active")
+          .eq("id", prof.organization_id)
+          .single();
+        if (org) setOrgData(org);
+      }
 
       // Get athletes in org
       const { count: athleteCount } = await supabase
@@ -251,7 +269,7 @@ export default function AdminDashboard() {
 
         {/* Alert breakdown */}
         {(stats?.redAlerts || 0) > 0 && (
-          <Card>
+          <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-lg">Urgent Attention</CardTitle>
             </CardHeader>
@@ -270,6 +288,78 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Semester Screening */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CalendarCheck className="h-5 w-5 text-emerald-500" />
+              Semester Screening
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {orgData === null ? (
+              <p className="text-slate-400 text-sm">Loading screening status...</p>
+            ) : orgData.screening_active ? (
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-sm px-3 py-1">
+                    Screening Active
+                  </Badge>
+                  <p className="text-sm text-slate-500">
+                    Athletes will see the full semester screening check-in form.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-slate-300 text-slate-600 hover:bg-slate-50"
+                  disabled={screeningLoading}
+                  onClick={async () => {
+                    if (!orgData?.id) return;
+                    setScreeningLoading(true);
+                    try {
+                      const supabase = createClient();
+                      await supabase
+                        .from("organizations")
+                        .update({ screening_active: false })
+                        .eq("id", orgData.id);
+                      setOrgData((prev) => prev ? { ...prev, screening_active: false } : prev);
+                    } finally {
+                      setScreeningLoading(false);
+                    }
+                  }}
+                >
+                  <StopCircle className="h-4 w-4 mr-2" />
+                  {screeningLoading ? "Deactivating..." : "Deactivate"}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <p className="text-sm text-slate-500">
+                  Activate semester check-in to send a full screening to all athletes.
+                </p>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={screeningLoading}
+                  onClick={async () => {
+                    setScreeningLoading(true);
+                    try {
+                      const res = await fetch("/api/screening/trigger", { method: "POST" });
+                      if (res.ok && orgData?.id) {
+                        setOrgData((prev) => prev ? { ...prev, screening_active: true } : prev);
+                      }
+                    } finally {
+                      setScreeningLoading(false);
+                    }
+                  }}
+                >
+                  <PlayCircle className="h-4 w-4 mr-2" />
+                  {screeningLoading ? "Activating..." : "Activate Semester Check-In"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

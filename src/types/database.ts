@@ -1,4 +1,62 @@
-export type UserRole = "athlete" | "coach" | "support" | "admin";
+export type UserRole = "athlete" | "coach" | "support" | "admin" | "psychiatrist" | "trusted_adult";
+export type CheckinMode = "weekly" | "screening";
+export type Pillar = "emotional" | "resilience" | "recovery" | "support";
+export type ConsentScope = "summary" | "full";
+export type ConsentTargetRole = "psychiatrist" | "trusted_adult";
+
+export interface PillarScores {
+  emotional: number;
+  resilience: number;
+  recovery: number;
+  support: number;
+}
+
+export interface Question {
+  id: string;
+  pillar: Pillar;
+  text: string;
+  sub_text: string | null;
+  low_label: string;
+  high_label: string;
+  min_val: number;
+  max_val: number;
+  modes: CheckinMode[];
+  active: boolean;
+  created_at: string;
+}
+
+export interface ConsentLog {
+  id: string;
+  athlete_id: string;
+  checkin_id: string | null;
+  target_profile_id: string;
+  target_role: ConsentTargetRole;
+  scope: ConsentScope;
+  is_active: boolean;
+  expires_at: string | null;
+  granted_at: string;
+  revoked_at: string | null;
+  revoke_reason: string | null;
+}
+
+export interface AccessLog {
+  id: string;
+  viewer_profile_id: string;
+  athlete_id: string;
+  checkin_id: string | null;
+  consent_log_id: string | null;
+  access_type: string;
+  accessed_at: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface QuestionUsage {
+  id: string;
+  athlete_id: string;
+  question_id: string;
+  used_at: string;
+  checkin_id: string | null;
+}
 export type RiskLevel = "green" | "yellow" | "red";
 export type AlertSeverity = "yellow" | "red";
 export type AlertStatus = "open" | "acknowledged" | "resolved";

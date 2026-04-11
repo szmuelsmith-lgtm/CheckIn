@@ -9,6 +9,7 @@ import {
   BookOpen,
   TrendingUp,
   Heart,
+  Lock,
 } from "lucide-react";
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { label: "Journal", href: "/athlete/journal", icon: BookOpen },
   { label: "Trends", href: "/athlete/trends", icon: TrendingUp },
   { label: "Help", href: "/athlete/resources", icon: Heart },
+  { label: "Privacy", href: "/athlete/privacy", icon: Lock },
 ];
 
 export function AthleteTabBar() {
