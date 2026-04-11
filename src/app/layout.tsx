@@ -3,6 +3,7 @@ import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
+import { CapacitorProvider } from "@/components/capacitor-provider";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -49,7 +50,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
       <body className={cn("antialiased", dmSans.variable, dmSans.className)}>
-        {children}
+        <CapacitorProvider>
+          {children}
+        </CapacitorProvider>
         <Script id="sw-register" strategy="afterInteractive">{`
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(() => {});

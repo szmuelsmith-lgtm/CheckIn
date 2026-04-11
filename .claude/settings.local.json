@@ -11,7 +11,23 @@
       "Bash(./setup)",
       "Skill(office-hours)",
       "Skill(office-hours:*)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest add card slider label input textarea badge separator avatar sheet scroll-area alert -y)",
+      "Bash(npx next:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(ls /Users/samuelsmith/Desktop/check-in/src/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(ls /Users/samuelsmith/Desktop/check-in/src/app/\\\\\\(dashboard\\\\\\)/admin/ /Users/samuelsmith/Desktop/check-in/src/app/\\\\\\(dashboard\\\\\\)/athlete/)",
+      "Bash(npm run:*)",
+      "Bash(npx supabase:*)",
+      "Bash(node scripts/run-schema.mjs)",
+      "Bash(node scripts/push-schema.mjs)",
+      "Bash(SK=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvZXljcGhlaWdqaWh2ZnZ1cGlkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDY2NjIzNSwiZXhwIjoyMDkwMjQyMjM1fQ.6OnUth2brJjV37VrgDtXiWiXJJX5uHJD4ZBrigO4NtE\" DBPASS='utSCM3r$KDHtkd_' node -e \":*)",
+      "Bash(nslookup db.doeycpheigjihvfvupid.supabase.co)",
+      "Bash(node scripts/setup.mjs)",
+      "Bash(kill -9 48855 61189)",
+      "Bash(xargs kill:*)",
+      "Bash(ls /Users/samuelsmith/Desktop/check-in/public/icon-*.png)"
     ]
   }
 }
