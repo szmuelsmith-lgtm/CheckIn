@@ -11,7 +11,7 @@ const ROLES = [
   {
     id: "athlete",
     label: "Athlete",
-    email: "athlete@checkin.dev",
+    email: "checkin.athlete.test@mailinator.com",
     name: "Alex Athlete",
     icon: <User className="h-6 w-6" />,
     color: "emerald",
@@ -21,7 +21,7 @@ const ROLES = [
   {
     id: "coach",
     label: "Coach",
-    email: "coach@checkin.dev",
+    email: "checkin.coach.test@mailinator.com",
     name: "Chris Coach",
     icon: <Users className="h-6 w-6" />,
     color: "blue",
@@ -31,7 +31,7 @@ const ROLES = [
   {
     id: "psychiatrist",
     label: "Counselor / Psychiatrist",
-    email: "psych@checkin.dev",
+    email: "checkin.psych.test@mailinator.com",
     name: "Dr. Parker",
     icon: <Stethoscope className="h-6 w-6" />,
     color: "violet",
@@ -41,7 +41,7 @@ const ROLES = [
   {
     id: "trusted_adult",
     label: "Trusted Adult",
-    email: "trusted@checkin.dev",
+    email: "checkin.trusted.test@mailinator.com",
     name: "Taylor Trusted",
     icon: <UserCheck className="h-6 w-6" />,
     color: "amber",
@@ -207,21 +207,37 @@ export default function DevPortalPage() {
       </div>
 
       {/* Credentials note */}
-      <div className="mt-8 bg-white border border-slate-200 rounded-xl p-4 w-full max-w-2xl">
-        <p className="text-xs text-slate-500 font-medium mb-2">Test credentials (all accounts):</p>
+      <div className="mt-8 bg-white border border-slate-200 rounded-xl p-4 w-full max-w-2xl space-y-3">
+        <p className="text-xs text-slate-500 font-medium">Test credentials (all accounts):</p>
         <div className="grid grid-cols-2 gap-2 text-xs font-mono">
           <div className="bg-slate-50 rounded-lg px-3 py-2">
             <span className="text-slate-400">password: </span>
             <span className="text-slate-700">{TEST_PASSWORD}</span>
           </div>
           <div className="bg-slate-50 rounded-lg px-3 py-2">
-            <span className="text-slate-400">emails: </span>
-            <span className="text-slate-700">*@checkin.dev</span>
+            <span className="text-slate-400">inbox: </span>
+            <span className="text-slate-700">mailinator.com</span>
           </div>
         </div>
-        <p className="text-[10px] text-slate-400 mt-2">
-          First-time login creates the account. If email confirmation is required, check the inbox then click again.
-        </p>
+
+        {/* Email confirmation step */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-blue-800 mb-1">If you see &quot;check your email&quot;:</p>
+          <ol className="text-xs text-blue-700 space-y-1 list-decimal pl-4">
+            <li>Go to <span className="font-mono font-bold">mailinator.com</span></li>
+            <li>Search the inbox name (e.g. <span className="font-mono">checkin.athlete.test</span>)</li>
+            <li>Open the confirmation email and click the link</li>
+            <li>Come back here and click the role button again</li>
+          </ol>
+        </div>
+
+        {/* Faster option */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-amber-800 mb-1">Faster: disable email confirmation</p>
+          <p className="text-xs text-amber-700">
+            In your Supabase dashboard → <strong>Authentication → Providers → Email</strong> → turn off <strong>&quot;Confirm email&quot;</strong>. Then clicking any button here logs in instantly with no email step.
+          </p>
+        </div>
       </div>
 
       <p className="text-xs text-slate-400 mt-6">

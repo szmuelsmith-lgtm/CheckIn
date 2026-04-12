@@ -55,7 +55,14 @@ export default function RootLayout({
         </CapacitorProvider>
         <Script id="sw-register" strategy="afterInteractive">{`
           if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+              // Unregister any stale service worker in dev so it never intercepts requests
+              navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => r.unregister());
+              });
+            } else {
+              navigator.serviceWorker.register('/sw.js').catch(() => {});
+            }
           }
         `}</Script>
       </body>
