@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       support_score:     pillarScores.support,
       question_ids:      questionIds,
       responses:         body.responses,
-      notes:             body.notes ?? null,
+      notes_private:     body.notes ?? null,
     })
     .select('id')
     .single();

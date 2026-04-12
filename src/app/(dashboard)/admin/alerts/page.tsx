@@ -21,11 +21,11 @@ interface AlertWithDetails {
     team_id: string | null;
   };
   checkin: {
-    mood_score: number;
-    stress_score: number;
-    sleep_score: number;
-    support_score: number;
-  };
+    emotional_score: number | null;
+    resilience_score: number | null;
+    recovery_score: number | null;
+    support_score: number | null;
+  } | null;
 }
 
 const SEVERITY_STYLES = {
@@ -68,7 +68,7 @@ export default function AdminAlertsPage() {
           created_at,
           resolved_at,
           athlete:profiles!alerts_athlete_id_fkey(id, full_name, team_id),
-          checkin:checkins!alerts_checkin_id_fkey(mood_score, stress_score, sleep_score, support_score)
+          checkin:checkins!alerts_checkin_id_fkey(emotional_score, resilience_score, recovery_score, support_score)
         `)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -204,10 +204,10 @@ export default function AdminAlertsPage() {
                           </p>
                           {alert.checkin && (
                             <div className="flex gap-4 mt-2 text-xs text-slate-400">
-                              <span>Mood: {alert.checkin.mood_score}</span>
-                              <span>Stress: {alert.checkin.stress_score}</span>
-                              <span>Sleep: {alert.checkin.sleep_score}</span>
-                              <span>Support: {alert.checkin.support_score}</span>
+                              <span>Emotional: {alert.checkin.emotional_score ?? "—"}</span>
+                              <span>Resilience: {alert.checkin.resilience_score ?? "—"}</span>
+                              <span>Recovery: {alert.checkin.recovery_score ?? "—"}</span>
+                              <span>Support: {alert.checkin.support_score ?? "—"}</span>
                             </div>
                           )}
                         </div>

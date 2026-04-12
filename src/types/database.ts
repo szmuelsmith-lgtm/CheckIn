@@ -106,19 +106,17 @@ export interface Checkin {
   id: string;
   athlete_id: string;
   team_id: string | null;
-  mood_score: number;
-  stress_score: number;
-  sleep_score: number;
-  support_score: number;
-  family_score: number | null;
-  social_score: number | null;
-  spiritual_score: number | null;
-  academic_score: number | null;
-  athletic_confidence_score: number | null;
-  wants_followup: boolean;
+  mode: CheckinMode;
+  is_private: boolean;
+  emotional_score: number | null;
+  resilience_score: number | null;
+  recovery_score: number | null;
+  support_score: number | null;
+  question_ids: string[];
+  responses: Record<string, number>;
   notes_private: string | null;
-  risk_level: RiskLevel;
   completed_at: string;
+  created_at: string;
 }
 
 export interface Journal {

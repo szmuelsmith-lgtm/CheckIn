@@ -83,25 +83,32 @@ export default function AdminDashboard() {
         .select("*", { count: "exact", head: true })
         .gte("completed_at", weekAgo);
 
-      // Risk distribution from latest check-ins
+      // Wellness distribution from latest check-ins (pillar-based)
       const { data: latestCheckins } = await supabase
         .from("checkins")
-        .select("risk_level, athlete_id")
+        .select("athlete_id, emotional_score, resilience_score, recovery_score, support_score")
         .gte("completed_at", weekAgo);
 
-      // Dedupe by athlete (latest only)
-      const byAthlete = new Map<string, string>();
+      // Dedupe by athlete (first seen = most recent due to ordering)
+      const byAthlete = new Map<string, { e: number; rec: number; res: number; sup: number }>();
       latestCheckins?.forEach((c) => {
         if (!byAthlete.has(c.athlete_id)) {
-          byAthlete.set(c.athlete_id, c.risk_level);
+          byAthlete.set(c.athlete_id, {
+            e:   c.emotional_score  ?? 5,
+            rec: c.recovery_score   ?? 5,
+            res: c.resilience_score ?? 5,
+            sup: c.support_score    ?? 5,
+          });
         }
       });
 
       let greenCount = 0, yellowCount = 0, redCount = 0;
-      byAthlete.forEach((level) => {
-        if (level === "green") greenCount++;
-        else if (level === "yellow") yellowCount++;
-        else if (level === "red") redCount++;
+      byAthlete.forEach(({ e, rec, res, sup }) => {
+        // Red: support trigger (emotional > 8 OR recovery < 3)
+        if (e > 8 || rec < 3) redCount++;
+        // Yellow: any pillar below 5
+        else if (e < 5 || rec < 5 || res < 5 || sup < 5) yellowCount++;
+        else greenCount++;
       });
 
       const total = athleteCount || 0;
@@ -246,19 +253,19 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-green-400" />
                     <span className="text-slate-600">
-                      Green: {stats?.greenCount} ({totalRisk > 0 ? Math.round(((stats?.greenCount || 0) / totalRisk) * 100) : 0}%)
+                      Stable: {stats?.greenCount} ({totalRisk > 0 ? Math.round(((stats?.greenCount || 0) / totalRisk) * 100) : 0}%)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-amber-400" />
                     <span className="text-slate-600">
-                      Yellow: {stats?.yellowCount} ({totalRisk > 0 ? Math.round(((stats?.yellowCount || 0) / totalRisk) * 100) : 0}%)
+                      Needs attention: {stats?.yellowCount} ({totalRisk > 0 ? Math.round(((stats?.yellowCount || 0) / totalRisk) * 100) : 0}%)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-red-400" />
                     <span className="text-slate-600">
-                      Red: {stats?.redCount} ({totalRisk > 0 ? Math.round(((stats?.redCount || 0) / totalRisk) * 100) : 0}%)
+                      Support triggered: {stats?.redCount} ({totalRisk > 0 ? Math.round(((stats?.redCount || 0) / totalRisk) * 100) : 0}%)
                     </span>
                   </div>
                 </div>

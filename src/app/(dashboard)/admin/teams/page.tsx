@@ -74,21 +74,28 @@ export default function AdminTeamsPage() {
 
           const { data: recentCheckins } = await supabase
             .from("checkins")
-            .select("athlete_id, risk_level")
+            .select("athlete_id, emotional_score, resilience_score, recovery_score, support_score")
             .eq("team_id", team.id)
             .gte("completed_at", weekAgo);
 
-          // Dedupe by athlete
-          const byAthlete = new Map<string, string>();
+          // Dedupe by athlete (first = most recent)
+          const byAthlete = new Map<string, { e: number; rec: number; res: number; sup: number }>();
           recentCheckins?.forEach((c) => {
-            if (!byAthlete.has(c.athlete_id)) byAthlete.set(c.athlete_id, c.risk_level);
+            if (!byAthlete.has(c.athlete_id)) {
+              byAthlete.set(c.athlete_id, {
+                e:   c.emotional_score  ?? 5,
+                rec: c.recovery_score   ?? 5,
+                res: c.resilience_score ?? 5,
+                sup: c.support_score    ?? 5,
+              });
+            }
           });
 
           let green = 0, yellow = 0, red = 0;
-          byAthlete.forEach((level) => {
-            if (level === "green") green++;
-            else if (level === "yellow") yellow++;
-            else red++;
+          byAthlete.forEach(({ e, rec, res, sup }) => {
+            if (e > 8 || rec < 3) red++;
+            else if (e < 5 || rec < 5 || res < 5 || sup < 5) yellow++;
+            else green++;
           });
 
           const total = athleteCount || 0;
