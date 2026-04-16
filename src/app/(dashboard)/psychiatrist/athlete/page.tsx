@@ -31,10 +31,6 @@ interface CheckinEntry {
   completed_at: string;
   mode: string;
   pillar_scores: PillarScores;
-  emotional_score?: number;
-  resilience_score?: number;
-  recovery_score?: number;
-  support_score?: number;
   notes_private: string | null;
   responses: QuestionResponse[] | null;
 }
@@ -60,12 +56,15 @@ function PillarCard({ pillar, score }: { pillar: Pillar; score: number }) {
   const pct = Math.round((score / 10) * 100);
   return (
     <div className={`rounded-xl p-4 border ${style.bg} ${style.border}`}>
-      <p className={`text-xs uppercase tracking-wide font-medium mb-1 ${style.text}`}>
+      <p className={`text-[11px] uppercase tracking-widest font-semibold mb-1 ${style.text}`}>
         {PILLAR_LABELS[pillar]}
       </p>
       <p className={`text-2xl font-bold ${style.text}`}>{score.toFixed(1)}</p>
       <div className="mt-2 h-1.5 bg-white/60 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${style.text.replace("text-", "bg-")}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full rounded-full`}
+          style={{ width: `${pct}%`, background: "currentColor", opacity: 0.6 }}
+        />
       </div>
     </div>
   );
@@ -109,41 +108,126 @@ function CollapsibleResponses({ responses, notes }: { responses: QuestionRespons
 function AthleteView() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
-  const [data, setData] = useState<AthleteData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]         = useState<AthleteData | null>(null);
+  const [loading, setLoading]   = useState(true);
   const [forbidden, setForbidden] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError]       = useState(false);
   const [userName, setUserName] = useState("...");
 
   useEffect(() => {
     if (!id) { setError(true); setLoading(false); return; }
+
     async function load() {
       try {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
+
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: prof } = await supabase.from("profiles").select("full_name").eq("auth_user_id", user.id).single();
-          if (prof) setUserName(prof.full_name);
+        if (!user) { setError(true); setLoading(false); return; }
+
+        // Get psychiatrist profile
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("auth_user_id", user.id)
+          .single();
+        if (!prof) { setError(true); setLoading(false); return; }
+        setUserName(prof.full_name);
+
+        // Verify consent exists
+        type ConsentResult = {
+          scope: "summary" | "full";
+          granted_at: string;
+          athlete: { full_name: string }[] | { full_name: string } | null;
+        };
+        const { data: consent } = await supabase
+          .from("consent_logs")
+          .select("scope, granted_at, athlete:athlete_id(full_name)")
+          .eq("target_profile_id", prof.id)
+          .eq("athlete_id", id)
+          .eq("is_active", true)
+          .maybeSingle() as { data: ConsentResult | null };
+
+        if (!consent) { setForbidden(true); setLoading(false); return; }
+
+        const athleteObj = Array.isArray(consent.athlete) ? consent.athlete[0] : consent.athlete;
+
+        // Fetch check-ins
+        const { data: checkins } = await supabase
+          .from("checkins")
+          .select("id, completed_at, mode, emotional_score, resilience_score, recovery_score, support_score, notes_private, responses, question_ids")
+          .eq("athlete_id", id)
+          .order("completed_at", { ascending: false })
+          .limit(20);
+
+        // If full scope, build question text map
+        let questionMap: Record<string, { text: string; pillar: string }> = {};
+        if (consent.scope === "full" && checkins && checkins.length > 0) {
+          const allQIds = Array.from(new Set(
+            checkins.flatMap((c: { question_ids?: string[] }) => c.question_ids ?? [])
+          ));
+          if (allQIds.length > 0) {
+            const { data: questions } = await supabase
+              .from("questions")
+              .select("id, text, pillar")
+              .in("id", allQIds);
+            questionMap = Object.fromEntries(
+              (questions ?? []).map((q: { id: string; text: string; pillar: string }) => [q.id, { text: q.text, pillar: q.pillar }])
+            );
+          }
         }
 
-        const res = await fetch(`/api/psychiatrist/athlete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id }),
+        // Build structured data
+        const entries: CheckinEntry[] = (checkins ?? []).map((c: {
+          id: string;
+          completed_at: string;
+          mode: string;
+          emotional_score?: number;
+          resilience_score?: number;
+          recovery_score?: number;
+          support_score?: number;
+          notes_private?: string | null;
+          responses?: Record<string, number> | null;
+        }) => ({
+          id:            c.id,
+          completed_at:  c.completed_at,
+          mode:          c.mode,
+          pillar_scores: {
+            emotional:  c.emotional_score  ?? 5,
+            resilience: c.resilience_score ?? 5,
+            recovery:   c.recovery_score   ?? 5,
+            support:    c.support_score    ?? 5,
+          },
+          notes_private: consent.scope === "full" ? (c.notes_private ?? null) : null,
+          responses: consent.scope === "full" && c.responses
+            ? Object.entries(c.responses).map(([qid, val]) => ({
+                question_text: questionMap[qid]?.text ?? "Question",
+                pillar:        (questionMap[qid]?.pillar ?? "emotional") as Pillar,
+                response_value: val as number,
+              }))
+            : null,
+        }));
+
+        setData({
+          athlete_name: athleteObj?.full_name ?? "Unknown",
+          scope:        consent.scope,
+          granted_at:   consent.granted_at,
+          checkins:     entries,
         });
-        if (res.status === 403) { setForbidden(true); return; }
-        if (!res.ok) { setError(true); return; }
-        setData(await res.json());
-      } catch { setError(true); }
-      finally { setLoading(false); }
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [id]);
 
   if (loading) return (
     <DashboardLayout role="psychiatrist" userName={userName}>
-      <div className="flex items-center justify-center h-64"><p className="text-slate-500">Loading...</p></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-emerald-600 animate-spin" />
+      </div>
     </DashboardLayout>
   );
 
@@ -152,8 +236,8 @@ function AthleteView() {
       <div className="max-w-3xl mx-auto">
         <Card><CardContent className="py-16 text-center">
           <Lock className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-lg font-medium text-slate-900">This athlete has not shared data with you.</p>
-          <p className="text-slate-500 mt-2 text-sm">Access requires the athlete to grant consent through their Check-In app.</p>
+          <p className="text-lg font-medium text-slate-900">This patient has not shared data with you.</p>
+          <p className="text-slate-500 mt-2 text-sm">Access requires the patient to grant consent through their Check-In app.</p>
           <Link href="/psychiatrist/dashboard" className="mt-6 inline-block"><Button variant="outline">Back</Button></Link>
         </CardContent></Card>
       </div>
@@ -165,72 +249,96 @@ function AthleteView() {
       <div className="max-w-3xl mx-auto">
         <Card className="border-red-200 bg-red-50"><CardContent className="py-8 text-center">
           <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
-          <p className="text-red-700">Failed to load data.</p>
+          <p className="text-red-700">Failed to load patient data.</p>
+          <Link href="/psychiatrist/dashboard" className="mt-4 inline-block text-sm text-red-600 hover:underline">Back to dashboard</Link>
         </CardContent></Card>
       </div>
     </DashboardLayout>
   );
 
-  const grantedDate = new Date(data.granted_at).toLocaleDateString();
+  const grantedDate = new Date(data.granted_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
     <DashboardLayout role="psychiatrist" userName={userName}>
       <div className="max-w-4xl mx-auto">
-        <Link href="/psychiatrist/dashboard" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-6 transition-colors">
+        <Link
+          href="/psychiatrist/dashboard"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-6 transition-colors"
+        >
           <ArrowLeft className="h-4 w-4" />Back to Dashboard
         </Link>
 
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-slate-900">{data.athlete_name}</h1>
+        <div className="flex items-start justify-between flex-wrap gap-3 mb-5">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{data.athlete_name}</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Access granted {grantedDate}</p>
+          </div>
+          <Badge
+            variant="outline"
+            className={data.scope === "full"
+              ? "bg-violet-50 text-violet-700 border-violet-200"
+              : "bg-blue-50 text-blue-700 border-blue-200"
+            }
+          >
+            {data.scope === "full" ? "FULL REPORT" : "SUMMARY"}
+          </Badge>
         </div>
 
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
           <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">
-            Viewing <strong>{data.scope === "full" ? "full report" : "summary"}</strong> — shared {grantedDate}. Access is logged.
+            Viewing <strong>{data.scope === "full" ? "full clinical report" : "summary scores"}</strong>. This access is logged.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 mb-6">
-          <Badge variant="outline" className={data.scope === "full" ? "bg-violet-50 text-violet-700 border-violet-200" : "bg-blue-50 text-blue-700 border-blue-200"}>
-            {data.scope === "full" ? "FULL REPORT" : "SUMMARY"}
-          </Badge>
-          <span className="text-sm text-slate-500">{data.checkins.length} check-in{data.checkins.length !== 1 ? "s" : ""}</span>
-        </div>
-
-        {data.checkins.length === 0 && (
-          <Card><CardContent className="py-12 text-center"><p className="text-slate-500">No check-ins shared yet.</p></CardContent></Card>
+        {data.checkins.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-slate-500">No check-ins available for this patient.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-5">
+            <p className="text-sm text-slate-500">{data.checkins.length} check-in{data.checkins.length !== 1 ? "s" : ""} on record</p>
+            {data.checkins.map((checkin) => {
+              const date = new Date(checkin.completed_at).toLocaleDateString("en-US", {
+                weekday: "long", year: "numeric", month: "long", day: "numeric",
+              });
+              return (
+                <Card key={checkin.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <CardTitle className="text-[15px] font-semibold">{date}</CardTitle>
+                      <Badge
+                        variant="outline"
+                        className={
+                          checkin.mode === "screening"
+                            ? "bg-violet-50 text-violet-700 border-violet-200 text-xs"
+                            : "bg-slate-50 text-slate-600 border-slate-200 text-xs"
+                        }
+                      >
+                        {checkin.mode === "screening" ? "Screening" : "Weekly"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {PILLARS.map(pillar => (
+                        <PillarCard key={pillar} pillar={pillar} score={checkin.pillar_scores[pillar]} />
+                      ))}
+                    </div>
+                    {data.scope === "full" && (
+                      <CollapsibleResponses
+                        responses={checkin.responses}
+                        notes={checkin.notes_private}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
-
-        <div className="space-y-6">
-          {data.checkins.map((checkin) => {
-            const scores: PillarScores = checkin.pillar_scores ?? {
-              emotional:  checkin.emotional_score  ?? 5,
-              resilience: checkin.resilience_score ?? 5,
-              recovery:   checkin.recovery_score   ?? 5,
-              support:    checkin.support_score     ?? 5,
-            };
-            const date = new Date(checkin.completed_at).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-            return (
-              <Card key={checkin.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <CardTitle className="text-base">{date}</CardTitle>
-                    <Badge variant="outline" className="text-xs bg-slate-50 text-slate-600 border-slate-200">
-                      {checkin.mode === "screening" ? "Screening" : "Weekly"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {PILLARS.map(pillar => <PillarCard key={pillar} pillar={pillar} score={scores[pillar]} />)}
-                  </div>
-                  {data.scope === "full" && <CollapsibleResponses responses={checkin.responses} notes={checkin.notes_private} />}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
       </div>
     </DashboardLayout>
   );
@@ -238,7 +346,13 @@ function AthleteView() {
 
 export default function PsychiatristAthletePage() {
   return (
-    <Suspense fallback={<DashboardLayout role="psychiatrist" userName="..."><div className="flex items-center justify-center h-64"><p className="text-slate-500">Loading...</p></div></DashboardLayout>}>
+    <Suspense fallback={
+      <DashboardLayout role="psychiatrist" userName="...">
+        <div className="flex items-center justify-center h-64">
+          <div className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-emerald-600 animate-spin" />
+        </div>
+      </DashboardLayout>
+    }>
       <AthleteView />
     </Suspense>
   );

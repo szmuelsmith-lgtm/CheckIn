@@ -5,13 +5,11 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 export async function POST() {
   const supabase = createServerSupabaseClient();
 
-  // Verify authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Fetch profile and verify psychiatrist role
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('id, role')
@@ -22,11 +20,12 @@ export async function POST() {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
-  if (profile.role !== 'psychiatrist') {
-    return NextResponse.json({ error: 'Forbidden: psychiatrists only' }, { status: 403 });
+  // Both psychiatrists and trusted adults can view shared athletes
+  if (profile.role !== 'psychiatrist' && profile.role !== 'trusted_adult') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Fetch active consent grants where this psychiatrist is the target
+  // Fetch active consent grants targeting this user
   const { data: consents, error: consentsError } = await supabase
     .from('consent_logs')
     .select(`
@@ -50,17 +49,37 @@ export async function POST() {
     return NextResponse.json({ error: 'Failed to fetch athletes' }, { status: 500 });
   }
 
-  // Shape the response: basic athlete info + consent metadata
-  const athletes = (consents ?? []).map(c => {
+  if (!consents || consents.length === 0) {
+    return NextResponse.json({ athletes: [] });
+  }
+
+  // Fetch latest check-in date for each athlete
+  const athleteIds = consents.map(c => c.athlete_id);
+  const { data: latestCheckins } = await supabase
+    .from('checkins')
+    .select('athlete_id, completed_at')
+    .in('athlete_id', athleteIds)
+    .order('completed_at', { ascending: false });
+
+  // Build a map of athlete_id → latest completed_at
+  const latestCheckinMap = new Map<string, string>();
+  (latestCheckins ?? []).forEach(c => {
+    if (!latestCheckinMap.has(c.athlete_id)) {
+      latestCheckinMap.set(c.athlete_id, c.completed_at);
+    }
+  });
+
+  const athletes = consents.map(c => {
     const ap = c.athlete_profile as unknown as { id: string; full_name: string; email: string } | null;
     return {
-      athlete_id:  c.athlete_id,
-      full_name:   ap?.full_name ?? null,
-      email:       ap?.email ?? null,
-      consent_id:  c.id,
-      scope:       c.scope,
-      granted_at:  c.granted_at,
-      expires_at:  c.expires_at,
+      athlete_id:      c.athlete_id,
+      athlete_name:    ap?.full_name ?? null,
+      email:           ap?.email ?? null,
+      consent_id:      c.id,
+      scope:           c.scope,
+      granted_at:      c.granted_at,
+      expires_at:      c.expires_at,
+      last_checkin_at: latestCheckinMap.get(c.athlete_id) ?? null,
     };
   });
 

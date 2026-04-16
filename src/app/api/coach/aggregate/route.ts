@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { scoreToPillarLevel } from '@/lib/pillar-scoring';
 import type { PillarLevel } from '@/lib/pillar-scoring';
@@ -22,17 +21,16 @@ function emptyDistribution(): PillarDistribution {
 
 // POST /api/coach/aggregate  (no body needed)
 export async function POST() {
-  // Use the regular auth client to verify the caller's identity and role
-  const authClient = createServerSupabaseClient();
+  const supabase = createServerSupabaseClient();
 
-  const { data: { user }, error: authError } = await authClient.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: profile, error: profileError } = await authClient
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, role, team_id')
+    .select('id, role, team_id, organization_id')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -44,18 +42,14 @@ export async function POST() {
     return NextResponse.json({ error: 'Forbidden: coaches only' }, { status: 403 });
   }
 
+  // No team assigned — return insufficient_data so dashboard shows the right state
   if (!profile.team_id) {
-    return NextResponse.json({ error: 'Coach is not assigned to a team' }, { status: 400 });
+    return NextResponse.json({ insufficient_data: true, athlete_count: 0, no_team: true });
   }
 
-  // Use service role client for privileged data access
-  const serviceClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   // Fetch all athlete profile IDs on the coach's team
-  const { data: athletes, error: athletesError } = await serviceClient
+  // RLS policy "Coaches read team profiles" allows this when coach has matching org
+  const { data: athletes, error: athletesError } = await supabase
     .from('profiles')
     .select('id')
     .eq('team_id', profile.team_id)
@@ -76,8 +70,8 @@ export async function POST() {
   const cutoffDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
   // Fetch most recent weekly checkin per athlete in the past 14 days
-  // We fetch all and then deduplicate to the latest per athlete in JS
-  const { data: allCheckins, error: checkinsError } = await serviceClient
+  // RLS policy "Coaches read team checkins" allows this
+  const { data: allCheckins, error: checkinsError } = await supabase
     .from('checkins')
     .select('id, athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at')
     .in('athlete_id', athleteIds)
@@ -138,20 +132,15 @@ export async function POST() {
     }
   }
 
-  // Insert access log
-  const { error: accessLogError } = await serviceClient
-    .from('access_logs')
-    .insert({
+  // Log access (non-critical — fire-and-forget, ignore errors)
+  void Promise.resolve(
+    supabase.from('access_logs').insert({
       viewer_profile_id: profile.id,
-      athlete_id:        null,
       checkin_id:        null,
       access_type:       'coach_aggregate',
       metadata:          { team_id: profile.team_id, athlete_count: athleteCount },
-    });
-
-  if (accessLogError) {
-    console.error('Failed to insert access_log:', accessLogError);
-  }
+    })
+  ).catch(() => {});
 
   return NextResponse.json({
     checkin_rate:     checkinRate,

@@ -23,7 +23,6 @@ interface Resource {
 const CATEGORY_OPTIONS = [
   { value: "crisis", label: "Crisis" },
   { value: "counseling", label: "Counseling" },
-  { value: "academic", label: "Academic" },
   { value: "wellness", label: "Wellness" },
   { value: "other", label: "Other" },
 ];
@@ -31,7 +30,6 @@ const CATEGORY_OPTIONS = [
 const CATEGORY_BADGE: Record<string, string> = {
   crisis: "bg-red-100 text-red-700 border-red-200",
   counseling: "bg-teal-100 text-teal-700 border-teal-200",
-  academic: "bg-purple-100 text-purple-700 border-purple-200",
   wellness: "bg-green-100 text-green-700 border-green-200",
   other: "bg-slate-100 text-slate-700 border-slate-200",
 };

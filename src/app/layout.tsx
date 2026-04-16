@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import Script from "next/script";
 import { CapacitorProvider } from "@/components/capacitor-provider";
 
 const dmSans = DM_Sans({
@@ -15,12 +14,6 @@ export const metadata: Metadata = {
   title: "Check-In | Athlete Anchor",
   description:
     "Privacy-first athlete wellness platform. Support athletes earlier, protect trust, strengthen teams.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Check-In",
-  },
   icons: {
     icon: "/favicon.svg",
     apple: "/icon.svg",
@@ -43,28 +36,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      </head>
       <body className={cn("antialiased", dmSans.variable, dmSans.className)}>
         <CapacitorProvider>
           {children}
         </CapacitorProvider>
-        <Script id="sw-register" strategy="afterInteractive">{`
-          if ('serviceWorker' in navigator) {
-            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-              // Unregister any stale service worker in dev so it never intercepts requests
-              navigator.serviceWorker.getRegistrations().then(regs => {
-                regs.forEach(r => r.unregister());
-              });
-            } else {
-              navigator.serviceWorker.register('/sw.js').catch(() => {});
-            }
-          }
-        `}</Script>
       </body>
     </html>
   );

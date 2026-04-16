@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
-import { PILLAR_LABELS } from "@/lib/pillar-scoring";
+import { PILLAR_LABELS, computePillarScores, evaluateSupportTrigger } from "@/lib/pillar-scoring";
+import { selectQuestionsForSession } from "@/lib/question-engine";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import {
   CheckCircle,
@@ -187,6 +188,8 @@ export default function ScreeningCheckinPage() {
   const [pillarScores, setPillarScores] = useState<PillarScores | null>(null);
   const [triggerSupport, setTriggerSupport] = useState(false);
   const [error, setError] = useState("");
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [teamId, setTeamId] = useState<string | null>(null);
 
   // Load user name on mount
   useEffect(() => {
@@ -195,59 +198,82 @@ export default function ScreeningCheckinPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
       const { data: prof } = await supabase
-        .from("profiles").select("full_name").eq("auth_user_id", user.id).single();
-      if (prof) setUserName(prof.full_name);
+        .from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
+      if (prof) {
+        setUserName(prof.full_name);
+        setProfileId(prof.id);
+        setTeamId(prof.team_id ?? null);
+      }
     }
     loadUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadQuestions() {
+    if (!profileId) return;
     setLoading(true);
-    const res = await fetch("/api/questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "screening" }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const qs: Question[] = data.questions ?? [];
+    try {
+      const supabase = createClient();
+      const { data: allQuestions, error: qErr } = await supabase
+        .from("questions").select("*").eq("active", true);
+      if (qErr || !allQuestions || allQuestions.length === 0) {
+        setError("Failed to load screening questions. Please try again.");
+        setLoading(false);
+        return;
+      }
+      const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentUsage } = await supabase
+        .from("question_usage").select("*").eq("athlete_id", profileId).gte("used_at", cutoff);
+      const selected = selectQuestionsForSession(profileId, "screening", allQuestions as Question[], recentUsage ?? []);
+      const qs = selected.length > 0 ? selected : (allQuestions as Question[]).slice(0, 16);
       setQuestions(qs);
       const initial: Record<string, number> = {};
       for (const q of qs) initial[q.id] = 5;
       setResponses(initial);
-    } else {
-      setError("Failed to load screening questions. Please try again.");
+    } catch (e) {
+      setError(`Failed to load questions: ${String(e)}`);
     }
     setLoading(false);
   }
 
   async function handleSubmit() {
+    if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true);
     setError("");
     try {
-      const res = await fetch("/api/checkins", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "screening", responses, notes: notes || null }),
+      const supabase = createClient();
+      const questionIds = Object.keys(responses);
+      const { data: questionRows } = await supabase.from("questions").select("*").in("id", questionIds);
+      const qs = (questionRows ?? []) as Question[];
+      const scores  = computePillarScores(responses, qs);
+      const trigger = evaluateSupportTrigger(scores);
+      const checkinId = crypto.randomUUID();
+      const { error: checkinErr } = await supabase.from("checkins").insert({
+        id: checkinId, athlete_id: profileId, team_id: teamId,
+        mode: "screening", is_private: true,
+        emotional_score: scores.emotional, resilience_score: scores.resilience,
+        recovery_score: scores.recovery, support_score: scores.support,
+        question_ids: questionIds, responses, notes_private: notes || null,
       });
-      if (!res.ok) {
-        setError("Failed to submit. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-      const data = await res.json();
-      setPillarScores(data.pillarScores);
-      setTriggerSupport(data.triggerSupport ?? false);
+      if (checkinErr) { setError(`Submission failed: ${checkinErr.message}`); setSubmitting(false); return; }
+      await supabase.from("question_usage").insert(
+        questionIds.map(qid => ({ athlete_id: profileId, question_id: qid, checkin_id: checkinId, used_at: new Date().toISOString() }))
+      );
+      await supabase.from("audit_logs").insert({
+        actor_profile_id: profileId, action: "checkin_submitted",
+        target_type: "checkin", target_id: checkinId, metadata: { mode: "screening" },
+      });
+      setPillarScores(scores);
+      setTriggerSupport(trigger);
       setPhase("result");
-    } catch {
-      setError("An error occurred. Please try again.");
+    } catch (e) {
+      setError(`An error occurred: ${String(e)}`);
     }
     setSubmitting(false);
   }
 
   const handleAcceptConsent = async () => {
-    await loadQuestions();
     setPhase("questions");
+    await loadQuestions();
   };
 
   if (phase === "consent") {

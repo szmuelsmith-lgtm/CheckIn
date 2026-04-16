@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { Check } from "lucide-react";
+import { Check, Heart, Users, Bell, Flame } from "lucide-react";
 
 interface Preferences {
   wants_faith_support: boolean;
@@ -17,31 +15,50 @@ interface Preferences {
 function Toggle({
   checked,
   onChange,
-  label,
-  description,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
-  label: string;
-  description: string;
 }) {
   return (
-    <label className="flex items-start gap-4 cursor-pointer py-4">
-      <div className="relative mt-0.5">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="sr-only peer"
-        />
-        <div className="h-6 w-11 rounded-full bg-slate-200 peer-checked:bg-emerald-500 transition-colors" />
-        <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-[28px] w-[50px] shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+        checked ? "bg-emerald-600" : "bg-slate-200"
+      }`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-[24px] w-[24px] rounded-full bg-white shadow-md transform transition-transform duration-200 mt-[2px] ml-[2px] ${
+          checked ? "translate-x-[22px]" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
+
+interface PrefRowProps {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}
+
+function PrefRow({ icon, label, description, checked, onChange }: PrefRowProps) {
+  return (
+    <div className="flex items-center justify-between py-4 gap-4">
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 mt-0.5">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[14px] font-semibold text-slate-900">{label}</p>
+          <p className="text-[12px] text-slate-500 mt-0.5 leading-relaxed">{description}</p>
+        </div>
       </div>
-      <div>
-        <p className="text-sm font-medium text-slate-900">{label}</p>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
-      </div>
-    </label>
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
   );
 }
 
@@ -62,22 +79,12 @@ export default function AthletePreferencesPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
       const { data: prof } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .eq("auth_user_id", user.id)
-        .single();
-
+        .from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
       if (!prof) return;
       setProfile(prof);
-
       const { data: existingPrefs } = await supabase
-        .from("athlete_preferences")
-        .select("*")
-        .eq("athlete_id", prof.id)
-        .single();
-
+        .from("athlete_preferences").select("*").eq("athlete_id", prof.id).single();
       if (existingPrefs) {
         setPrefs({
           wants_faith_support: existingPrefs.wants_faith_support,
@@ -86,44 +93,27 @@ export default function AthletePreferencesPage() {
           opt_out_reminders: existingPrefs.opt_out_reminders,
         });
       }
-
       setLoading(false);
     }
     load();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
     setSaved(false);
-
     const supabase = createClient();
-
-    // Upsert preferences
     const { error } = await supabase
       .from("athlete_preferences")
-      .upsert(
-        {
-          athlete_id: profile.id,
-          ...prefs,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "athlete_id" }
-      );
-
+      .upsert({ athlete_id: profile.id, ...prefs, updated_at: new Date().toISOString() }, { onConflict: "athlete_id" });
     if (!error) {
       await supabase.from("audit_logs").insert({
-        actor_profile_id: profile.id,
-        action: "update",
-        target_type: "preferences",
-        target_id: profile.id,
-        metadata: prefs,
+        actor_profile_id: profile.id, action: "update", target_type: "preferences",
+        target_id: profile.id, metadata: prefs,
       });
-
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     }
-
     setSaving(false);
   };
 
@@ -131,7 +121,7 @@ export default function AthletePreferencesPage() {
     return (
       <DashboardLayout role="athlete" userName="...">
         <div className="flex items-center justify-center h-64">
-          <p className="text-slate-500">Loading preferences...</p>
+          <div className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-emerald-600 animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -139,68 +129,86 @@ export default function AthletePreferencesPage() {
 
   return (
     <DashboardLayout role="athlete" userName={profile?.full_name || "Athlete"}>
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Preferences</h1>
-          <p className="text-slate-500 mt-1">Customize your Check-In experience</p>
+      <div className="max-w-2xl mx-auto space-y-5">
+
+        {/* Header */}
+        <div>
+          <h1 className="text-[26px] font-bold text-slate-900 tracking-tight">Preferences</h1>
+          <p className="text-[14px] text-slate-500 mt-0.5">Customize your Check-In experience. All settings are optional.</p>
         </div>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Check-In Options</CardTitle>
-            <CardDescription>
-              These settings control what optional questions appear in your weekly check-in.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="divide-y divide-slate-100">
-            <Toggle
+        {/* Check-In Options */}
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Check-In Questions</p>
+            <p className="text-[12px] text-slate-500 mt-0.5">These add optional questions to your weekly check-in.</p>
+          </div>
+          <div className="px-5 divide-y divide-slate-100">
+            <PrefRow
+              icon={<Flame className="h-4 w-4" />}
+              label="Faith & values"
+              description="Include spiritual well-being questions in your check-ins"
               checked={prefs.wants_faith_support}
-              onChange={(v) => setPrefs({ ...prefs, wants_faith_support: v })}
-              label="Faith & values support"
-              description="Include questions about faith and spiritual well-being in your check-ins"
+              onChange={v => setPrefs(p => ({ ...p, wants_faith_support: v }))}
             />
-            <Toggle
+            <PrefRow
+              icon={<Heart className="h-4 w-4" />}
+              label="Family & home life"
+              description="Include questions about family and home stress"
               checked={prefs.wants_family_checkins}
-              onChange={(v) => setPrefs({ ...prefs, wants_family_checkins: v })}
-              label="Family check-in questions"
-              description="Include questions about family and home life stress"
+              onChange={v => setPrefs(p => ({ ...p, wants_family_checkins: v }))}
             />
-            <Toggle
-              checked={prefs.wants_peer_support}
-              onChange={(v) => setPrefs({ ...prefs, wants_peer_support: v })}
+            <PrefRow
+              icon={<Users className="h-4 w-4" />}
               label="Peer support"
-              description="Let your program know you're open to peer mentoring or buddy check-ins"
+              description="Signal you're open to peer mentoring or buddy check-ins"
+              checked={prefs.wants_peer_support}
+              onChange={v => setPrefs(p => ({ ...p, wants_peer_support: v }))}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-lg">Notifications</CardTitle>
-            <CardDescription>
-              Control how Check-In communicates with you.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Toggle
-              checked={prefs.opt_out_reminders}
-              onChange={(v) => setPrefs({ ...prefs, opt_out_reminders: v })}
-              label="Opt out of weekly reminders"
-              description="Stop receiving email reminders to complete your weekly check-in"
+        {/* Notifications */}
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Notifications</p>
+          </div>
+          <div className="px-5">
+            <PrefRow
+              icon={<Bell className="h-4 w-4" />}
+              label="Weekly reminders"
+              description={prefs.opt_out_reminders ? "Reminders are off — you won't receive email nudges" : "You'll receive weekly email reminders to check in"}
+              checked={!prefs.opt_out_reminders}
+              onChange={v => setPrefs(p => ({ ...p, opt_out_reminders: !v }))}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
+        {/* Save */}
         <div className="flex items-center gap-3">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Preferences"}
-          </Button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="h-10 px-5 disabled:opacity-60 text-white font-semibold text-[14px] rounded-xl transition-opacity hover:opacity-90 flex items-center gap-2"
+            style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+          >
+            {saving ? (
+              <span className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            ) : "Save Preferences"}
+          </button>
           {saved && (
-            <span className="flex items-center gap-1 text-sm text-green-600">
-              <Check className="h-4 w-4" /> Saved
-            </span>
+            <div className="flex items-center gap-1.5 text-[13px] text-emerald-700 font-medium">
+              <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Check className="h-3 w-3" strokeWidth={2.5} />
+              </div>
+              Saved
+            </div>
           )}
         </div>
+
+        <p className="text-[11px] text-slate-400 leading-relaxed">
+          These preferences are stored securely and only affect what you see in your own check-ins. They are never shared with coaches.
+        </p>
       </div>
     </DashboardLayout>
   );

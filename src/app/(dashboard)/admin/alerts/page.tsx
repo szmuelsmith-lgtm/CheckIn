@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertTriangle, Clock, User } from "lucide-react";
+
+const OB = {
+  bg:        "#f8fafc",
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e2e8f0",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#047857",
+  red:       "#dc2626",
+  amber:     "#d97706",
+};
 
 interface AlertWithDetails {
   id: string;
@@ -15,32 +26,24 @@ interface AlertWithDetails {
   status: "open" | "acknowledged" | "resolved";
   created_at: string;
   resolved_at: string | null;
-  athlete: {
-    id: string;
-    full_name: string;
-    team_id: string | null;
-  };
+  athlete: { id: string; full_name: string; team_id: string | null };
   checkin: {
-    emotional_score: number | null;
-    resilience_score: number | null;
-    recovery_score: number | null;
-    support_score: number | null;
+    emotional_score: number | null; resilience_score: number | null;
+    recovery_score: number | null;  support_score: number | null;
   } | null;
 }
 
-const SEVERITY_STYLES = {
-  red: { badge: "bg-red-100 text-red-700 border-red-200", dot: "bg-red-500" },
-  yellow: { badge: "bg-amber-100 text-amber-700 border-amber-200", dot: "bg-amber-500" },
-};
-
-const STATUS_STYLES = {
-  open: { label: "Open", color: "text-red-600" },
-  acknowledged: { label: "Acknowledged", color: "text-amber-600" },
-  resolved: { label: "Resolved", color: "text-green-600" },
-};
+function getTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export default function AdminAlertsPage() {
-  const [alerts, setAlerts] = useState<AlertWithDetails[]>([]);
+  const [alerts, setAlerts]   = useState<AlertWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null);
 
@@ -49,33 +52,16 @@ export default function AdminAlertsPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name, role")
-        .eq("auth_user_id", user.id)
-        .single();
-
+      const { data: prof } = await supabase.from("profiles").select("full_name, role").eq("auth_user_id", user.id).single();
       if (prof) setProfile(prof);
-
       const { data: alertData } = await supabase
         .from("alerts")
-        .select(`
-          id,
-          severity,
-          trigger_type,
-          status,
-          created_at,
-          resolved_at,
+        .select(`id, severity, trigger_type, status, created_at, resolved_at,
           athlete:profiles!alerts_athlete_id_fkey(id, full_name, team_id),
-          checkin:checkins!alerts_checkin_id_fkey(emotional_score, resilience_score, recovery_score, support_score)
-        `)
+          checkin:checkins!alerts_checkin_id_fkey(emotional_score, resilience_score, recovery_score, support_score)`)
         .order("created_at", { ascending: false })
         .limit(50);
-
-      if (alertData) {
-        setAlerts(alertData as unknown as AlertWithDetails[]);
-      }
+      if (alertData) setAlerts(alertData as unknown as AlertWithDetails[]);
       setLoading(false);
     }
     load();
@@ -83,50 +69,27 @@ export default function AdminAlertsPage() {
 
   const handleStatusChange = async (alertId: string, newStatus: "acknowledged" | "resolved") => {
     const supabase = createClient();
-    const updateData: Record<string, unknown> = { status: newStatus };
-    if (newStatus === "resolved") {
-      updateData.resolved_at = new Date().toISOString();
-    }
-
-    await supabase.from("alerts").update(updateData).eq("id", alertId);
-
-    setAlerts((prev) =>
-      prev.map((a) =>
-        a.id === alertId ? { ...a, status: newStatus, ...(newStatus === "resolved" ? { resolved_at: new Date().toISOString() } : {}) } : a
-      )
-    );
-
-    // Audit log
+    const update: Record<string, unknown> = { status: newStatus };
+    if (newStatus === "resolved") update.resolved_at = new Date().toISOString();
+    await supabase.from("alerts").update(update).eq("id", alertId);
+    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status: newStatus, ...(newStatus === "resolved" ? { resolved_at: new Date().toISOString() } : {}) } : a));
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("auth_user_id", user.id)
-        .single();
-      if (prof) {
-        await supabase.from("audit_logs").insert({
-          actor_profile_id: prof.id,
-          action: "update",
-          target_type: "alert",
-          target_id: alertId,
-          metadata: { new_status: newStatus },
-        });
-      }
+      const { data: prof } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).single();
+      if (prof) await supabase.from("audit_logs").insert({ actor_profile_id: prof.id, action: "update", target_type: "alert", target_id: alertId, metadata: { new_status: newStatus } });
     }
   };
 
-  const openAlerts = alerts.filter((a) => a.status === "open");
-  const acknowledgedAlerts = alerts.filter((a) => a.status === "acknowledged");
-  const resolvedAlerts = alerts.filter((a) => a.status === "resolved");
-
+  const openAlerts         = alerts.filter(a => a.status === "open");
+  const acknowledgedAlerts = alerts.filter(a => a.status === "acknowledged");
+  const resolvedAlerts     = alerts.filter(a => a.status === "resolved");
   const roleName = profile?.role === "support" ? "Support" : "Admin";
 
   if (loading) {
     return (
       <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName="...">
         <div className="flex items-center justify-center h-64">
-          <p className="text-slate-500">Loading alerts...</p>
+          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: OB.border, borderTopColor: OB.green }} />
         </div>
       </DashboardLayout>
     );
@@ -134,107 +97,111 @@ export default function AdminAlertsPage() {
 
   return (
     <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">Alert Queue</h1>
-          <p className="text-slate-500 mt-1">
+      <div className="max-w-4xl mx-auto space-y-4">
+
+        {/* Header */}
+        <div>
+          <h1 className="text-[24px] font-bold tracking-tight" style={{ color: OB.text }}>Alert Queue</h1>
+          <p className="text-[13px] mt-0.5" style={{ color: OB.textMuted }}>
             {openAlerts.length} open alert{openAlerts.length !== 1 ? "s" : ""} requiring attention
           </p>
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="py-4 text-center">
-              <p className="text-3xl font-bold text-red-600">{openAlerts.length}</p>
-              <p className="text-sm text-slate-500">Open</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4 text-center">
-              <p className="text-3xl font-bold text-amber-600">{acknowledgedAlerts.length}</p>
-              <p className="text-sm text-slate-500">Acknowledged</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-4 text-center">
-              <p className="text-3xl font-bold text-green-600">{resolvedAlerts.length}</p>
-              <p className="text-sm text-slate-500">Resolved</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Open",         count: openAlerts.length,         color: OB.red,   bg: "#fee2e2", icon: <AlertTriangle className="h-4 w-4" /> },
+            { label: "Acknowledged", count: acknowledgedAlerts.length, color: OB.amber, bg: "#fef3c7", icon: <Clock className="h-4 w-4" /> },
+            { label: "Resolved",     count: resolvedAlerts.length,     color: OB.green, bg: "#d1fae5", icon: <CheckCircle className="h-4 w-4" /> },
+          ].map(item => (
+            <div key={item.label} className="rounded-2xl p-4 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+              <div className="h-8 w-8 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: item.bg, color: item.color }}>
+                {item.icon}
+              </div>
+              <p className="text-[28px] font-bold tabular-nums leading-none" style={{ color: item.color }}>{item.count}</p>
+              <p className="text-[11px] font-medium mt-1" style={{ color: OB.textMuted }}>{item.label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Alert list */}
         {alerts.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-slate-900">All clear</p>
-              <p className="text-slate-500">No alerts at this time.</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-2xl p-14 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div className="h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "#d1fae5" }}>
+              <CheckCircle className="h-6 w-6" style={{ color: OB.green }} />
+            </div>
+            <p className="text-[17px] font-semibold mb-1" style={{ color: OB.text }}>All clear</p>
+            <p className="text-[13px]" style={{ color: OB.textMuted }}>No alerts at this time.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {alerts.map((alert) => {
-              const severityStyle = SEVERITY_STYLES[alert.severity];
-              const statusStyle = STATUS_STYLES[alert.status];
-              const timeAgo = getTimeAgo(alert.created_at);
+          <div className="space-y-2">
+            {alerts.map(alert => {
+              const isSevere  = alert.severity === "red";
+              const isOpen    = alert.status === "open";
+              const isResolved = alert.status === "resolved";
+              const severityColor = isSevere ? OB.red : OB.amber;
+              const severityBg    = isSevere ? "#fee2e2" : "#fef3c7";
+              const statusLabel   = isOpen ? "Open" : alert.status === "acknowledged" ? "Acknowledged" : "Resolved";
+              const statusColor   = isOpen ? OB.red : isResolved ? OB.green : OB.amber;
 
               return (
-                <Card key={alert.id} className="overflow-hidden">
-                  <CardContent className="py-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className={`mt-1 h-3 w-3 rounded-full shrink-0 ${severityStyle.dot}`} />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-slate-900">
-                              {alert.athlete?.full_name || "Unknown Athlete"}
-                            </span>
-                            <Badge variant="outline" className={severityStyle.badge}>
-                              {alert.severity.toUpperCase()}
-                            </Badge>
-                            <span className={`text-xs font-medium ${statusStyle.color}`}>
-                              {statusStyle.label}
-                            </span>
-                          </div>
-                          <p className="text-sm text-slate-500 mt-1">
-                            Trigger: {alert.trigger_type === "wants_followup" ? "Requested follow-up" : "Risk score"}{" "}
-                            &middot; {timeAgo}
-                          </p>
-                          {alert.checkin && (
-                            <div className="flex gap-4 mt-2 text-xs text-slate-400">
-                              <span>Emotional: {alert.checkin.emotional_score ?? "—"}</span>
-                              <span>Resilience: {alert.checkin.resilience_score ?? "—"}</span>
-                              <span>Recovery: {alert.checkin.recovery_score ?? "—"}</span>
-                              <span>Support: {alert.checkin.support_score ?? "—"}</span>
-                            </div>
-                          )}
-                        </div>
+                <div key={alert.id} className="rounded-2xl p-4" style={{ background: OB.surface, border: `1px solid ${isOpen ? severityColor + "40" : OB.border}` }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: severityBg }}>
+                        <User className="h-4 w-4" style={{ color: severityColor }} />
                       </div>
-
-                      <div className="flex gap-2 shrink-0">
-                        {alert.status === "open" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleStatusChange(alert.id, "acknowledged")}
-                          >
-                            Acknowledge
-                          </Button>
-                        )}
-                        {alert.status !== "resolved" && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleStatusChange(alert.id, "resolved")}
-                          >
-                            Resolve
-                          </Button>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-[14px]" style={{ color: OB.text }}>{alert.athlete?.full_name || "Unknown Athlete"}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: severityBg, color: severityColor }}>
+                            {alert.severity.toUpperCase()}
+                          </span>
+                          <span className="text-[11px] font-medium" style={{ color: statusColor }}>{statusLabel}</span>
+                        </div>
+                        <p className="text-[12px] mt-1" style={{ color: OB.textMuted }}>
+                          {alert.trigger_type === "wants_followup" ? "Requested follow-up" : "Risk score triggered"} · {getTimeAgo(alert.created_at)}
+                        </p>
+                        {alert.checkin && (
+                          <div className="flex gap-3 mt-2 flex-wrap">
+                            {[
+                              { label: "Emotional",  val: alert.checkin.emotional_score },
+                              { label: "Resilience", val: alert.checkin.resilience_score },
+                              { label: "Recovery",   val: alert.checkin.recovery_score },
+                              { label: "Support",    val: alert.checkin.support_score },
+                            ].map(({ label, val }) => (
+                              <div key={label} className="flex items-center gap-1 px-2 py-0.5 rounded-lg" style={{ background: OB.raised }}>
+                                <span className="text-[10px] font-medium" style={{ color: OB.textMuted }}>{label}</span>
+                                <span className="text-[11px] font-bold tabular-nums" style={{ color: val !== null && val > 7 ? OB.red : OB.textSub }}>{val ?? "—"}</span>
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    <div className="flex flex-col gap-2 shrink-0">
+                      {isOpen && (
+                        <button
+                          onClick={() => handleStatusChange(alert.id, "acknowledged")}
+                          className="h-8 px-3 text-[12px] font-semibold rounded-lg border transition-colors"
+                          style={{ borderColor: OB.border, color: OB.textSub, background: OB.raised }}
+                        >
+                          Acknowledge
+                        </button>
+                      )}
+                      {!isResolved && (
+                        <button
+                          onClick={() => handleStatusChange(alert.id, "resolved")}
+                          className="h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90"
+                          style={{ background: `linear-gradient(135deg,#065f46,${OB.green})` }}
+                        >
+                          Resolve
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -242,14 +209,4 @@ export default function AdminAlertsPage() {
       </div>
     </DashboardLayout>
   );
-}
-
-function getTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
 }

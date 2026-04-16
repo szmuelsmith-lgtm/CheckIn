@@ -4,11 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield } from "lucide-react";
+import { Anchor, Check } from "lucide-react";
 import { UserRole } from "@/types/database";
 
 export default function SignupPage() {
@@ -29,7 +25,6 @@ export default function SignupPage() {
 
     const supabase = createClient();
 
-    // Validate invite code if provided
     let orgId: string | null = null;
     let teamId: string | null = null;
     let role: UserRole = "athlete";
@@ -63,7 +58,6 @@ export default function SignupPage() {
       teamId = invite.team_id;
       role = invite.role;
 
-      // Decrement uses if limited
       if (invite.uses_remaining !== null) {
         await supabase
           .from("invite_codes")
@@ -72,13 +66,10 @@ export default function SignupPage() {
       }
     }
 
-    // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName },
-      },
+      options: { data: { full_name: fullName } },
     });
 
     if (authError) {
@@ -88,15 +79,32 @@ export default function SignupPage() {
     }
 
     if (authData.user) {
-      // Create profile
-      const { error: profileError } = await supabase.from("profiles").insert({
-        auth_user_id: authData.user.id,
-        full_name: fullName,
-        email,
-        role,
-        organization_id: orgId,
-        team_id: teamId,
+      // Try the SECURITY DEFINER RPC first (works even without an active session,
+      // which happens when Supabase email confirmation is required).
+      // Falls back to a direct insert (works when email confirmation is disabled).
+      let profileError: { message: string } | null = null;
+
+      const { error: rpcError } = await supabase.rpc("create_signup_profile", {
+        p_auth_user_id: authData.user.id,
+        p_full_name: fullName,
+        p_email: email,
+        p_role: role,
+        p_organization_id: orgId,
+        p_team_id: teamId,
       });
+
+      if (rpcError) {
+        // RPC not deployed yet — fall back to direct insert (requires active session)
+        const { error: insertError } = await supabase.from("profiles").insert({
+          auth_user_id: authData.user.id,
+          full_name: fullName,
+          email,
+          role,
+          organization_id: orgId,
+          team_id: teamId,
+        });
+        profileError = insertError;
+      }
 
       if (profileError) {
         setError("Account created but profile setup failed. Please contact support.");
@@ -104,14 +112,12 @@ export default function SignupPage() {
         return;
       }
 
-      // If no invite code, this is an admin creating a new org — handled after email confirmation
       if (!inviteCode.trim()) {
         setSuccess(true);
         setLoading(false);
         return;
       }
 
-      // Redirect based on role
       const redirectMap: Record<string, string> = {
         athlete: "/athlete/dashboard",
         coach: "/coach/dashboard",
@@ -126,129 +132,175 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <div className="p-3 bg-green-50 rounded-xl inline-block mb-4">
-              <Shield className="h-8 w-8 text-green-500" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Check your email</h2>
-            <p className="text-slate-500">
-              We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+          <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
+            <Check className="h-6 w-6 text-emerald-600" strokeWidth={2.5} />
+          </div>
+          <h2 className="text-[20px] font-bold text-slate-900 mb-2">Check your email</h2>
+          <p className="text-[14px] text-slate-500 leading-relaxed">
+            We sent a confirmation link to{" "}
+            <span className="font-medium text-slate-700">{email}</span>.
+            Click it to activate your account.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block mt-6 text-[13px] font-medium text-emerald-700 hover:underline"
+          >
+            Back to sign in
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-emerald-50 rounded-xl">
-              <Shield className="h-8 w-8 text-emerald-500" />
-            </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 py-12">
+      {/* Logo */}
+      <div className="flex flex-col items-center mb-8">
+        <div className="h-12 w-12 rounded-2xl bg-emerald-700 flex items-center justify-center mb-3 shadow-sm">
+          <Anchor className="h-6 w-6 text-white" strokeWidth={2.5} />
+        </div>
+        <p className="text-[15px] font-semibold text-slate-800 tracking-tight">Check-In</p>
+        <p className="text-[11px] text-slate-400 tracking-widest uppercase mt-0.5">Athlete Anchor</p>
+      </div>
+
+      <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <h1 className="text-[22px] font-bold text-slate-900 tracking-tight mb-1">Create account</h1>
+        <p className="text-sm text-slate-500 mb-7">Join Check-In by Athlete Anchor</p>
+
+        <form onSubmit={handleSignup} className="space-y-4">
+          {/* Full name */}
+          <div>
+            <label htmlFor="fullName" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+              Full Name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              placeholder="Alex Johnson"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+            />
           </div>
-          <CardTitle className="text-2xl font-bold text-slate-900">
-            Create your account
-          </CardTitle>
-          <CardDescription>
-            Join Check-In by Athlete Anchor
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Samuel Smith"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@school.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="inviteCode">
-                Invite Code <span className="text-slate-400">(optional)</span>
-              </Label>
-              <Input
-                id="inviteCode"
-                type="text"
-                placeholder="Enter team invite code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-              />
-              <p className="text-xs text-slate-400">
-                Got a code from your coach or program? Enter it to join your team.
-              </p>
-            </div>
-            {/* Consent & Disclosure */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
+
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="you@school.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label htmlFor="password" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          {/* Invite code */}
+          <div>
+            <label htmlFor="inviteCode" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+              Invite Code
+              <span className="text-slate-400 font-normal ml-1">— optional</span>
+            </label>
+            <input
+              id="inviteCode"
+              type="text"
+              placeholder="Team invite code"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          {/* FERPA / Privacy notice */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Privacy Notice (FERPA)</p>
+            <ul className="space-y-1.5">
+              {[
+                "Coaches see only anonymized team averages — never your individual scores",
+                "Counselors / support staff may see your data only if you grant consent or a health-safety alert is triggered",
+                "Journal entries are private to you only",
+                "You may inspect, amend, or request deletion of your records at any time",
+                "Staff may be mandatory reporters under state law",
+              ].map(item => (
+                <li key={item} className="flex items-start gap-2 text-[11px] text-slate-600">
+                  <span className="text-emerald-600 mt-0.5 shrink-0 font-bold">·</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <label className="flex items-start gap-3 cursor-pointer pt-1">
+              <div className="relative flex-shrink-0 mt-0.5">
                 <input
                   type="checkbox"
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  className="peer sr-only"
                   required
                 />
-                <span className="text-xs text-slate-600 leading-relaxed">
-                  I acknowledge that I am at least 18 years old. I have read and agree to the{" "}
-                  <Link href="/terms" className="text-emerald-600 underline" target="_blank">Terms of Service</Link> and{" "}
-                  <Link href="/privacy" className="text-emerald-600 underline" target="_blank">Privacy Policy</Link>.
-                  I understand that:
-                </span>
-              </label>
-              <ul className="text-xs text-slate-500 space-y-1 ml-7 list-disc pl-1">
-                <li>Check-in responses may be shared with authorized support staff per the three-tier privacy model</li>
-                <li>Staff members may be mandatory reporters under Title IX and state law — disclosures of sexual violence, abuse, or harm to minors may be reported to authorities</li>
-                <li>This platform is not a medical service, crisis intervention tool, or substitute for professional mental health care</li>
-                <li>My institution is the data controller under FERPA; I have the right to inspect, correct, and request deletion of my records</li>
-              </ul>
-            </div>
+                <div className="h-4 w-4 rounded border-2 border-slate-300 peer-checked:bg-emerald-600 peer-checked:border-emerald-600 transition-colors flex items-center justify-center">
+                  {consentChecked && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+                </div>
+              </div>
+              <span className="text-[12px] text-slate-700 leading-relaxed font-medium">
+                I am 18 or older. I have read the privacy notice above and agree to the{" "}
+                <Link href="/terms" className="text-emerald-700 underline" target="_blank">Terms of Service</Link>
+                {" "}and{" "}
+                <Link href="/privacy" className="text-emerald-700 underline" target="_blank">Privacy Policy</Link>
+                . I understand my FERPA rights and how my wellness data will be used and protected.
+              </span>
+            </label>
+          </div>
 
-            {error && (
-              <p className="text-sm text-red-600" role="alert">{error}</p>
+          {error && (
+            <p className="text-[13px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2" role="alert">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !consentChecked}
+            className="w-full h-10 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-semibold text-[14px] rounded-lg transition-colors flex items-center justify-center"
+          >
+            {loading ? (
+              <span className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            ) : (
+              "Create account"
             )}
-            <Button type="submit" className="w-full" disabled={loading || !consentChecked}>
-              {loading ? "Creating account..." : "Create account"}
-            </Button>
-          </form>
-          <p className="text-center text-sm text-slate-500 mt-4">
-            Already have an account?{" "}
-            <Link href="/login" className="text-emerald-600 hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+          </button>
+        </form>
+
+        <p className="text-center text-[13px] text-slate-500 mt-5">
+          Already have an account?{" "}
+          <Link href="/login" className="text-emerald-700 font-medium hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!body.responses || typeof body.responses !== 'object' || Object.keys(body.responses).length === 0) {
+    console.error('checkin 400: empty/missing responses. body:', JSON.stringify(body));
     return NextResponse.json({ error: 'Invalid or missing responses' }, { status: 400 });
   }
 
@@ -64,10 +65,12 @@ export async function POST(request: NextRequest) {
   const pillarScores = computePillarScores(body.responses, questions);
   const triggerSupport = evaluateSupportTrigger(pillarScores);
 
-  // Insert checkin record
-  const { data: checkin, error: checkinError } = await supabase
+  // Insert checkin record — use generated_id so we don't need a read-back
+  const generatedId = crypto.randomUUID();
+  const { error: checkinError } = await supabase
     .from('checkins')
     .insert({
+      id:                generatedId,
       athlete_id:        profile.id,
       team_id:           profile.team_id,
       mode:              body.mode,
@@ -79,13 +82,13 @@ export async function POST(request: NextRequest) {
       question_ids:      questionIds,
       responses:         body.responses,
       notes_private:     body.notes ?? null,
-    })
-    .select('id')
-    .single();
+    });
 
-  if (checkinError || !checkin) {
-    return NextResponse.json({ error: 'Failed to create checkin' }, { status: 500 });
+  if (checkinError) {
+    console.error('checkin insert error:', JSON.stringify(checkinError));
+    return NextResponse.json({ error: 'Failed to create checkin', detail: checkinError?.message }, { status: 500 });
   }
+  const checkin = { id: generatedId };
 
   // Insert question_usage rows
   const usageRows = questionIds.map(qid => ({

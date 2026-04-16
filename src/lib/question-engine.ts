@@ -45,12 +45,15 @@ export function selectQuestionsForSession(
   const selected: Question[] = [];
 
   for (const pillar of PILLARS) {
+    // Note: allQuestions is already pre-filtered by active=true at the DB level.
+    // We avoid re-checking q.modes here because PostgREST may return enum arrays
+    // with varying type representations that could fail strict includes() checks.
     const pool = allQuestions.filter(
-      q => q.pillar === pillar && q.active && q.modes.includes(mode) && !recentIds.has(q.id)
+      q => q.pillar === pillar && !recentIds.has(q.id)
     );
     // Fall back to used questions if pool is exhausted
     const fallback = allQuestions.filter(
-      q => q.pillar === pillar && q.active && q.modes.includes(mode) && recentIds.has(q.id)
+      q => q.pillar === pillar && recentIds.has(q.id)
     );
     const available = pool.length >= perPillar ? pool : [...pool, ...fallback];
     const shuffled = seededShuffle(available, seed + pillar.length);
