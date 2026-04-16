@@ -1,157 +1,234 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
-  Eye,
-  Heart,
-  Users,
-  ClipboardCheck,
-  TrendingUp,
-  Lock,
-  Anchor,
-  ArrowRight,
-  Check,
+  Lock, ArrowRight, Check, Eye, Users,
+  ClipboardCheck, TrendingUp, Heart, Anchor, Shield,
 } from "lucide-react";
 
 export default function LandingPage() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // Capacitor injects window.Capacitor before any JS runs
+    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean; isNative?: boolean } }).Capacitor;
+    const isNative =
+      cap?.isNativePlatform?.() === true ||
+      cap?.isNative === true ||
+      window.location.protocol === "capacitor:" ||
+      (window.location.hostname === "localhost" && window.location.port === "");
+
+    if (isNative) {
+      // Client-side navigation — no hard reload, no glitch
+      router.replace("/login");
+      return;
+    }
+    setReady(true);
+  }, [router]);
+
+  // Render nothing until we know we're on web (prevents any flash in native)
+  if (!ready) return null;
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Nav */}
-      <nav className="border-b border-emerald-100/60 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-white text-slate-900 antialiased">
+
+      {/* ─── Nav ─── */}
+      <header className="fixed top-0 inset-x-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-emerald-700 flex items-center justify-center shrink-0">
+              <Anchor className="h-4 w-4 text-white" strokeWidth={2.5} />
+            </div>
+            <div className="leading-none">
+              <p className="font-semibold text-[15px] text-slate-900 tracking-tight">Check-In</p>
+              <p className="text-[10px] text-slate-400 tracking-widest uppercase">Athlete Anchor</p>
+            </div>
+          </Link>
+          <nav className="hidden md:flex items-center gap-7 text-sm text-slate-500">
+            <Link href="/privacy" className="hover:text-slate-800 transition-colors">Privacy</Link>
+            <Link href="/compliance" className="hover:text-slate-800 transition-colors">Compliance</Link>
+          </nav>
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-emerald-900 flex items-center justify-center">
-              <Anchor className="h-4.5 w-4.5 text-emerald-400" />
-            </div>
-            <div>
-              <span className="font-bold text-lg tracking-tight text-slate-900">Check-In</span>
-              <span className="text-[10px] text-emerald-600 ml-1.5 font-medium uppercase tracking-widest">Athlete Anchor</span>
-            </div>
-          </div>
-          <div className="flex gap-3 items-center">
-            <Link href="/privacy" className="text-sm text-slate-500 hover:text-slate-700 hidden md:block">
-              Privacy
+            <Link
+              href="/login"
+              className="hidden sm:block text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5"
+            >
+              Sign in
             </Link>
-            <Link href="/compliance" className="text-sm text-slate-500 hover:text-slate-700 hidden md:block">
-              Compliance
-            </Link>
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Sign in</Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">Get Started</Button>
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Get Started
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-green-50/30" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-100/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+      {/* ─── Hero ─── */}
+      <section className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_60%_-10%,rgba(16,185,129,0.08),transparent)]" />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-50/60 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200/60 rounded-full px-4 py-1.5 text-sm text-emerald-700 font-medium mb-8">
-            <Lock className="h-3.5 w-3.5" />
-            Privacy-first. FERPA-aligned. NCAA-ready.
+        <div className="relative max-w-5xl mx-auto px-5 md:px-8 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 border border-emerald-200 bg-emerald-50/80 rounded-full px-3.5 py-1.5 text-xs font-medium text-emerald-700 mb-10 tracking-wide">
+            <Lock className="h-3 w-3" />
+            Privacy-first · FERPA-aligned · NCAA-ready
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-[1.1] tracking-tight">
-            Athletes share more when
-            <br />
-            <span className="text-emerald-600">they trust the system</span>
+          {/* Headline */}
+          <h1 className="text-5xl md:text-[68px] lg:text-[76px] font-bold text-slate-900 tracking-[-0.03em] leading-[1.04] mb-7">
+            The wellness platform
+            <br className="hidden md:block" />{" "}
+            <span className="text-emerald-700">athletes actually trust</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-slate-500 mt-8 max-w-2xl mx-auto leading-relaxed">
-            Weekly check-ins that catch what annual screenings miss.
-            Three-tier privacy that athletes actually trust.
-            Follow-up workflows that ensure no one falls through.
+          {/* Sub */}
+          <p className="text-lg md:text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto mb-10">
+            Weekly check-ins that surface what annual screenings miss.
+            Three-tier privacy athletes believe in.
+            Follow-up workflows that ensure no one falls through the cracks.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
-            <Link href="/signup">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white text-base px-8 h-12 w-full sm:w-auto">
-                Start Free Pilot
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[15px] px-7 py-3.5 rounded-xl transition-all shadow-sm hover:shadow-md w-full sm:w-auto justify-center"
+            >
+              Start Free Pilot
+              <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/login">
-              <Button size="lg" variant="outline" className="text-base px-8 h-12 border-emerald-200 text-emerald-700 hover:bg-emerald-50 w-full sm:w-auto">
-                Sign In
-              </Button>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center text-[15px] font-medium text-slate-600 hover:text-slate-900 border border-slate-300 hover:border-slate-400 px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto bg-white"
+            >
+              Sign In
             </Link>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 mt-10 text-sm text-slate-400">
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> 2-minute check-ins</span>
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> Installs like a native app</span>
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> No athlete data in emails</span>
+          {/* Proof row */}
+          <div className="flex flex-wrap justify-center gap-x-7 gap-y-2 mt-9 text-sm text-slate-400">
+            {[
+              "2-minute check-ins",
+              "Installs like a native app",
+              "No athlete data in emails",
+            ].map((item) => (
+              <span key={item} className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                {item}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Trust bar */}
-      <section className="border-y border-emerald-100/60 bg-emerald-900 py-4">
-        <div className="max-w-6xl mx-auto px-6 flex flex-wrap justify-center gap-x-10 gap-y-2 text-sm text-emerald-300/80">
-          <span>FERPA-Aligned</span>
-          <span>NCAA Best Practices</span>
-          <span>SOC 2 Ready Architecture</span>
-          <span>End-to-End Encrypted</span>
-          <span>Audit Logged</span>
+      {/* ─── Trust bar ─── */}
+      <div className="bg-slate-900 py-4 border-y border-slate-800">
+        <div className="max-w-5xl mx-auto px-5 flex flex-wrap justify-center gap-x-10 gap-y-2 text-[13px] font-medium text-slate-400 tracking-wide">
+          {["FERPA-Aligned", "NCAA Best Practices", "SOC 2 Ready Architecture", "End-to-End Encrypted", "Audit Logged"].map((t) => (
+            <span key={t}>{t}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ─── How it works ─── */}
+      <section className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">How it works</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+              Simple for athletes, powerful for programs
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Athletes check in weekly",
+                desc: "A 2-minute check-in covering mood, stress, sleep, and support. Opens instantly on their phone, no app store required.",
+              },
+              {
+                step: "02",
+                title: "System flags early signs",
+                desc: "Automatic risk scoring identifies athletes who may need support. Red alerts notify the right staff instantly.",
+              },
+              {
+                step: "03",
+                title: "Staff follow up with care",
+                desc: "Structured follow-ups are assigned, tracked, and documented. Nothing gets missed. Everything is logged.",
+              },
+            ].map((item) => (
+              <div key={item.step} className="relative">
+                <p className="text-[11px] font-bold text-emerald-600/50 tracking-widest mb-4 font-mono">{item.step}</p>
+                <h3 className="text-[17px] font-semibold text-slate-900 mb-2 leading-snug">{item.title}</h3>
+                <p className="text-[15px] text-slate-500 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Privacy model */}
-      <section className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+      {/* ─── Privacy model ─── */}
+      <section className="py-24 bg-slate-50/70 border-y border-slate-100">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Privacy model</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
               Privacy tiers athletes understand
             </h2>
-            <p className="text-slate-500 mt-3 max-w-xl mx-auto">
-              Athletes control visibility. Coaches see status, not secrets. Journals stay private. Period.
+            <p className="text-slate-500 mt-4 max-w-lg mx-auto text-[15px] leading-relaxed">
+              Athletes control visibility. Coaches see team status, not secrets. Journals stay private. Period.
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-5">
             {[
               {
                 tier: "Private",
-                color: "emerald",
-                items: ["Journal entries", "Free-text notes", "Follow-up requests", "Faith preferences"],
                 who: "Athlete only",
-                bg: "bg-emerald-50",
-                border: "border-emerald-200",
-                badge: "bg-emerald-100 text-emerald-700",
+                items: ["Journal entries", "Free-text notes", "Follow-up requests", "Faith preferences"],
+                color: "emerald",
+                dotBg: "bg-emerald-100",
+                dotText: "text-emerald-700",
+                border: "border-emerald-200/80",
+                bg: "bg-white",
               },
               {
                 tier: "Support",
-                color: "amber",
-                items: ["Flagged responses", "Alert details", "Trigger types", "Crisis indicators"],
                 who: "Licensed counselor + Admin",
-                bg: "bg-amber-50",
-                border: "border-amber-200",
-                badge: "bg-amber-100 text-amber-700",
+                items: ["Flagged responses", "Alert details", "Trigger types", "Crisis indicators"],
+                color: "amber",
+                dotBg: "bg-amber-100",
+                dotText: "text-amber-700",
+                border: "border-amber-200/80",
+                bg: "bg-white",
               },
               {
                 tier: "Coach",
-                color: "blue",
-                items: ["Team completion rate", "Aggregate risk percentages", "Team-level averages", "Week-over-week trends"],
                 who: "Team coach (aggregate only)",
-                bg: "bg-sky-50",
-                border: "border-sky-200",
-                badge: "bg-sky-100 text-sky-700",
+                items: ["Team completion rate", "Aggregate risk %", "Team-level averages", "Week-over-week trends"],
+                color: "sky",
+                dotBg: "bg-sky-100",
+                dotText: "text-sky-700",
+                border: "border-sky-200/80",
+                bg: "bg-white",
               },
             ].map((tier) => (
-              <div key={tier.tier} className={`rounded-2xl ${tier.bg} border ${tier.border} p-6`}>
-                <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${tier.badge} mb-4`}>
-                  Tier: {tier.tier}
+              <div key={tier.tier} className={`${tier.bg} border ${tier.border} rounded-2xl p-6 shadow-sm`}>
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide ${tier.dotBg} ${tier.dotText} mb-4`}>
+                  {tier.tier}
                 </div>
-                <p className="text-sm font-medium text-slate-900 mb-3">Visible to: {tier.who}</p>
-                <ul className="space-y-2">
+                <p className="text-[13px] font-medium text-slate-500 mb-4">{tier.who}</p>
+                <ul className="space-y-2.5">
                   {tier.items.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-slate-600">
-                      <div className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
+                    <li key={item} className="flex items-center gap-2.5 text-[14px] text-slate-700">
+                      <div className="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0" />
                       {item}
                     </li>
                   ))}
@@ -162,121 +239,111 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-20 bg-slate-50/50">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-slate-900 text-center mb-14 tracking-tight">
-            Built for athlete trust, designed for program accountability
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
+      {/* ─── Features ─── */}
+      <section className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Features</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+              Built for trust. Designed for accountability.
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5">
             {[
               {
-                icon: <Eye className="h-5 w-5" />,
+                icon: <Eye className="h-[18px] w-[18px]" />,
                 title: "Early visibility without surveillance",
-                description: "Weekly 2-minute check-ins surface trends before they become crises. Coaches see team percentages, never individual data.",
+                desc: "Weekly check-ins surface trends before they become crises. Coaches see team-level data only.",
               },
               {
-                icon: <Lock className="h-5 w-5" />,
+                icon: <Lock className="h-[18px] w-[18px]" />,
                 title: "Athlete-first privacy model",
-                description: "Three-tier privacy ensures athletes control what's shared. Journals and personal notes stay private.",
+                desc: "Three-tier privacy ensures athletes control what's shared. Journals and notes stay private.",
               },
               {
-                icon: <Users className="h-5 w-5" />,
+                icon: <Users className="h-[18px] w-[18px]" />,
                 title: "Structured follow-up for staff",
-                description: "Automated risk scoring routes the right alerts to the right people. No one falls through the cracks.",
+                desc: "Automated risk scoring routes the right alerts to the right people. No one falls through.",
               },
               {
-                icon: <ClipboardCheck className="h-5 w-5" />,
+                icon: <ClipboardCheck className="h-[18px] w-[18px]" />,
                 title: "NCAA compliance built in",
-                description: "Go beyond annual screening. Weekly check-ins create ongoing compliance documentation automatically.",
+                desc: "Go beyond annual screening. Weekly check-ins create ongoing compliance documentation.",
               },
               {
-                icon: <TrendingUp className="h-5 w-5" />,
+                icon: <TrendingUp className="h-[18px] w-[18px]" />,
                 title: "Trend detection over time",
-                description: "Spot declining well-being over weeks, not just point-in-time snapshots. Catch deterioration early.",
+                desc: "Spot declining well-being over weeks, not just point-in-time snapshots.",
               },
               {
-                icon: <Heart className="h-5 w-5" />,
-                title: "Values-based support (optional)",
-                description: "Faith, family, and relationship check-ins are available but never required. Athletes choose what matters.",
+                icon: <Heart className="h-[18px] w-[18px]" />,
+                title: "Values-based support",
+                desc: "Faith, family, and relationship check-ins available but never required. Athlete's choice.",
               },
-            ].map((feature) => (
-              <div key={feature.title} className="bg-white rounded-2xl p-6 border border-slate-200/60 hover:border-emerald-200 hover:shadow-md transition-all">
-                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl inline-block mb-4">
-                  {feature.icon}
+            ].map((f) => (
+              <div key={f.title} className="group p-5 rounded-2xl border border-slate-200/80 hover:border-emerald-200 hover:shadow-[0_4px_24px_-4px_rgba(16,185,129,0.1)] transition-all duration-200">
+                <div className="inline-flex p-2 rounded-lg bg-emerald-50 text-emerald-600 mb-4">
+                  {f.icon}
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{feature.description}</p>
+                <h3 className="font-semibold text-[15px] text-slate-900 mb-1.5 leading-snug">{f.title}</h3>
+                <p className="text-[14px] text-slate-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-slate-900 mb-14 tracking-tight">How it works</h2>
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              { step: "1", title: "Athletes check in weekly", description: "A 2-minute wellness check covering mood, stress, sleep, and support. Opens like an app on their phone." },
-              { step: "2", title: "System flags early signs", description: "Automatic risk scoring identifies athletes who may need support. Red alerts notify staff instantly." },
-              { step: "3", title: "Staff follow up with care", description: "The right people get the right alerts. Follow-ups are assigned, tracked, and documented." },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="h-14 w-14 rounded-2xl bg-emerald-600 text-white font-bold text-xl flex items-center justify-center mx-auto mb-5">
-                  {item.step}
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-emerald-900 py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
+      {/* ─── Bottom CTA ─── */}
+      <section className="bg-slate-900 py-24">
+        <div className="max-w-3xl mx-auto px-5 md:px-8 text-center">
+          <Shield className="h-10 w-10 text-emerald-400 mx-auto mb-6 opacity-80" />
+          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">
             Ready to support your athletes better?
           </h2>
-          <p className="text-emerald-300/80 mb-10 text-lg">
-            Start a free 30-day pilot with one team. No commitment required.
+          <p className="text-slate-400 text-lg leading-relaxed mb-10">
+            Start a free 30-day pilot with one team. No commitment, no credit card.
           </p>
-          <Link href="/signup">
-            <Button size="lg" className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-semibold text-base px-10 h-12">
-              Start Free Pilot
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[15px] px-8 py-3.5 rounded-xl transition-colors shadow-lg"
+          >
+            Start Free Pilot
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 py-10 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
+      {/* ─── Footer ─── */}
+      <footer className="border-t border-slate-200 bg-white py-10">
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-lg bg-emerald-900 flex items-center justify-center">
-                <Anchor className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="h-7 w-7 rounded-lg bg-emerald-800 flex items-center justify-center">
+                <Anchor className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
               </div>
-              <span className="text-sm font-semibold text-slate-700">Check-In by Athlete Anchor</span>
+              <span className="text-[14px] font-semibold text-slate-700">Check-In · Athlete Anchor</span>
             </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-500">
-              <Link href="/privacy" className="hover:text-emerald-600 transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-emerald-600 transition-colors">Terms of Service</Link>
-              <Link href="/compliance" className="hover:text-emerald-600 transition-colors">Compliance</Link>
-              <Link href="/accessibility" className="hover:text-emerald-600 transition-colors">Accessibility</Link>
-              <Link href="/login" className="hover:text-emerald-600 transition-colors">Sign In</Link>
+            <div className="flex flex-wrap gap-x-7 gap-y-2 text-[13px] text-slate-500">
+              {[
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms", href: "/terms" },
+                { label: "Compliance", href: "/compliance" },
+                { label: "Accessibility", href: "/accessibility" },
+                { label: "Sign In", href: "/login" },
+              ].map((l) => (
+                <Link key={l.href} href={l.href} className="hover:text-emerald-700 transition-colors">
+                  {l.label}
+                </Link>
+              ))}
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-6">
-            &copy; {new Date().getFullYear()} Athlete Anchor, Inc. All rights reserved.
+            © {new Date().getFullYear()} Athlete Anchor, Inc. All rights reserved.
             FERPA-aligned. NCAA best practices compliant. Built with athlete privacy as the foundation.
           </p>
         </div>
       </footer>
+
     </div>
   );
 }

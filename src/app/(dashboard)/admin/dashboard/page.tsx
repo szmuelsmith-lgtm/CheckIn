@@ -2,13 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { ErrorState } from "@/components/ui/error-state";
 import Link from "next/link";
-import { AlertTriangle, Users, ClipboardCheck, TrendingUp, CalendarCheck, PlayCircle, StopCircle } from "lucide-react";
+import {
+  AlertTriangle, Users, ClipboardCheck, CalendarCheck,
+  PlayCircle, StopCircle, Shield, Activity, ChevronRight,
+  TrendingUp,
+} from "lucide-react";
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const OB = {
+  bg:        "#f8fafc",
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e2e8f0",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#047857",
+  red:       "#dc2626",
+};
 
 interface DashboardStats {
   totalAthletes: number;
@@ -26,13 +40,26 @@ interface OrgData {
   screening_active: boolean;
 }
 
+// Demo data shown when no real athletes exist
+const DEMO_STATS: DashboardStats = {
+  totalAthletes: 24,
+  checkinRate:   78,
+  openAlerts:    3,
+  redAlerts:     1,
+  yellowAlerts:  2,
+  greenCount:    14,
+  yellowCount:   7,
+  redCount:      3,
+};
+
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [profile, setProfile] = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
-  const [orgData, setOrgData] = useState<OrgData | null>(null);
+  const [stats, setStats]               = useState<DashboardStats | null>(null);
+  const [profile, setProfile]           = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
+  const [orgData, setOrgData]           = useState<OrgData | null>(null);
   const [screeningLoading, setScreeningLoading] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(false);
+  const [isDemo, setIsDemo]             = useState(false);
 
   async function load() {
     setLoading(true);
@@ -47,10 +74,8 @@ export default function AdminDashboard() {
         .select("full_name, role, organization_id")
         .eq("auth_user_id", user.id)
         .single();
-
       if (prof) setProfile(prof);
 
-      // Get org screening state
       if (prof?.organization_id) {
         const { data: org } = await supabase
           .from("organizations")
@@ -60,71 +85,66 @@ export default function AdminDashboard() {
         if (org) setOrgData(org);
       }
 
-      // Get athletes in org
       const { count: athleteCount } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true })
         .eq("organization_id", prof?.organization_id)
         .eq("role", "athlete");
 
-      // Get open alerts
+      // Use demo data if no real athletes
+      if (!athleteCount || athleteCount === 0) {
+        setStats(DEMO_STATS);
+        setIsDemo(true);
+        setLoading(false);
+        return;
+      }
+
       const { data: openAlertsData } = await supabase
         .from("alerts")
         .select("severity")
         .eq("status", "open");
 
-      const redAlerts = openAlertsData?.filter((a) => a.severity === "red").length || 0;
-      const yellowAlerts = openAlertsData?.filter((a) => a.severity === "yellow").length || 0;
+      const redAlerts    = openAlertsData?.filter(a => a.severity === "red").length    || 0;
+      const yellowAlerts = openAlertsData?.filter(a => a.severity === "yellow").length || 0;
 
-      // Get latest check-ins (last 7 days) for rate calculation
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const { count: recentCheckins } = await supabase
         .from("checkins")
         .select("*", { count: "exact", head: true })
         .gte("completed_at", weekAgo);
 
-      // Wellness distribution from latest check-ins (pillar-based)
       const { data: latestCheckins } = await supabase
         .from("checkins")
         .select("athlete_id, emotional_score, resilience_score, recovery_score, support_score")
         .gte("completed_at", weekAgo);
 
-      // Dedupe by athlete (first seen = most recent due to ordering)
       const byAthlete = new Map<string, { e: number; rec: number; res: number; sup: number }>();
-      latestCheckins?.forEach((c) => {
+      latestCheckins?.forEach(c => {
         if (!byAthlete.has(c.athlete_id)) {
           byAthlete.set(c.athlete_id, {
-            e:   c.emotional_score  ?? 5,
-            rec: c.recovery_score   ?? 5,
-            res: c.resilience_score ?? 5,
-            sup: c.support_score    ?? 5,
+            e: c.emotional_score ?? 5, rec: c.recovery_score ?? 5,
+            res: c.resilience_score ?? 5, sup: c.support_score ?? 5,
           });
         }
       });
 
       let greenCount = 0, yellowCount = 0, redCount = 0;
       byAthlete.forEach(({ e, rec, res, sup }) => {
-        // Red: support trigger (emotional > 8 OR recovery < 3)
-        if (e > 8 || rec < 3) redCount++;
-        // Yellow: any pillar below 5
+        if (e > 8 || rec < 3)                             redCount++;
         else if (e < 5 || rec < 5 || res < 5 || sup < 5) yellowCount++;
-        else greenCount++;
+        else                                               greenCount++;
       });
 
-      const total = athleteCount || 0;
+      const total       = athleteCount || 0;
       const checkinRate = total > 0 ? Math.round(((recentCheckins || 0) / total) * 100) : 0;
 
       setStats({
         totalAthletes: total,
-        checkinRate: Math.min(checkinRate, 100),
-        openAlerts: (openAlertsData?.length || 0),
-        redAlerts,
-        yellowAlerts,
-        greenCount,
-        yellowCount,
-        redCount,
+        checkinRate:   Math.min(checkinRate, 100),
+        openAlerts:    openAlertsData?.length || 0,
+        redAlerts, yellowAlerts, greenCount, yellowCount, redCount,
       });
-
+      setIsDemo(false);
     } catch {
       setError(true);
     } finally {
@@ -135,12 +155,14 @@ export default function AdminDashboard() {
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const roleName = profile?.role === "support" ? "Support" : "Admin";
+  const totalRisk = (stats?.greenCount || 0) + (stats?.yellowCount || 0) + (stats?.redCount || 0);
 
   if (loading) {
     return (
       <DashboardLayout role="admin" userName="...">
         <div className="flex items-center justify-center h-64">
-          <p className="text-slate-500">Loading dashboard...</p>
+          <div className="h-5 w-5 rounded-full border-2 animate-spin"
+               style={{ borderColor: OB.border, borderTopColor: OB.green }} />
         </div>
       </DashboardLayout>
     );
@@ -149,224 +171,214 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <DashboardLayout role="admin" userName="...">
-        <ErrorState message="Couldn't load dashboard data. Check your connection and try again." onRetry={load} />
+        <div className="max-w-4xl mx-auto">
+          <div className="rounded-2xl p-10 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <p className="mb-3 text-[14px]" style={{ color: OB.textMuted }}>Couldn&apos;t load dashboard data.</p>
+            <button onClick={load} className="text-[13px] font-medium" style={{ color: OB.green }}>Retry</button>
+          </div>
+        </div>
       </DashboardLayout>
     );
   }
 
-  const totalRisk = (stats?.greenCount || 0) + (stats?.yellowCount || 0) + (stats?.redCount || 0);
-
   return (
     <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">{roleName} Dashboard</h1>
-          <p className="text-slate-500 mt-1">Program overview and athlete wellness status</p>
+      <div className="max-w-4xl mx-auto space-y-4">
+
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: OB.text }}>{roleName} Dashboard</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: OB.textMuted }}>Program overview · athlete wellness status</p>
+          </div>
+          {isDemo && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold"
+                 style={{ background: "#dbeafe", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+              DEMO DATA
+            </div>
+          )}
         </div>
 
-        {/* Top stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="py-5">
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 text-slate-400" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.totalAthletes}</p>
-                  <p className="text-sm text-slate-500">Athletes</p>
-                </div>
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Athletes */}
+          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#dbeafe" }}>
+                <Users className="h-[18px] w-[18px]" style={{ color: "#2563eb" }} />
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Athletes</p>
+            </div>
+            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.totalAthletes}</p>
+          </div>
 
-          <Card>
-            <CardContent className="py-5">
-              <div className="flex items-center gap-3">
-                <ClipboardCheck className="h-5 w-5 text-slate-400" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats?.checkinRate}%</p>
-                  <p className="text-sm text-slate-500">Check-in Rate</p>
-                </div>
+          {/* Check-in rate */}
+          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#d1fae5" }}>
+                <ClipboardCheck className="h-[18px] w-[18px]" style={{ color: OB.green }} />
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Check-in Rate</p>
+            </div>
+            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.checkinRate}%</p>
+            <div className="mt-3 h-[2px] rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
+              <div className="h-full rounded-full" style={{ width: `${stats?.checkinRate}%`, background: `linear-gradient(to right,#065f46,${OB.green})` }} />
+            </div>
+            <p className="text-[11px] mt-1.5" style={{ color: OB.textMuted }}>7-day rolling</p>
+          </div>
 
+          {/* Open alerts */}
           <Link href="/admin/alerts">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="py-5">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-red-400" />
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{stats?.openAlerts}</p>
-                    <p className="text-sm text-slate-500">Open Alerts</p>
-                  </div>
+            <div className="rounded-2xl p-5 transition-shadow hover:shadow-sm cursor-pointer" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#fee2e2" }}>
+                  <AlertTriangle className="h-[18px] w-[18px]" style={{ color: OB.red }} />
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Open Alerts</p>
+              </div>
+              <div className="flex items-end justify-between">
+                <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.openAlerts}</p>
+                <ChevronRight className="h-4 w-4 mb-1" style={{ color: OB.textMuted }} />
+              </div>
+              {(stats?.redAlerts || 0) > 0 && (
+                <div className="flex gap-2 mt-2">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fee2e2", color: OB.red }}>{stats?.redAlerts} RED</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fefce8", color: "#ca8a04" }}>{stats?.yellowAlerts} YELLOW</span>
+                </div>
+              )}
+            </div>
           </Link>
 
-          <Card>
-            <CardContent className="py-5">
-              <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-slate-400" />
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{totalRisk}</p>
-                  <p className="text-sm text-slate-500">Checked In (7d)</p>
-                </div>
+          {/* Wellness snapshot */}
+          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#f0fdf4" }}>
+                <Activity className="h-[18px] w-[18px]" style={{ color: OB.green }} />
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Checked In (7d)</p>
+            </div>
+            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{totalRisk}</p>
+          </div>
         </div>
 
-        {/* Team Health */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-lg">Team Health Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {totalRisk === 0 ? (
-              <p className="text-slate-500 text-center py-8">No check-in data yet this week.</p>
-            ) : (
-              <div className="space-y-4">
-                {/* Bar */}
-                <div className="flex h-8 rounded-lg overflow-hidden">
-                  {stats && stats.greenCount > 0 && (
-                    <div
-                      className="bg-green-400 transition-all"
-                      style={{ width: `${(stats.greenCount / totalRisk) * 100}%` }}
-                    />
-                  )}
-                  {stats && stats.yellowCount > 0 && (
-                    <div
-                      className="bg-amber-400 transition-all"
-                      style={{ width: `${(stats.yellowCount / totalRisk) * 100}%` }}
-                    />
-                  )}
-                  {stats && stats.redCount > 0 && (
-                    <div
-                      className="bg-red-400 transition-all"
-                      style={{ width: `${(stats.redCount / totalRisk) * 100}%` }}
-                    />
-                  )}
-                </div>
-                {/* Legend */}
-                <div className="flex gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-green-400" />
-                    <span className="text-slate-600">
-                      Stable: {stats?.greenCount} ({totalRisk > 0 ? Math.round(((stats?.greenCount || 0) / totalRisk) * 100) : 0}%)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-amber-400" />
-                    <span className="text-slate-600">
-                      Needs attention: {stats?.yellowCount} ({totalRisk > 0 ? Math.round(((stats?.yellowCount || 0) / totalRisk) * 100) : 0}%)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-red-400" />
-                    <span className="text-slate-600">
-                      Support triggered: {stats?.redCount} ({totalRisk > 0 ? Math.round(((stats?.redCount || 0) / totalRisk) * 100) : 0}%)
-                    </span>
-                  </div>
-                </div>
+        {/* Team health distribution */}
+        <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-4 w-4" style={{ color: OB.textMuted }} />
+            <p className="text-[13px] font-semibold" style={{ color: OB.textSub }}>Team Wellness Distribution</p>
+          </div>
+          {totalRisk === 0 ? (
+            <p className="text-[13px] text-center py-6" style={{ color: OB.textMuted }}>No check-in data yet this week.</p>
+          ) : (
+            <>
+              {/* Stacked bar */}
+              <div className="flex h-6 rounded-xl overflow-hidden gap-[2px] mb-4" style={{ background: "#ffffff" }}>
+                {(stats?.greenCount || 0) > 0 && (
+                  <div className="transition-all" style={{ width: `${((stats?.greenCount || 0) / totalRisk) * 100}%`, background: "#059669" }} />
+                )}
+                {(stats?.yellowCount || 0) > 0 && (
+                  <div className="transition-all" style={{ width: `${((stats?.yellowCount || 0) / totalRisk) * 100}%`, background: "#eab308" }} />
+                )}
+                {(stats?.redCount || 0) > 0 && (
+                  <div className="transition-all" style={{ width: `${((stats?.redCount || 0) / totalRisk) * 100}%`, background: OB.red }} />
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+              {/* Legend */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Stable",           count: stats?.greenCount  || 0, color: "#059669", bg: "#f0fdf4" },
+                  { label: "Needs attention",  count: stats?.yellowCount || 0, color: "#ca8a04", bg: "#fefce8" },
+                  { label: "Support triggered", count: stats?.redCount   || 0, color: OB.red,   bg: "#fee2e2" },
+                ].map(item => (
+                  <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: item.bg }}>
+                    <p className="text-[20px] font-bold tabular-nums" style={{ color: item.color }}>{item.count}</p>
+                    <p className="text-[10px] font-medium mt-0.5" style={{ color: item.color }}>{item.label}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: item.color, opacity: 0.7 }}>
+                      {totalRisk > 0 ? Math.round((item.count / totalRisk) * 100) : 0}%
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
-        {/* Alert breakdown */}
-        {(stats?.redAlerts || 0) > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-lg">Urgent Attention</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200">
-                  {stats?.redAlerts} RED
-                </Badge>
-                <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">
-                  {stats?.yellowAlerts} YELLOW
-                </Badge>
-                <Link href="/admin/alerts" className="text-sm text-emerald-600 hover:underline ml-auto">
-                  View all alerts &rarr;
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Compliance / privacy notice */}
+        <div className="rounded-2xl p-4" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+          <div className="flex items-start gap-3">
+            <Shield className="h-4 w-4 mt-0.5 shrink-0" style={{ color: OB.green }} />
+            <div>
+              <p className="text-[12px] font-semibold mb-1" style={{ color: "#065f46" }}>Privacy & Compliance</p>
+              <p className="text-[11px] leading-relaxed" style={{ color: "#047857" }}>
+                Coaches see only anonymized team aggregates (FERPA § 99.31). Individual athlete data is protected. Crisis disclosures are covered under FERPA § 99.36 health/safety exception and NCAA 2023 Mental Health Best Practices.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Semester Screening */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarCheck className="h-5 w-5 text-emerald-500" />
-              Semester Screening
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {orgData === null ? (
-              <p className="text-slate-400 text-sm">Loading screening status...</p>
-            ) : orgData.screening_active ? (
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-sm px-3 py-1">
-                    Screening Active
-                  </Badge>
-                  <p className="text-sm text-slate-500">
-                    Athletes will see the full semester screening check-in form.
-                  </p>
+        <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarCheck className="h-4 w-4" style={{ color: OB.green }} />
+            <p className="text-[13px] font-semibold" style={{ color: OB.textSub }}>Semester Screening</p>
+          </div>
+
+          {orgData === null ? (
+            <p className="text-[13px]" style={{ color: OB.textMuted }}>Loading screening status…</p>
+          ) : orgData.screening_active ? (
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[13px] font-semibold" style={{ color: "#065f46" }}>Screening Active</p>
                 </div>
-                <Button
-                  variant="outline"
-                  className="border-slate-300 text-slate-600 hover:bg-slate-50"
-                  disabled={screeningLoading}
-                  onClick={async () => {
-                    if (!orgData?.id) return;
-                    setScreeningLoading(true);
-                    try {
-                      const supabase = createClient();
-                      await supabase
-                        .from("organizations")
-                        .update({ screening_active: false })
-                        .eq("id", orgData.id);
-                      setOrgData((prev) => prev ? { ...prev, screening_active: false } : prev);
-                    } finally {
-                      setScreeningLoading(false);
-                    }
-                  }}
-                >
-                  <StopCircle className="h-4 w-4 mr-2" />
-                  {screeningLoading ? "Deactivating..." : "Deactivate"}
-                </Button>
+                <p className="text-[12px]" style={{ color: OB.textMuted }}>Athletes will see the full semester screening check-in form.</p>
               </div>
-            ) : (
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <p className="text-sm text-slate-500">
-                  Activate semester check-in to send a full screening to all athletes.
-                </p>
-                <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  disabled={screeningLoading}
-                  onClick={async () => {
-                    setScreeningLoading(true);
-                    try {
-                      const res = await fetch("/api/screening/trigger", { method: "POST" });
-                      if (res.ok && orgData?.id) {
-                        setOrgData((prev) => prev ? { ...prev, screening_active: true } : prev);
-                      }
-                    } finally {
-                      setScreeningLoading(false);
+              <button
+                disabled={screeningLoading}
+                onClick={async () => {
+                  if (!orgData?.id) return;
+                  setScreeningLoading(true);
+                  try {
+                    const supabase = createClient();
+                    await supabase.from("organizations").update({ screening_active: false }).eq("id", orgData.id);
+                    setOrgData(prev => prev ? { ...prev, screening_active: false } : prev);
+                  } finally { setScreeningLoading(false); }
+                }}
+                className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl border transition-colors disabled:opacity-50"
+                style={{ borderColor: OB.border, color: OB.textSub, background: OB.raised }}
+              >
+                <StopCircle className="h-4 w-4" />
+                {screeningLoading ? "Deactivating…" : "Deactivate"}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <p className="text-[13px]" style={{ color: OB.textMuted }}>
+                Activate semester check-in to send a full screening to all athletes.
+              </p>
+              <button
+                disabled={screeningLoading}
+                onClick={async () => {
+                  setScreeningLoading(true);
+                  try {
+                    const supabase = createClient();
+                    if (orgData?.id) {
+                      await supabase.from("organizations").update({ screening_active: true }).eq("id", orgData.id);
+                      setOrgData(prev => prev ? { ...prev, screening_active: true } : prev);
                     }
-                  }}
-                >
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                  {screeningLoading ? "Activating..." : "Activate Semester Check-In"}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  } finally { setScreeningLoading(false); }
+                }}
+                className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold text-white rounded-xl transition-opacity hover:opacity-90 disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+              >
+                <PlayCircle className="h-4 w-4" />
+                {screeningLoading ? "Activating…" : "Activate Semester Check-In"}
+              </button>
+            </div>
+          )}
+        </div>
+
       </div>
     </DashboardLayout>
   );

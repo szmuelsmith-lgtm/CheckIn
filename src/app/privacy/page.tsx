@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-emerald-900 flex items-center justify-center">
-              <Anchor className="h-4.5 w-4.5 text-emerald-400" />
+              <Anchor className="h-[18px] w-[18px] text-emerald-400" />
             </div>
             <div>
               <span className="font-bold text-lg tracking-tight text-slate-900">Check-In</span>
