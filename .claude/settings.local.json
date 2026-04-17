@@ -27,7 +27,8 @@
       "Bash(node scripts/setup.mjs)",
       "Bash(kill -9 48855 61189)",
       "Bash(xargs kill:*)",
-      "Bash(ls /Users/samuelsmith/Desktop/check-in/public/icon-*.png)"
+      "Bash(ls /Users/samuelsmith/Desktop/check-in/public/icon-*.png)",
+      "Bash(npx tsc *)"
     ]
   }
 }

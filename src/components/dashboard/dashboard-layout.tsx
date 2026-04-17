@@ -45,7 +45,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
   const isAthlete = verifiedRole === "athlete";
 
   return (
-    <div style={{ background: "#f8fafc", minHeight: "100%" }}>
+    <div style={{ background: "#f4f7f5", minHeight: "100%" }}>
       <Sidebar role={verifiedRole} userName={verifiedName} />
 
       {/* Mobile header — athletes only */}
@@ -53,30 +53,36 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
         <header
           className="fixed top-0 left-0 right-0 z-40 lg:hidden"
           style={{
-            background: "rgba(255,255,255,0.97)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderBottom: "1px solid #e2e8f0",
+            background: "rgba(244,247,245,0.92)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            boxShadow: "0 1px 0 rgba(0,0,0,0.05), 0 2px 12px rgba(0,0,0,0.03)",
           }}
         >
           <div
             className="flex items-center justify-between px-5 h-14"
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div
-                className="h-7 w-7 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+                className="h-8 w-8 rounded-[10px] flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg, #065f46, #059669)",
+                  boxShadow: "0 2px 8px rgba(5,150,105,0.3)",
+                }}
               >
-                <Anchor className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+                <Anchor className="h-4 w-4 text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-bold text-[16px] tracking-tight" style={{ color: "#0f172a" }}>Check-In</span>
+              <span className="font-bold text-[16px] tracking-tight" style={{ color: "#0f172a" }}>
+                Check-In
+              </span>
             </div>
+
             <div className="flex items-center gap-0.5">
               <Link
                 href="/athlete/preferences"
                 className="p-2 rounded-xl transition-colors"
-                style={{ color: "#64748b" }}
+                style={{ color: "#94a3b8" }}
                 aria-label="Preferences"
               >
                 <Settings className="h-[18px] w-[18px]" />
@@ -84,7 +90,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
               <button
                 onClick={handleSignOut}
                 className="p-2 rounded-xl transition-colors"
-                style={{ color: "#64748b" }}
+                style={{ color: "#94a3b8" }}
                 aria-label="Sign out"
               >
                 <LogOut className="h-[18px] w-[18px]" />
@@ -100,7 +106,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
       >
         <div
           className={`p-5 lg:p-8 ${isAthlete
-            ? "pt-[calc(3.5rem+env(safe-area-inset-top,0px))] lg:pt-8"
+            ? "pt-[calc(3.5rem+env(safe-area-inset-top,0px)+20px)] lg:pt-8"
             : "pt-16 lg:pt-8"
           } max-w-7xl mx-auto`}
         >

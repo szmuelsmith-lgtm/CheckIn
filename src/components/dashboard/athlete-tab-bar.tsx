@@ -2,16 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { LayoutDashboard, ClipboardCheck, BookOpen, TrendingUp, Heart, Lock } from "lucide-react";
 
 const TABS = [
   { label: "Home",     href: "/athlete/dashboard", icon: LayoutDashboard },
-  { label: "Check-In", href: "/athlete/checkin",   icon: ClipboardCheck  },
-  { label: "Journal",  href: "/athlete/journal",   icon: BookOpen        },
   { label: "Trends",   href: "/athlete/trends",    icon: TrendingUp      },
+  { label: "Check-In", href: "/athlete/checkin",   icon: ClipboardCheck,  cta: true },
+  { label: "Journal",  href: "/athlete/journal",   icon: BookOpen        },
   { label: "Help",     href: "/athlete/resources", icon: Heart           },
-  { label: "Privacy",  href: "/athlete/privacy",   icon: Lock            },
 ];
 
 export function AthleteTabBar() {
@@ -21,18 +19,54 @@ export function AthleteTabBar() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
       style={{
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderTop: "1px solid #e2e8f0",
+        background: "rgba(255,255,255,0.92)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        /* no border — soft top shadow only */
+        boxShadow: "0 -1px 0 rgba(0,0,0,0.05), 0 -4px 24px rgba(0,0,0,0.04)",
       }}
       role="tablist"
       aria-label="Main navigation"
     >
-      <div className="flex items-center h-[60px] max-w-lg mx-auto px-1">
+      <div
+        className="flex items-center max-w-lg mx-auto px-3"
+        style={{
+          height: "60px",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
         {TABS.map((tab) => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/");
           const Icon = tab.icon;
+
+          if (tab.cta) {
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                role="tab"
+                aria-selected={isActive}
+                aria-label={tab.label}
+                className="flex flex-col items-center justify-center flex-1 gap-1.5 active:scale-95 transition-transform duration-150"
+              >
+                <div
+                  className="h-11 w-11 rounded-[18px] flex items-center justify-center"
+                  style={{
+                    background: isActive
+                      ? "linear-gradient(135deg, #065f46, #059669)"
+                      : "linear-gradient(135deg, #047857, #10b981)",
+                    boxShadow: "0 4px 14px rgba(5,150,105,0.38)",
+                  }}
+                >
+                  <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
+                </div>
+                <span className="text-[9px] font-bold tracking-wide" style={{ color: "#059669" }}>
+                  CHECK-IN
+                </span>
+              </Link>
+            );
+          }
+
           return (
             <Link
               key={tab.href}
@@ -40,17 +74,18 @@ export function AthleteTabBar() {
               role="tab"
               aria-selected={isActive}
               aria-label={tab.label}
-              className="flex flex-col items-center justify-center flex-1 py-2 gap-1 transition-opacity active:opacity-70"
+              className="flex flex-col items-center justify-center flex-1 py-2 gap-1 active:opacity-60 transition-opacity"
             >
               <div
-                className="flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200"
-                style={isActive ? {
-                  background: "#f0fdf4",
-                  boxShadow: "inset 0 0 0 1px rgba(4,120,87,0.2)",
-                } : {}}
+                className="flex items-center justify-center w-9 h-9 rounded-2xl transition-all duration-200"
+                style={
+                  isActive
+                    ? { background: "#ecfdf5", boxShadow: "0 1px 4px rgba(5,150,105,0.15)" }
+                    : {}
+                }
               >
                 <Icon
-                  className={cn("h-[18px] w-[18px]")}
+                  className="h-[18px] w-[18px]"
                   style={{ color: isActive ? "#047857" : "#94a3b8" }}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
