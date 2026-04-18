@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardCheck, BookOpen, TrendingUp, Heart, Lock } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, BookOpen, TrendingUp, Heart } from "lucide-react";
 
 const TABS = [
   { label: "Home",     href: "/athlete/dashboard", icon: LayoutDashboard },
