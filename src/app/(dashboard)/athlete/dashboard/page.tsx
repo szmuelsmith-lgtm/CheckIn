@@ -142,10 +142,10 @@ export default function AthleteDashboard() {
     setLoading(true); setError(false);
     try {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const { data: prof } = await supabase
-        .from("profiles").select("id, full_name").eq("auth_user_id", session.user.id).single();
+        .from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
       if (!prof) { setLoading(false); return; }
       setUserName(prof.full_name);
       setFirstName(prof.full_name?.split(" ")[0] || "Athlete");

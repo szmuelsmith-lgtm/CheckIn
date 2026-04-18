@@ -122,14 +122,14 @@ function AthleteView() {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { setError(true); setLoading(false); return; }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setError(true); setLoading(false); return; }
 
         // Get psychiatrist profile
         const { data: prof } = await supabase
           .from("profiles")
           .select("id, full_name")
-          .eq("auth_user_id", session.user.id)
+          .eq("auth_user_id", user.id)
           .single();
         if (!prof) { setError(true); setLoading(false); return; }
         setUserName(prof.full_name);

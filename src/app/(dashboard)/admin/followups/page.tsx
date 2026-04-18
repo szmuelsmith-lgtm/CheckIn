@@ -88,9 +88,9 @@ export default function AdminFollowupsPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data: prof } = await supabase.from("profiles").select("id, full_name, role, organization_id").eq("auth_user_id", session.user.id).single();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: prof } = await supabase.from("profiles").select("id, full_name, role, organization_id").eq("auth_user_id", user.id).single();
       if (!prof) return;
       setProfile(prof);
       await loadFollowups();

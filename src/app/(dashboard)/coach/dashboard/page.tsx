@@ -154,10 +154,10 @@ export default function CoachDashboard() {
     setLoading(true); setError(false);
     try {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const { data: prof } = await supabase.from("profiles").select("full_name, team_id").eq("auth_user_id", session.user.id).single();
+      const { data: prof } = await supabase.from("profiles").select("full_name, team_id").eq("auth_user_id", user.id).single();
       if (prof) {
         setProfile({ full_name: prof.full_name });
         if (prof.team_id) {
@@ -165,7 +165,7 @@ export default function CoachDashboard() {
           if (team) setTeamName(team.name);
         }
       }
-      const { data: prof2 } = await supabase.from("profiles").select("id, team_id").eq("auth_user_id", session.user.id).single();
+      const { data: prof2 } = await supabase.from("profiles").select("id, team_id").eq("auth_user_id", user.id).single();
       if (!prof2?.team_id) { setNoTeam(true); setLoading(false); return; }
 
       const { data: athletes } = await supabase.from("profiles").select("id").eq("team_id", prof2.team_id).eq("role", "athlete");
