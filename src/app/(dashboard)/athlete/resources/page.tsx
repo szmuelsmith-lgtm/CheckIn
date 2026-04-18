@@ -8,6 +8,18 @@ import {
   Sparkles, AlertTriangle,
 } from "lucide-react";
 
+const T = {
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e8edf2",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#059669",
+  greenDeep: "#065f46",
+};
+
 interface Resource {
   id: string;
   title: string;
@@ -18,7 +30,8 @@ interface Resource {
 
 const CATEGORY_CONFIG: Record<string, {
   label: string;
-  filterBg: string;
+  activeBg: string;
+  activeColor: string;
   cardBg: string;
   cardBorder: string;
   iconBg: string;
@@ -27,43 +40,46 @@ const CATEGORY_CONFIG: Record<string, {
 }> = {
   crisis: {
     label: "Crisis",
-    filterBg: "bg-red-600 text-white",
-    cardBg: "bg-red-50",
-    cardBorder: "border-red-200",
-    iconBg: "bg-red-100",
-    iconColor: "text-red-600",
+    activeBg: "#fef2f2",
+    activeColor: "#dc2626",
+    cardBg: "#fef2f2",
+    cardBorder: "#fecaca",
+    iconBg: "#fee2e2",
+    iconColor: "#dc2626",
     icon: Phone,
   },
   counseling: {
     label: "Counseling",
-    filterBg: "bg-teal-600 text-white",
-    cardBg: "bg-teal-50",
-    cardBorder: "border-teal-200",
-    iconBg: "bg-teal-100",
-    iconColor: "text-teal-600",
+    activeBg: "#f0fdfa",
+    activeColor: "#0d9488",
+    cardBg: "#f0fdfa",
+    cardBorder: "#99f6e4",
+    iconBg: "#ccfbf1",
+    iconColor: "#0d9488",
     icon: Heart,
   },
   wellness: {
     label: "Wellness",
-    filterBg: "bg-emerald-600 text-white",
-    cardBg: "bg-emerald-50",
-    cardBorder: "border-emerald-200",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
+    activeBg: "#f0fdf4",
+    activeColor: "#059669",
+    cardBg: "#f0fdf4",
+    cardBorder: "#bbf7d0",
+    iconBg: "#d1fae5",
+    iconColor: "#059669",
     icon: Sparkles,
   },
   other: {
     label: "Other",
-    filterBg: "bg-slate-600 text-white",
-    cardBg: "bg-slate-50",
-    cardBorder: "border-slate-200",
-    iconBg: "bg-slate-100",
-    iconColor: "text-slate-600",
+    activeBg: "#f8fafc",
+    activeColor: "#475569",
+    cardBg: "#f8fafc",
+    cardBorder: "#e2e8f0",
+    iconBg: "#e2e8f0",
+    iconColor: "#475569",
     icon: BookOpen,
   },
 };
 
-// Built-in always-visible crisis resources
 const CRISIS_RESOURCES = [
   {
     id: "_988",
@@ -97,10 +113,10 @@ export default function AthleteResourcesPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
       const { data: prof } = await supabase
-        .from("profiles").select("full_name, organization_id").eq("auth_user_id", user.id).single();
+        .from("profiles").select("full_name, organization_id").eq("auth_user_id", session.user.id).single();
       if (prof) setProfile(prof);
       const { data: resourceData } = await supabase
         .from("resources").select("id, title, description, category, url")
@@ -121,7 +137,8 @@ export default function AthleteResourcesPage() {
     return (
       <DashboardLayout role="athlete" userName="...">
         <div className="flex items-center justify-center h-64">
-          <div className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-emerald-600 animate-spin" />
+          <div className="h-5 w-5 rounded-full border-2 animate-spin"
+               style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
@@ -129,38 +146,45 @@ export default function AthleteResourcesPage() {
 
   return (
     <DashboardLayout role="athlete" userName={profile?.full_name || "Athlete"}>
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-2xl mx-auto space-y-4">
 
         {/* Header */}
-        <div>
-          <h1 className="text-[26px] font-bold text-slate-900 tracking-tight">Resources</h1>
-          <p className="text-[14px] text-slate-500 mt-0.5">Support available through your program and beyond.</p>
+        <div className="animate-fade-in">
+          <h1 className="text-[26px] font-bold tracking-tight" style={{ color: T.text }}>Resources</h1>
+          <p className="text-[14px] mt-0.5" style={{ color: T.textMuted }}>Support available through your program and beyond.</p>
         </div>
 
         {/* Crisis banner — always visible */}
-        <div className="bg-red-600 rounded-2xl p-5 text-white">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="text-[13px] font-bold uppercase tracking-wide">Crisis Support</span>
+        <div
+          className="rounded-3xl p-5 animate-fade-in-up"
+          style={{ background: "linear-gradient(135deg, #991b1b, #dc2626)", boxShadow: "0 4px 20px rgba(220,38,38,0.2)" }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-8 w-8 rounded-xl flex items-center justify-center"
+                 style={{ background: "rgba(255,255,255,0.15)" }}>
+              <AlertTriangle className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-[13px] font-bold text-white uppercase tracking-wide">Crisis Support</span>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2.5">
             {CRISIS_RESOURCES.map(r => (
               <a
                 key={r.id}
                 href={r.url}
-                className="bg-white/15 hover:bg-white/25 rounded-xl p-3 transition-colors text-center block"
+                className="rounded-2xl p-3 text-center block transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.15)" }}
               >
-                <p className="text-[18px] font-bold">{r.number}</p>
-                <p className="text-[11px] text-red-100 mt-0.5 leading-tight">{r.title}</p>
+                <p className="text-[20px] font-bold text-white">{r.number}</p>
+                <p className="text-[10px] mt-0.5 leading-tight" style={{ color: "rgba(255,255,255,0.75)" }}>{r.title}</p>
               </a>
             ))}
           </div>
-          <p className="text-[11px] text-red-200 mt-3">Free · Confidential · 24/7</p>
+          <p className="text-[11px] mt-3" style={{ color: "rgba(255,255,255,0.6)" }}>Free · Confidential · 24/7</p>
         </div>
 
         {/* Category filter */}
         {resources.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap animate-fade-in">
             {categories.map(cat => {
               const isActive = filterCategory === cat;
               const cfg = cat !== "all" ? CATEGORY_CONFIG[cat] : null;
@@ -168,11 +192,19 @@ export default function AthleteResourcesPage() {
                 <button
                   key={cat}
                   onClick={() => setFilterCategory(cat)}
-                  className={`px-3 py-1.5 text-[12px] font-semibold rounded-full border transition-all ${
-                    isActive
-                      ? (cfg ? cfg.filterBg + " border-transparent" : "bg-slate-700 text-white border-transparent")
-                      : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                  }`}
+                  className="px-3 py-1.5 text-[12px] font-semibold rounded-full transition-all"
+                  style={isActive
+                    ? {
+                        background: cfg ? cfg.activeBg : T.raised,
+                        color: cfg ? cfg.activeColor : T.textSub,
+                        border: `1px solid ${cfg ? cfg.cardBorder : T.border}`,
+                      }
+                    : {
+                        background: T.surface,
+                        color: T.textMuted,
+                        border: `1px solid ${T.border}`,
+                      }
+                  }
                 >
                   {cat === "all" ? "All Resources" : (cfg?.label || cat)}
                 </button>
@@ -183,18 +215,20 @@ export default function AthleteResourcesPage() {
 
         {/* Resource cards */}
         {resources.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <Heart className="h-7 w-7 text-slate-300 mx-auto mb-3" />
-            <p className="text-[15px] font-medium text-slate-700 mb-1">No resources added yet</p>
-            <p className="text-[13px] text-slate-500">Resources will be added by your program administrators.</p>
+          <div className="rounded-3xl p-12 text-center"
+               style={{ background: T.surface, border: `2px dashed ${T.border}` }}>
+            <Heart className="h-7 w-7 mx-auto mb-3" style={{ color: T.border }} />
+            <p className="text-[15px] font-semibold mb-1" style={{ color: T.text }}>No resources added yet</p>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>Resources will be added by your program administrators.</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p className="text-[14px] text-slate-500">No resources in this category.</p>
+          <div className="rounded-3xl p-10 text-center"
+               style={{ background: T.surface, border: `2px dashed ${T.border}` }}>
+            <p className="text-[14px]" style={{ color: T.textMuted }}>No resources in this category.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map(resource => {
+            {filtered.map((resource, i) => {
               const cfg = CATEGORY_CONFIG[resource.category] || CATEGORY_CONFIG.other;
               const Icon = cfg.icon;
               return (
@@ -203,18 +237,26 @@ export default function AthleteResourcesPage() {
                   href={resource.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`flex items-start gap-3 p-4 rounded-2xl border ${cfg.cardBg} ${cfg.cardBorder} hover:shadow-sm transition-shadow group`}
+                  className="flex items-start gap-3 p-4 rounded-3xl border transition-all active:scale-[0.99] animate-fade-in-up group"
+                  style={{
+                    background: cfg.cardBg,
+                    borderColor: cfg.cardBorder,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                    animationDelay: `${i * 40}ms`,
+                  }}
                 >
-                  <div className={`h-9 w-9 rounded-xl ${cfg.iconBg} ${cfg.iconColor} flex items-center justify-center shrink-0 mt-0.5`}>
+                  <div className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
+                       style={{ background: cfg.iconBg, color: cfg.iconColor }}>
                     <Icon className="h-[18px] w-[18px]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-[14px] text-slate-900 leading-snug">{resource.title}</p>
-                      <ExternalLink className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5 group-hover:text-slate-600 transition-colors" />
+                      <p className="font-semibold text-[14px] leading-snug" style={{ color: T.text }}>{resource.title}</p>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-colors" style={{ color: T.textMuted }} />
                     </div>
-                    <p className="text-[12px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{resource.description}</p>
-                    <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.iconBg} ${cfg.iconColor}`}>
+                    <p className="text-[12px] mt-1 leading-relaxed line-clamp-2" style={{ color: T.textMuted }}>{resource.description}</p>
+                    <span className="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                          style={{ background: cfg.iconBg, color: cfg.iconColor }}>
                       {cfg.label}
                     </span>
                   </div>

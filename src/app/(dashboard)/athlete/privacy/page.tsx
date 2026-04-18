@@ -7,6 +7,18 @@ import { getActiveConsents, createConsent, revokeConsent } from "@/lib/consent";
 import { Lock, Shield, Eye, X, Plus, Clock, User, FileText, AlertCircle, Mail } from "lucide-react";
 import type { ConsentLog, ConsentScope, ConsentTargetRole } from "@/types/database";
 
+const T = {
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e8edf2",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#059669",
+  greenDeep: "#065f46",
+};
+
 interface ConsentWithTarget extends ConsentLog {
   target_profile?: { id: string; full_name: string; role: string };
 }
@@ -48,21 +60,19 @@ export default function PrivacyPage() {
   const [sharing, setSharing]   = useState(false);
 
   async function loadAll(supabase = createClient()) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
     const { data: prof } = await supabase
-      .from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
+      .from("profiles").select("id, full_name").eq("auth_user_id", session.user.id).single();
     if (!prof) return;
     setProfile(prof);
 
-    // Fetch consents directly — no API route needed
     try {
       const c = await getActiveConsents(prof.id, supabase);
       setConsents(c as ConsentWithTarget[]);
     } catch { setConsents([]); }
 
-    // Access logs
     const { data: logs } = await supabase
       .from("access_logs")
       .select("id, viewer_profile_id, access_type, accessed_at")
@@ -71,7 +81,6 @@ export default function PrivacyPage() {
       .limit(20);
     setAccessLogs(logs ?? []);
 
-    // Share targets
     const { data: tgts } = await supabase
       .from("profiles").select("id, full_name, role").in("role", ["psychiatrist", "trusted_adult"]);
     setTargets(tgts ?? []);
@@ -126,7 +135,8 @@ export default function PrivacyPage() {
     return (
       <DashboardLayout role="athlete" userName="...">
         <div className="flex items-center justify-center h-64">
-          <div className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-emerald-600 animate-spin" />
+          <div className="h-5 w-5 rounded-full border-2 animate-spin"
+               style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
@@ -134,30 +144,34 @@ export default function PrivacyPage() {
 
   return (
     <DashboardLayout role="athlete" userName={profile?.full_name || "Athlete"}>
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-2xl mx-auto space-y-4">
 
         {/* Header */}
-        <div>
-          <h1 className="text-[26px] font-bold text-slate-900 tracking-tight">Privacy & Sharing</h1>
-          <p className="text-[14px] text-slate-500 mt-0.5">Your data is private by default. Only you decide who sees it.</p>
+        <div className="animate-fade-in">
+          <h1 className="text-[26px] font-bold tracking-tight" style={{ color: T.text }}>Privacy & Sharing</h1>
+          <p className="text-[14px] mt-0.5" style={{ color: T.textMuted }}>Your data is private by default. Only you decide who sees it.</p>
         </div>
 
         {/* Privacy guarantee */}
-        <div className="bg-emerald-700 text-white rounded-2xl p-5">
+        <div
+          className="rounded-3xl p-5 animate-fade-in-up"
+          style={{ background: "linear-gradient(135deg, #065f46, #047857)", boxShadow: "0 4px 20px rgba(5,150,105,0.2)" }}
+        >
           <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-              <Shield className="h-4 w-4" />
+            <div className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0"
+                 style={{ background: "rgba(255,255,255,0.15)" }}>
+              <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <p className="text-[14px] font-bold mb-1">Three-tier privacy protection</p>
-              <ul className="space-y-1">
+              <p className="text-[14px] font-bold text-white mb-1.5">Three-tier privacy protection</p>
+              <ul className="space-y-1.5">
                 {[
                   "Coaches only see anonymized team averages — never your scores",
                   "Support staff see flagged responses only when risk is detected",
                   "Journal entries are completely private to you",
                 ].map(item => (
-                  <li key={item} className="flex items-start gap-2 text-[12px] text-emerald-100">
-                    <span className="mt-0.5 shrink-0">·</span>{item}
+                  <li key={item} className="flex items-start gap-2 text-[12px]" style={{ color: "rgba(255,255,255,0.8)" }}>
+                    <span className="mt-0.5 shrink-0 text-white/60">·</span>{item}
                   </li>
                 ))}
               </ul>
@@ -166,11 +180,12 @@ export default function PrivacyPage() {
         </div>
 
         {/* Active sharing */}
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="rounded-3xl overflow-hidden animate-fade-in-up"
+             style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${T.borderSub}` }}>
             <div>
-              <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Active Sharing</p>
-              <p className="text-[12px] text-slate-500 mt-0.5">
+              <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: T.textMuted }}>Active Sharing</p>
+              <p className="text-[12px] mt-0.5" style={{ color: T.textMuted }}>
                 {consents.length === 0
                   ? "You haven't shared data with anyone"
                   : `Sharing with ${consents.length} person${consents.length !== 1 ? "s" : ""}`}
@@ -178,24 +193,25 @@ export default function PrivacyPage() {
             </div>
             <button
               onClick={() => setShowShare(!showShare)}
-              className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90"
-              style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+              className="flex items-center gap-1.5 h-9 px-3.5 text-[12px] font-bold text-white rounded-2xl"
+              style={{ background: "linear-gradient(135deg, #065f46, #059669)", boxShadow: "0 2px 8px rgba(5,150,105,0.25)" }}
             >
-              <Plus className="h-3.5 w-3.5" /> Share
+              <Plus className="h-3.5 w-3.5" />Share
             </button>
           </div>
 
           {/* Share form */}
           {showShare && (
-            <div className="px-5 py-5 bg-slate-50 border-b border-slate-100">
-              <p className="text-[13px] font-semibold text-slate-900 mb-4">Share your data with someone you trust</p>
+            <div className="px-5 py-5" style={{ background: T.raised, borderBottom: `1px solid ${T.borderSub}` }}>
+              <p className="text-[13px] font-semibold mb-4" style={{ color: T.text }}>Share your data with someone you trust</p>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-slate-600 mb-1.5">Share with</label>
+                  <label className="block text-[12px] font-semibold mb-1.5" style={{ color: T.textSub }}>Share with</label>
                   <select
                     value={selectedTarget}
                     onChange={e => setSelectedTarget(e.target.value)}
-                    className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+                    className="w-full h-11 px-3.5 rounded-2xl text-[14px] focus:outline-none"
+                    style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.text }}
                   >
                     <option value="">Select a person...</option>
                     {targets.map(t => (
@@ -205,26 +221,26 @@ export default function PrivacyPage() {
                     ))}
                   </select>
                   {targets.length === 0 && (
-                    <p className="text-[11px] text-slate-400 mt-1.5">No counselors or trusted adults available yet.</p>
+                    <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>No counselors or trusted adults available yet.</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-slate-600 mb-1.5">What to share</label>
+                  <label className="block text-[12px] font-semibold mb-1.5" style={{ color: T.textSub }}>What to share</label>
                   <div className="grid grid-cols-2 gap-2">
                     {(["summary", "full"] as ConsentScope[]).map(s => (
                       <button
                         key={s}
                         onClick={() => setSelectedScope(s)}
-                        className={`p-3 rounded-xl border text-left transition-all ${
-                          selectedScope === s
-                            ? "border-emerald-500 bg-emerald-50"
-                            : "border-slate-200 bg-white hover:border-slate-300"
-                        }`}
+                        className="p-3 rounded-2xl text-left transition-all"
+                        style={{
+                          border: `1px solid ${selectedScope === s ? T.green : T.border}`,
+                          background: selectedScope === s ? "#f0fdf4" : T.surface,
+                        }}
                       >
-                        <p className={`text-[13px] font-semibold ${selectedScope === s ? "text-emerald-700" : "text-slate-800"}`}>
+                        <p className="text-[13px] font-semibold" style={{ color: selectedScope === s ? T.greenDeep : T.text }}>
                           {s === "summary" ? "Summary only" : "Full report"}
                         </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                        <p className="text-[11px] mt-0.5" style={{ color: T.textMuted }}>
                           {s === "summary" ? "Pillar scores only" : "All responses + notes"}
                         </p>
                       </button>
@@ -234,18 +250,19 @@ export default function PrivacyPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setShowShare(false); setSelectedTarget(""); setSelectedScope("summary"); }}
-                    className="flex-1 h-9 border border-slate-200 hover:bg-slate-100 text-slate-600 font-medium text-[13px] rounded-lg transition-colors"
+                    className="flex-1 h-10 font-medium text-[13px] rounded-2xl"
+                    style={{ border: `1px solid ${T.border}`, color: T.textSub }}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleShare}
                     disabled={!selectedTarget || sharing}
-                    className="flex-1 h-9 disabled:opacity-50 text-white font-semibold text-[13px] rounded-lg transition-opacity hover:opacity-90 flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+                    className="flex-1 h-10 disabled:opacity-50 text-white font-bold text-[13px] rounded-2xl flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, #065f46, #059669)" }}
                   >
                     {sharing
-                      ? <span className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      ? <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                       : "Confirm Share"}
                   </button>
                 </div>
@@ -257,29 +274,32 @@ export default function PrivacyPage() {
           <div className="px-5">
             {consents.length === 0 && !showShare ? (
               <div className="py-8 text-center">
-                <Lock className="h-7 w-7 text-slate-300 mx-auto mb-2" />
-                <p className="text-[13px] text-slate-500">Everything stays private unless you choose to share.</p>
+                <Lock className="h-7 w-7 mx-auto mb-2" style={{ color: T.border }} />
+                <p className="text-[13px]" style={{ color: T.textMuted }}>Everything stays private unless you choose to share.</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {consents.map(c => (
-                  <div key={c.id} className="flex items-center justify-between py-4 gap-3">
+              <div>
+                {consents.map((c, i) => (
+                  <div key={c.id} className="flex items-center justify-between py-4 gap-3"
+                       style={{ borderBottom: i < consents.length - 1 ? `1px solid ${T.borderSub}` : "none" }}>
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center">
-                        <User className="h-3.5 w-3.5 text-slate-400" />
+                      <div className="h-9 w-9 rounded-2xl flex items-center justify-center"
+                           style={{ background: T.raised }}>
+                        <User className="h-4 w-4" style={{ color: T.textMuted }} />
                       </div>
                       <div>
-                        <p className="text-[13px] font-semibold text-slate-900">
+                        <p className="text-[13px] font-semibold" style={{ color: T.text }}>
                           {c.target_profile?.full_name ?? "Unknown"}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            c.scope === "full" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"
-                          }`}>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg"
+                                style={c.scope === "full"
+                                  ? { background: "#f5f3ff", color: "#7c3aed" }
+                                  : { background: "#eff6ff", color: "#2563eb" }}>
                             {c.scope === "full" ? "FULL REPORT" : "SUMMARY"}
                           </span>
                           {c.expires_at && (
-                            <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                            <span className="text-[10px] flex items-center gap-0.5" style={{ color: T.textMuted }}>
                               <Clock className="h-2.5 w-2.5" />
                               expires {new Date(c.expires_at).toLocaleDateString()}
                             </span>
@@ -290,7 +310,8 @@ export default function PrivacyPage() {
                     <button
                       onClick={() => handleRevoke(c.id)}
                       disabled={revoking === c.id}
-                      className="flex items-center gap-1 h-7 px-2.5 text-[11px] font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 h-8 px-3 text-[11px] font-semibold rounded-2xl disabled:opacity-50"
+                      style={{ border: "1px solid #fecaca", color: "#ef4444" }}
                     >
                       <X className="h-3 w-3" />
                       {revoking === c.id ? "..." : "Revoke"}
@@ -303,22 +324,24 @@ export default function PrivacyPage() {
         </div>
 
         {/* Access log */}
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
-            <Eye className="h-4 w-4 text-slate-400" />
-            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Who Viewed Your Data</p>
+        <div className="rounded-3xl overflow-hidden animate-fade-in-up"
+             style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+            <Eye className="h-4 w-4" style={{ color: T.textMuted }} />
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: T.textMuted }}>Who Viewed Your Data</p>
           </div>
           <div className="px-5">
             {accessLogs.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-[13px] text-slate-500">No one has accessed your data yet.</p>
+                <p className="text-[13px]" style={{ color: T.textMuted }}>No one has accessed your data yet.</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
-                {accessLogs.map(log => (
-                  <div key={log.id} className="flex items-center justify-between py-3">
-                    <p className="text-[13px] text-slate-700 capitalize">{log.access_type.replace(/_/g, " ")}</p>
-                    <p className="text-[11px] text-slate-400">{formatRelative(log.accessed_at)}</p>
+              <div>
+                {accessLogs.map((log, i) => (
+                  <div key={log.id} className="flex items-center justify-between py-3"
+                       style={{ borderBottom: i < accessLogs.length - 1 ? `1px solid ${T.borderSub}` : "none" }}>
+                    <p className="text-[13px] capitalize" style={{ color: T.textSub }}>{log.access_type.replace(/_/g, " ")}</p>
+                    <p className="text-[11px]" style={{ color: T.textMuted }}>{formatRelative(log.accessed_at)}</p>
                   </div>
                 ))}
               </div>
@@ -327,13 +350,14 @@ export default function PrivacyPage() {
         </div>
 
         {/* FERPA Rights */}
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-slate-400" />
-            <p className="text-[13px] font-bold text-slate-700 uppercase tracking-wide">Your FERPA Rights</p>
+        <div className="rounded-3xl overflow-hidden animate-fade-in-up"
+             style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <div className="px-5 py-4 flex items-center gap-2" style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+            <FileText className="h-4 w-4" style={{ color: T.textMuted }} />
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: T.textMuted }}>Your FERPA Rights</p>
           </div>
-          <div className="px-5 py-4 space-y-4">
-            <p className="text-[12px] text-slate-500 leading-relaxed">
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-[12px] leading-relaxed" style={{ color: T.textMuted }}>
               Your wellness data may constitute an education record protected under FERPA (20 U.S.C. § 1232g). You have the following rights:
             </p>
 
@@ -369,34 +393,33 @@ export default function PrivacyPage() {
                 color: "#64748b", bg: "#f8fafc",
               },
             ].map(item => (
-              <div key={item.title} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: item.bg }}>
-                <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+              <div key={item.title} className="flex items-start gap-3 p-3.5 rounded-2xl" style={{ background: item.bg }}>
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
                      style={{ background: `${item.color}20`, color: item.color }}>
                   {item.icon}
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold mb-0.5" style={{ color: item.color }}>{item.title}</p>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">{item.body}</p>
+                  <p className="text-[11px] leading-relaxed" style={{ color: T.textSub }}>{item.body}</p>
                 </div>
               </div>
             ))}
 
-            <p className="text-[10px] text-slate-400 leading-relaxed pt-1">
+            <p className="text-[10px] leading-relaxed pt-1" style={{ color: T.textMuted }}>
               Data retention: wellness check-in records are retained for the duration of enrollment plus 3 years. Clinical notes (if any) are retained for 7 years per NCAA best practices. You may request deletion of non-required records at any time.
             </p>
           </div>
         </div>
 
         {/* Mandatory reporter notice */}
-        <div className="rounded-2xl p-4" style={{ background: "#fff7ed", border: "1px solid #fed7aa" }}>
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "#c2410c" }} />
-            <div>
-              <p className="text-[12px] font-semibold mb-1" style={{ color: "#9a3412" }}>Mandatory Reporter Notice</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: "#c2410c" }}>
-                Athletic staff and counselors may be mandatory reporters under state law. If a disclosure indicates risk of harm to yourself or others, they may be required to report it regardless of your privacy settings. This is covered under FERPA § 99.36 health and safety emergency provisions.
-              </p>
-            </div>
+        <div className="rounded-2xl px-4 py-3 flex items-start gap-2.5"
+             style={{ background: "#fffbeb", border: "1px solid #fde68a" }}>
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#d97706" }} />
+          <div>
+            <p className="text-[12px] font-semibold mb-0.5" style={{ color: "#92400e" }}>Mandatory Reporter Notice</p>
+            <p className="text-[11px] leading-relaxed" style={{ color: "#b45309" }}>
+              Athletic staff and counselors may be mandatory reporters under state law. If a disclosure indicates risk of harm to yourself or others, they may be required to report it regardless of your privacy settings. This is covered under FERPA § 99.36 health and safety emergency provisions.
+            </p>
           </div>
         </div>
 

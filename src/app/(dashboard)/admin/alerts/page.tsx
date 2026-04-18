@@ -50,9 +50,9 @@ export default function AdminAlertsPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: prof } = await supabase.from("profiles").select("full_name, role").eq("auth_user_id", user.id).single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: prof } = await supabase.from("profiles").select("full_name, role").eq("auth_user_id", session.user.id).single();
       if (prof) setProfile(prof);
       const { data: alertData } = await supabase
         .from("alerts")
@@ -73,9 +73,9 @@ export default function AdminAlertsPage() {
     if (newStatus === "resolved") update.resolved_at = new Date().toISOString();
     await supabase.from("alerts").update(update).eq("id", alertId);
     setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status: newStatus, ...(newStatus === "resolved" ? { resolved_at: new Date().toISOString() } : {}) } : a));
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: prof } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).single();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: prof } = await supabase.from("profiles").select("id").eq("auth_user_id", session.user.id).single();
       if (prof) await supabase.from("audit_logs").insert({ actor_profile_id: prof.id, action: "update", target_type: "alert", target_id: alertId, metadata: { new_status: newStatus } });
     }
   };

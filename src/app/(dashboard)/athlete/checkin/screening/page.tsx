@@ -195,10 +195,10 @@ export default function ScreeningCheckinPage() {
   useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push("/login"); return; }
       const { data: prof } = await supabase
-        .from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
+        .from("profiles").select("id, full_name, team_id").eq("auth_user_id", session.user.id).single();
       if (prof) {
         setUserName(prof.full_name);
         setProfileId(prof.id);

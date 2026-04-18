@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -66,6 +66,22 @@ export default function LoginPage() {
   const [demoError, setDemoError]               = useState("");
   const router = useRouter();
 
+  const REDIRECT_MAP: Record<string, string> = {
+    athlete:       "/athlete/dashboard",
+    coach:         "/coach/dashboard",
+    admin:         "/admin/dashboard",
+    support:       "/admin/dashboard",
+    psychiatrist:  "/psychiatrist/dashboard",
+    trusted_adult: "/psychiatrist/dashboard",
+  };
+
+  // Warm up the Supabase connection as soon as the login page loads
+  // so the first signInWithPassword call doesn't pay the TCP/TLS setup cost.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().catch(() => {});
+  }, []);
+
   // ── Regular login ─────────────────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,29 +104,36 @@ export default function LoginPage() {
     }
 
     if (authData.user) {
+      // Fast path: role cached in user_metadata from a previous login
+      const cachedRole = authData.user.user_metadata?.role as string | undefined;
+      if (cachedRole && REDIRECT_MAP[cachedRole]) {
+        router.push(REDIRECT_MAP[cachedRole]);
+        return;
+      }
+
+      // Slow path: fetch role from DB (first login or legacy account)
       const { data: profile } = await supabase
         .from("profiles").select("role").eq("auth_user_id", authData.user.id).single();
 
       if (profile) {
-        const redirectMap: Record<string, string> = {
-          athlete:       "/athlete/dashboard",
-          coach:         "/coach/dashboard",
-          admin:         "/admin/dashboard",
-          support:       "/admin/dashboard",
-          psychiatrist:  "/psychiatrist/dashboard",
-          trusted_adult: "/psychiatrist/dashboard",
-        };
-        router.push(redirectMap[(profile as { role: string }).role] || "/athlete/dashboard");
+        const role = (profile as { role: string }).role;
+        // Cache role in metadata so next login skips this DB call
+        supabase.auth.updateUser({ data: { role } }).catch(() => {});
+        router.push(REDIRECT_MAP[role] || "/athlete/dashboard");
         return;
       }
 
+      // Brand-new user — create profile
       const userName = authData.user.user_metadata?.full_name || email.split("@")[0];
-      await supabase.from("profiles").insert({
-        auth_user_id: authData.user.id,
-        full_name: userName,
-        email: authData.user.email ?? email,
-        role: "athlete",
-      });
+      await Promise.all([
+        supabase.from("profiles").insert({
+          auth_user_id: authData.user.id,
+          full_name: userName,
+          email: authData.user.email ?? email,
+          role: "athlete",
+        }),
+        supabase.auth.updateUser({ data: { role: "athlete" } }),
+      ]);
 
       router.push("/athlete/dashboard");
       return;
@@ -148,13 +171,6 @@ export default function LoginPage() {
         return;
       }
     }
-
-    // Ensure role is set
-    await fetch("/api/dev/set-role", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: role.id }),
-    });
 
     router.push(role.redirect);
   };

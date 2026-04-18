@@ -195,13 +195,13 @@ export default function AdminAuditLogsPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
       const { data: prof } = await supabase
         .from("profiles")
         .select("full_name, role, organization_id")
-        .eq("auth_user_id", user.id)
+        .eq("auth_user_id", session.user.id)
         .single();
 
       if (prof) setProfile(prof);

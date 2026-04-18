@@ -44,7 +44,18 @@
       "Bash(xcrun simctl *)",
       "Bash(xcodebuild -workspace /Users/samuelsmith/Desktop/Check-in/.claude/worktrees/cool-lovelace-6f730f/ios/App/App.xcodeproj/project.xcworkspace -scheme App -destination 'platform=iOS Simulator,id=DDF3BF56-5708-49C8-8594-E811584755FE' build)",
       "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/simctl install *)",
-      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/simctl launch *)"
+      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/simctl launch *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(kill 54089)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(xcodebuild -workspace /Users/samuelsmith/Desktop/Check-in/.claude/worktrees/cool-lovelace-6f730f/ios/App/App.xcodeproj/project.xcworkspace -scheme App -destination id=DDF3BF56-5708-49C8-8594-E811584755FE -configuration Debug build)",
+      "Bash(open -a Simulator)",
+      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/simctl list *)",
+      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/simctl get_app_container DDF3BF56-5708-49C8-8594-E811584755FE com.getcheckin.app)",
+      "Bash(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' /Users/samuelsmith/Library/Developer/Xcode/DerivedData/App-gduzcgcqythbpphbbgdoldrjasfc/Build/Products/Debug-iphonesimulator/App.app/Info.plist)",
+      "Read(//Users/samuelsmith/Library/Developer/Xcode/DerivedData/App-gduzcgcqythbpphbbgdoldrjasfc/Build/Products/Debug-iphonesimulator/App.app/**)",
+      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace /Users/samuelsmith/Desktop/Check-in/.claude/worktrees/cool-lovelace-6f730f/ios/App/App.xcodeproj/project.xcworkspace -scheme App -destination id=DDF3BF56-5708-49C8-8594-E811584755FE -configuration Debug build)",
+      "Bash(/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace ios/App/App.xcodeproj/project.xcworkspace -scheme App -destination id=DDF3BF56-5708-49C8-8594-E811584755FE -configuration Debug build)"
     ]
   }
 }
