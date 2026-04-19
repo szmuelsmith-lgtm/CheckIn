@@ -9,12 +9,12 @@ const OB = {
   bg:        "#f8fafc",
   surface:   "#ffffff",
   raised:    "#f8fafc",
-  border:    "#e2e8f0",
+  border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#047857",
+  green:     "#059669",
   red:       "#dc2626",
   amber:     "#d97706",
 };
@@ -158,7 +158,7 @@ export default function AdminFollowupsPage() {
     );
   }
 
-  const inputCls = "w-full h-10 px-3.5 rounded-lg border text-[13px] bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors";
+  const inputCls = "w-full h-10 px-3.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors";
 
   return (
     <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
@@ -210,7 +210,7 @@ export default function AdminFollowupsPage() {
                 <textarea
                   placeholder="Describe the follow-up action needed..."
                   value={reason} onChange={e => setReason(e.target.value)} rows={3}
-                  className="w-full px-3.5 py-2.5 rounded-lg border text-[13px] bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors resize-none"
                   style={{ borderColor: OB.border, color: OB.text }}
                 />
               </div>

@@ -9,12 +9,12 @@ import Link from "next/link";
 const OB = {
   surface:   "#ffffff",
   raised:    "#f8fafc",
-  border:    "#e2e8f0",
+  border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#047857",
+  green:     "#059669",
   red:       "#dc2626",
 };
 
@@ -238,7 +238,7 @@ export default function PsychiatristDashboard() {
                       onClick={() => handleOutreach(athlete, "yes")}
                       disabled={responding === athlete.athlete_id}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold disabled:opacity-50"
-                      style={{ background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
+                      style={{ background: "linear-gradient(135deg,#065f46,#059669)", color: "#fff" }}
                     >
                       {responding === athlete.athlete_id
                         ? <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
@@ -253,7 +253,7 @@ export default function PsychiatristDashboard() {
 
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#dbeafe" }}>
                 <Users className="h-4 w-4" style={{ color: "#2563eb" }} />
@@ -263,7 +263,7 @@ export default function PsychiatristDashboard() {
             <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{athletes.length}</p>
           </div>
 
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#d1fae5" }}>
                 <CalendarCheck className="h-4 w-4" style={{ color: OB.green }} />
@@ -272,12 +272,12 @@ export default function PsychiatristDashboard() {
             </div>
             <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{checkinRate}%</p>
             <div className="mt-3 h-[2px] rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
-              <div className="h-full rounded-full" style={{ width: `${checkinRate}%`, background: `linear-gradient(to right,#065f46,${OB.green})` }} />
+              <div className="h-full rounded-full" style={{ width: `${checkinRate}%`, background: `linear-gradient(135deg,#065f46,${OB.green})` }} />
             </div>
             <p className="text-[11px] mt-1.5" style={{ color: OB.textMuted }}>14-day rolling</p>
           </div>
 
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#fee2e2" }}>
                 <AlertCircle className="h-4 w-4" style={{ color: OB.red }} />
@@ -287,7 +287,7 @@ export default function PsychiatristDashboard() {
             <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{yellowCount + redCount}</p>
           </div>
 
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#f0fdf4" }}>
                 <Heart className="h-4 w-4" style={{ color: OB.green }} />
@@ -300,7 +300,7 @@ export default function PsychiatristDashboard() {
 
         {/* Wellness distribution */}
         {totalRisk > 0 && (
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <p className="text-[13px] font-semibold mb-4" style={{ color: OB.textSub }}>Patient Wellness Distribution</p>
             {/* Stacked bar */}
             <div className="flex h-6 rounded-xl overflow-hidden gap-[2px] mb-4" style={{ background: "#ffffff" }}>
@@ -360,7 +360,7 @@ export default function PsychiatristDashboard() {
                         )}
                         {outreachDone === "yes" && (
                           <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                                style={{ background: "#d1fae5", color: "#047857" }}>
+                                style={{ background: "#d1fae5", color: "#059669" }}>
                             Outreach planned
                           </span>
                         )}
@@ -384,7 +384,7 @@ export default function PsychiatristDashboard() {
                   {!isExpired ? (
                     <Link href={`/psychiatrist/athlete?id=${athlete.athlete_id}`}>
                       <button className="flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-lg shrink-0"
-                              style={{ background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}>
+                              style={{ background: "linear-gradient(135deg,#065f46,#059669)", color: "#fff" }}>
                         View <ChevronRight className="h-3.5 w-3.5" />
                       </button>
                     </Link>

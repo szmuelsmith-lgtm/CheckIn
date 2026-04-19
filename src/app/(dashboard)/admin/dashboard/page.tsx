@@ -15,12 +15,12 @@ const OB = {
   bg:        "#f8fafc",
   surface:   "#ffffff",
   raised:    "#f8fafc",
-  border:    "#e2e8f0",
+  border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#047857",
+  green:     "#059669",
   red:       "#dc2626",
 };
 
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-3">
           {/* Athletes */}
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#dbeafe" }}>
                 <Users className="h-[18px] w-[18px]" style={{ color: "#2563eb" }} />
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Check-in rate */}
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#d1fae5" }}>
                 <ClipboardCheck className="h-[18px] w-[18px]" style={{ color: OB.green }} />
@@ -222,14 +222,14 @@ export default function AdminDashboard() {
             </div>
             <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.checkinRate}%</p>
             <div className="mt-3 h-[2px] rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
-              <div className="h-full rounded-full" style={{ width: `${stats?.checkinRate}%`, background: `linear-gradient(to right,#065f46,${OB.green})` }} />
+              <div className="h-full rounded-full" style={{ width: `${stats?.checkinRate}%`, background: `linear-gradient(135deg,#065f46,${OB.green})` }} />
             </div>
             <p className="text-[11px] mt-1.5" style={{ color: OB.textMuted }}>7-day rolling</p>
           </div>
 
           {/* Open alerts */}
           <Link href="/admin/alerts">
-            <div className="rounded-2xl p-5 transition-shadow hover:shadow-sm cursor-pointer" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div className="rounded-3xl p-5 transition-shadow hover:shadow-sm cursor-pointer" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#fee2e2" }}>
                   <AlertTriangle className="h-[18px] w-[18px]" style={{ color: OB.red }} />
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
           </Link>
 
           {/* Wellness snapshot */}
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#f0fdf4" }}>
                 <Activity className="h-[18px] w-[18px]" style={{ color: OB.green }} />
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Team health distribution */}
-        <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+        <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-4 w-4" style={{ color: OB.textMuted }} />
             <p className="text-[13px] font-semibold" style={{ color: OB.textSub }}>Team Wellness Distribution</p>
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Semester Screening */}
-        <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+        <div className="rounded-3xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
           <div className="flex items-center gap-2 mb-4">
             <CalendarCheck className="h-4 w-4" style={{ color: OB.green }} />
             <p className="text-[13px] font-semibold" style={{ color: OB.textSub }}>Semester Screening</p>
@@ -329,7 +329,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: OB.green }} />
                   <p className="text-[13px] font-semibold" style={{ color: "#065f46" }}>Screening Active</p>
                 </div>
                 <p className="text-[12px]" style={{ color: OB.textMuted }}>Athletes will see the full semester screening check-in form.</p>

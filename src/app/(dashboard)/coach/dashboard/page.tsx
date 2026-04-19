@@ -10,7 +10,7 @@ import { ClipboardCheck, Users, TrendingUp, TrendingDown, Minus, Heart, Zap, Shi
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg:        "#f4f7f5",
+  bg:        "#f8fafc",
   surface:   "#ffffff",
   raised:    "#f8fafc",
   border:    "#e8edf2",
