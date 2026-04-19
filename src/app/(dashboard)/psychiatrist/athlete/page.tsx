@@ -11,14 +11,14 @@ import type { Pillar, ConsentScope } from "@/types/database";
 
 const T = {
   surface:   "#ffffff",
-  raised:    "#f8fafc",
-  border:    "#e8edf2",
-  borderSub: "#f1f5f9",
+  raised:    "#f0f9ff",
+  border:    "#bae6fd",
+  borderSub: "#e0f2fe",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#059669",
-  greenDeep: "#065f46",
+  teal:      "#0d9488",
+  tealDeep:  "#134e4a",
 };
 
 interface PillarScores {
@@ -206,7 +206,7 @@ function AthleteView() {
   if (loading) return (
     <DashboardLayout role="psychiatrist" userName={userName}>
       <div className="flex items-center justify-center h-64">
-        <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
+        <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.teal }} />
       </div>
     </DashboardLayout>
   );
@@ -263,8 +263,8 @@ function AthleteView() {
           <span
             className="text-[11px] font-bold px-3 py-1.5 rounded-full"
             style={data.scope === "full"
-              ? { background: "#ede9fe", color: "#6d28d9" }
-              : { background: "#eff6ff", color: "#1d4ed8" }}
+              ? { background: "#f0fdfa", color: T.teal }
+              : { background: "#e0f2fe", color: "#0369a1" }}
           >
             {data.scope === "full" ? "FULL REPORT" : "SUMMARY"}
           </span>
@@ -297,7 +297,7 @@ function AthleteView() {
                     <span
                       className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                       style={checkin.mode === "screening"
-                        ? { background: "#ede9fe", color: "#6d28d9" }
+                        ? { background: "#f0fdfa", color: T.teal }
                         : { background: T.borderSub, color: T.textMuted }}
                     >
                       {checkin.mode === "screening" ? "Screening" : "Weekly"}
@@ -326,7 +326,7 @@ export default function PsychiatristAthletePage() {
     <Suspense fallback={
       <DashboardLayout role="psychiatrist" userName="...">
         <div className="flex items-center justify-center h-64">
-          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
+          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.teal }} />
         </div>
       </DashboardLayout>
     }>
