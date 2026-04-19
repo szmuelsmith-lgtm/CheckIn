@@ -121,7 +121,15 @@ export default function AthleteResourcesPage() {
       const { data: resourceData } = await supabase
         .from("resources").select("id, title, description, category, url")
         .order("category").order("title");
-      if (resourceData) setResources(resourceData.filter((r: Resource) => r.category !== "academic"));
+      if (resourceData) {
+        const crisisUrls   = new Set(CRISIS_RESOURCES.map(cr => cr.url.toLowerCase()));
+        const crisisTitles = new Set(CRISIS_RESOURCES.map(cr => cr.title.toLowerCase()));
+        setResources(
+          resourceData
+            .filter((r: Resource) => r.category !== "academic")
+            .filter((r: Resource) => !crisisUrls.has(r.url.toLowerCase()) && !crisisTitles.has(r.title.toLowerCase()))
+        );
+      }
       setLoading(false);
     }
     load();
