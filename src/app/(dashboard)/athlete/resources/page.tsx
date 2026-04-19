@@ -124,10 +124,17 @@ export default function AthleteResourcesPage() {
       if (resourceData) {
         const crisisUrls   = new Set(CRISIS_RESOURCES.map(cr => cr.url.toLowerCase()));
         const crisisTitles = new Set(CRISIS_RESOURCES.map(cr => cr.title.toLowerCase()));
+        const seen = new Set<string>();
         setResources(
           resourceData
             .filter((r: Resource) => r.category !== "academic")
             .filter((r: Resource) => !crisisUrls.has(r.url.toLowerCase()) && !crisisTitles.has(r.title.toLowerCase()))
+            .filter((r: Resource) => {
+              const key = r.title.toLowerCase();
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            })
         );
       }
       setLoading(false);
