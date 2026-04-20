@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Slider } from "@/components/ui/slider";
 import { createClient } from "@/lib/supabase/client";
 import { PILLAR_LABELS, computePillarScores, evaluateSupportTrigger } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
@@ -16,7 +15,7 @@ import {
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
   surface:   "#ffffff",
-  raised:    "#f4f7f5",
+  raised:    "#f8fafc",
   border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
@@ -395,7 +394,7 @@ export default function WeeklyCheckinPage() {
                     style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.textSub }}
                   >
                     {submitting && outreachConsent === false
-                      ? <span className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
+                      ? <span className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.textSub }} />
                       : <><X className="h-4 w-4" />No thanks</>}
                   </button>
                 </div>
@@ -426,11 +425,13 @@ export default function WeeklyCheckinPage() {
 
                 {/* Slider */}
                 <div>
-                  <Slider
-                    value={[currentVal]}
-                    onValueChange={([v]) => setResponses(r => ({ ...r, [question.id]: v }))}
+                  <input
+                    type="range"
                     min={1} max={10} step={1}
+                    value={currentVal}
+                    onChange={(e) => setResponses(r => ({ ...r, [question.id]: parseInt(e.target.value) }))}
                     className="w-full"
+                    style={{ accentColor: PILLAR_COLOR[question.pillar] }}
                   />
                   <div className="flex justify-between text-[11px] mt-2" style={{ color: T.textMuted }}>
                     <span>Not at all</span>
