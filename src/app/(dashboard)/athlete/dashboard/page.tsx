@@ -6,28 +6,25 @@ import { createClient } from "@/lib/supabase/client";
 import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import type { Pillar } from "@/types/database";
 import Link from "next/link";
-import { ClipboardCheck, TrendingUp, Heart, Lock, ClipboardList, ArrowRight } from "lucide-react";
+import { Heart, Zap, Shield, Users, ArrowRight, FileText, Lock } from "lucide-react";
 
-// Design tokens — aligned to login page
-const OB = {
-  bg:         "#f8fafc",
-  surface:    "#ffffff",
-  raised:     "#f8fafc",
-  border:     "#e2e8f0",
-  borderSub:  "#f1f5f9",
-  textPrimary:"#0f172a",
-  textSub:    "#334155",
-  textMuted:  "#64748b",
-  green:      "#047857",
-  greenDark:  "#047857",
-  greenDeep:  "#065f46",
+// ─── Design system — Smart Home aesthetic ─────────────────────────────────────
+const DS = {
+  bg:        "#F0F2F8",
+  surface:   "#FFFFFF",
+  shadow:    "0 4px 24px rgba(31,38,135,0.08)",
+  shadowSm:  "0 2px 12px rgba(31,38,135,0.05)",
+  text:      "#1C1C3D",
+  textSub:   "#5A5A8A",
+  textMuted: "#9EA3B2",
+  radius:    "20px",
 };
 
-const PILLAR_TOP: Record<Pillar, string> = {
-  emotional:  "#059669",
-  resilience: "#2563eb",
-  recovery:   "#7c3aed",
-  support:    "#0891b2",
+const PILLAR_CONFIG: Record<Pillar, { color: string; bg: string; icon: React.ReactNode; grad: string }> = {
+  emotional:  { color: "#5B8FF9", bg: "#EEF3FF", grad: "#5B8FF9", icon: <Heart  className="h-5 w-5" /> },
+  resilience: { color: "#9B8FF9", bg: "#F0EEFF", grad: "#9B8FF9", icon: <Zap    className="h-5 w-5" /> },
+  recovery:   { color: "#10B981", bg: "#D1FAE5", grad: "#10B981", icon: <Shield className="h-5 w-5" /> },
+  support:    { color: "#00C2CB", bg: "#E0FAFB", grad: "#00C2CB", icon: <Users  className="h-5 w-5" /> },
 };
 
 const PILLARS: Pillar[] = ["emotional", "resilience", "recovery", "support"];
@@ -76,7 +73,7 @@ export default function AthleteDashboard() {
     <DashboardLayout role="athlete" userName="...">
       <div className="flex items-center justify-center h-64">
         <div className="h-5 w-5 rounded-full border-2 animate-spin"
-             style={{ borderColor: OB.border, borderTopColor: OB.green }} />
+             style={{ borderColor: "#EEF3FF", borderTopColor: "#5B8FF9" }} />
       </div>
     </DashboardLayout>
   );
@@ -84,9 +81,9 @@ export default function AthleteDashboard() {
   if (error) return (
     <DashboardLayout role="athlete" userName={userName}>
       <div className="max-w-2xl mx-auto">
-        <div className="rounded-2xl p-8 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
-          <p className="text-sm mb-3" style={{ color: OB.textMuted }}>Couldn&apos;t load your dashboard.</p>
-          <button onClick={load} className="text-sm font-medium" style={{ color: OB.green }}>Retry</button>
+        <div className="rounded-[20px] p-8 text-center" style={{ background: DS.surface, boxShadow: DS.shadow }}>
+          <p className="text-sm mb-3" style={{ color: DS.textMuted }}>Couldn&apos;t load your dashboard.</p>
+          <button onClick={load} className="text-sm font-semibold" style={{ color: "#5B8FF9" }}>Retry</button>
         </div>
       </div>
     </DashboardLayout>
@@ -108,126 +105,175 @@ export default function AthleteDashboard() {
     const h = new Date().getHours();
     return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
   })();
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
 
   return (
     <DashboardLayout role="athlete" userName={userName}>
-      <div className="max-w-2xl mx-auto space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4 pb-4">
 
-        {/* Greeting */}
-        <div>
-          <h1 className="text-[26px] font-bold tracking-tight" style={{ color: OB.textPrimary }}>
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-[14px] mt-0.5" style={{ color: OB.textMuted }}>
-            {daysSinceCheckin === null
-              ? "Welcome — start your first check-in below."
-              : daysSinceCheckin === 0
-                ? "You checked in today. Keep it up."
-                : daysSinceCheckin <= 7
-                  ? `Last checked in ${daysSinceCheckin} day${daysSinceCheckin === 1 ? "" : "s"} ago.`
-                  : "It's been a while — how are you doing?"}
-          </p>
+        {/* Header greeting */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[26px] font-bold tracking-tight leading-tight" style={{ color: DS.text }}>
+              {greeting}, {firstName}!
+            </h1>
+            <p className="text-[13px] mt-0.5" style={{ color: DS.textMuted }}>{today}</p>
+          </div>
+          <div
+            className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "#EEF3FF", boxShadow: DS.shadowSm }}
+          >
+            <span className="text-[17px] font-bold" style={{ color: "#5B8FF9" }}>
+              {firstName.charAt(0)}
+            </span>
+          </div>
         </div>
 
-        {/* Pillar scores */}
+        {/* Primary CTA — gradient card */}
+        <Link href="/athlete/checkin">
+          <div
+            className="relative overflow-hidden rounded-[20px] p-5 transition-opacity active:opacity-90"
+            style={{
+              background: "linear-gradient(135deg, #5B8FF9 0%, #9B8FF9 100%)",
+              boxShadow: "0 10px 36px rgba(91,143,249,0.38)",
+            }}
+          >
+            {/* Decorative blobs */}
+            <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full pointer-events-none"
+                 style={{ background: "rgba(255,255,255,0.09)" }} />
+            <div className="absolute right-6 -bottom-8 h-24 w-24 rounded-full pointer-events-none"
+                 style={{ background: "rgba(255,255,255,0.06)" }} />
+
+            <div className="relative flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-1"
+                   style={{ color: "rgba(255,255,255,0.65)" }}>
+                  Weekly
+                </p>
+                <p className="text-[24px] font-bold text-white leading-tight">Check-In</p>
+                <p className="text-[13px] mt-1" style={{ color: "rgba(255,255,255,0.72)" }}>
+                  {daysSinceCheckin === null
+                    ? "Start your first check-in →"
+                    : daysSinceCheckin === 0
+                      ? "Checked in today ✓"
+                      : `Last checked in ${daysSinceCheckin}d ago`}
+                </p>
+              </div>
+              <div
+                className="h-12 w-12 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "rgba(255,255,255,0.18)" }}
+              >
+                <ArrowRight className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Section title */}
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-[16px] font-bold" style={{ color: DS.text }}>Your Pillars</p>
+          <Link href="/athlete/trends">
+            <p className="text-[13px] font-semibold" style={{ color: "#5B8FF9" }}>See Trends →</p>
+          </Link>
+        </div>
+
+        {/* Pillar grid — 2×2 cards */}
         {hasScores ? (
           <div className="grid grid-cols-2 gap-3">
             {PILLARS.map(pillar => {
               const score = pillarScores[pillar];
               const pct   = score !== null ? Math.round((score / 10) * 100) : 0;
+              const cfg   = PILLAR_CONFIG[pillar];
               return (
                 <div
                   key={pillar}
-                  className="rounded-2xl p-4"
-                  style={{
-                    background: OB.surface,
-                    border: `1px solid ${OB.border}`,
-                    borderTop: `2px solid ${PILLAR_TOP[pillar]}`,
-                  }}
+                  className="rounded-[20px] p-4"
+                  style={{ background: DS.surface, boxShadow: DS.shadow }}
                 >
-                  <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: OB.textMuted }}>
+                  {/* Colored icon */}
+                  <div
+                    className="h-10 w-10 rounded-[12px] flex items-center justify-center mb-3"
+                    style={{ background: cfg.bg, color: cfg.color }}
+                  >
+                    {cfg.icon}
+                  </div>
+
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                     style={{ color: DS.textMuted }}>
                     {PILLAR_LABELS[pillar]}
                   </p>
-                  <p className="text-[32px] font-bold leading-none mb-2 tabular-nums" style={{ color: OB.textPrimary }}>
+                  <p className="text-[32px] font-bold tabular-nums leading-none mb-3"
+                     style={{ color: DS.text }}>
                     {score !== null ? score.toFixed(1) : "—"}
                   </p>
-                  <div className="h-[2px] rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
-                    <div className="h-full rounded-full transition-all duration-500"
-                         style={{ width: `${pct}%`, background: PILLAR_TOP[pillar] }} />
+
+                  {/* Progress bar */}
+                  <div className="h-[4px] rounded-full overflow-hidden"
+                       style={{ background: "#F0F2F8" }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${pct}%`,
+                        background: `linear-gradient(to right, ${cfg.color}88, ${cfg.color})`,
+                      }}
+                    />
                   </div>
-                  <p className="text-[10px] mt-1.5" style={{ color: OB.textMuted }}>out of 10</p>
+                  <p className="text-[10px] mt-1.5" style={{ color: DS.textMuted }}>out of 10</p>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="rounded-2xl p-8 text-center border-dashed"
-               style={{ background: OB.surface, border: `1px dashed ${OB.border}` }}>
-            <TrendingUp className="h-7 w-7 mx-auto mb-3" style={{ color: OB.textMuted }} />
-            <p className="text-sm" style={{ color: OB.textMuted }}>Pillar scores appear after your first check-in.</p>
+          <div
+            className="rounded-[20px] p-10 text-center"
+            style={{ background: DS.surface, boxShadow: DS.shadow }}
+          >
+            <div className="h-14 w-14 rounded-[16px] flex items-center justify-center mx-auto mb-4"
+                 style={{ background: "#EEF3FF" }}>
+              <Heart className="h-7 w-7" style={{ color: "#5B8FF9" }} />
+            </div>
+            <p className="text-[15px] font-bold mb-1" style={{ color: DS.text }}>No data yet</p>
+            <p className="text-[13px]" style={{ color: DS.textMuted }}>
+              Complete your first check-in to see your pillar scores.
+            </p>
           </div>
         )}
 
-        {/* Primary CTA */}
-        <Link
-          href="/athlete/checkin"
-          className="flex items-center justify-between rounded-2xl px-5 py-4 transition-opacity group"
-          style={{ background: "linear-gradient(135deg,#065f46 0%,#047857 100%)" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.1)" }}>
-              <ClipboardCheck className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-[15px] text-white">Weekly Check-In</p>
-              <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.45)" }}>2 minutes · Confidential</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 text-white/50 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
-
-        {/* Secondary CTA */}
-        <Link
-          href="/athlete/checkin/screening"
-          className="flex items-center justify-between rounded-2xl px-5 py-4 transition-colors group"
-          style={{ background: OB.surface, border: `1px solid ${OB.border}` }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: OB.raised }}>
-              <ClipboardList className="h-5 w-5" style={{ color: OB.textMuted }} />
-            </div>
-            <div>
-              <p className="font-semibold text-[15px]" style={{ color: OB.textSub }}>Mental Health Screening</p>
-              <p className="text-[12px]" style={{ color: OB.textMuted }}>Comprehensive assessment</p>
-            </div>
-          </div>
-          <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" style={{ color: OB.textMuted }} />
-        </Link>
-
         {/* Quick links */}
         <div className="grid grid-cols-3 gap-3">
-          {[
-            { href: "/athlete/trends",    icon: <TrendingUp className="h-4 w-4" />, label: "Trends"    },
-            { href: "/athlete/resources", icon: <Heart      className="h-4 w-4" />, label: "Resources" },
-            { href: "/athlete/privacy",   icon: <Lock       className="h-4 w-4" />, label: "Privacy"   },
-          ].map(({ href, icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex flex-col items-center justify-center gap-2 rounded-2xl py-4 transition-colors"
-              style={{ background: OB.surface, border: `1px solid ${OB.border}` }}
-            >
-              <span style={{ color: OB.textMuted }}>{icon}</span>
-              <span className="text-[12px] font-medium" style={{ color: OB.textMuted }}>{label}</span>
+          {([
+            { href: "/athlete/checkin/screening", label: "Screening", color: "#5B8FF9", bg: "#EEF3FF", Icon: FileText },
+            { href: "/athlete/resources",         label: "Resources", color: "#10B981", bg: "#D1FAE5", Icon: Heart    },
+            { href: "/athlete/privacy",           label: "Privacy",   color: "#9B8FF9", bg: "#F0EEFF", Icon: Lock     },
+          ] as const).map(({ href, label, color, bg, Icon }) => (
+            <Link key={href} href={href}>
+              <div
+                className="rounded-[20px] py-4 px-3 flex flex-col items-center gap-2.5 transition-opacity active:opacity-80"
+                style={{ background: DS.surface, boxShadow: DS.shadowSm }}
+              >
+                <div
+                  className="h-10 w-10 rounded-[12px] flex items-center justify-center"
+                  style={{ background: bg }}
+                >
+                  <Icon className="h-5 w-5" style={{ color }} />
+                </div>
+                <span className="text-[11px] font-semibold" style={{ color: DS.textSub }}>
+                  {label}
+                </span>
+              </div>
             </Link>
           ))}
         </div>
 
         {/* Privacy notice */}
-        <div className="rounded-xl px-4 py-3 text-center"
-             style={{ background: OB.raised, border: `1px solid ${OB.border}` }}>
-          <p className="text-[12px]" style={{ color: OB.textMuted }}>
-            <span className="font-semibold" style={{ color: OB.textSub }}>Your data is private.</span>{" "}
+        <div
+          className="rounded-[20px] px-4 py-3.5 text-center"
+          style={{ background: "#EEF3FF" }}
+        >
+          <p className="text-[12px]" style={{ color: DS.textSub }}>
+            <span className="font-bold" style={{ color: "#5B8FF9" }}>Your data is private.</span>{" "}
             Coaches only see anonymized team averages — never your individual responses.
           </p>
         </div>

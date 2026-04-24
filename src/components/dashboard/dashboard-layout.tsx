@@ -45,7 +45,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
   const isAthlete = verifiedRole === "athlete";
 
   return (
-    <div style={{ background: "#f8fafc", minHeight: "100%" }}>
+    <div style={{ background: "#F0F2F8", minHeight: "100%" }}>
       <Sidebar role={verifiedRole} userName={verifiedName} />
 
       {/* Mobile header — athletes only */}
@@ -53,10 +53,9 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
         <header
           className="fixed top-0 left-0 right-0 z-40 lg:hidden"
           style={{
-            background: "rgba(255,255,255,0.97)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderBottom: "1px solid #e2e8f0",
+            background: "rgba(240,242,248,0.88)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
           }}
         >
           <div
@@ -65,29 +64,29 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
           >
             <div className="flex items-center gap-2">
               <div
-                className="h-7 w-7 rounded-lg flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+                className="h-8 w-8 rounded-[10px] flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg,#5B8FF9,#9B8FF9)" }}
               >
-                <Anchor className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+                <Anchor className="h-4 w-4 text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-bold text-[16px] tracking-tight" style={{ color: "#0f172a" }}>Check-In</span>
+              <span className="font-bold text-[17px] tracking-tight" style={{ color: "#1C1C3D" }}>Check-In</span>
             </div>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1">
               <Link
                 href="/athlete/preferences"
-                className="p-2 rounded-xl transition-colors"
-                style={{ color: "#64748b" }}
+                className="h-8 w-8 rounded-xl flex items-center justify-center"
+                style={{ background: "#FFFFFF", color: "#9EA3B2", boxShadow: "0 2px 8px rgba(31,38,135,0.08)" }}
                 aria-label="Preferences"
               >
-                <Settings className="h-[18px] w-[18px]" />
+                <Settings className="h-4 w-4" />
               </Link>
               <button
                 onClick={handleSignOut}
-                className="p-2 rounded-xl transition-colors"
-                style={{ color: "#64748b" }}
+                className="h-8 w-8 rounded-xl flex items-center justify-center"
+                style={{ background: "#FFFFFF", color: "#9EA3B2", boxShadow: "0 2px 8px rgba(31,38,135,0.08)" }}
                 aria-label="Sign out"
               >
-                <LogOut className="h-[18px] w-[18px]" />
+                <LogOut className="h-4 w-4" />
               </button>
             </div>
           </div>

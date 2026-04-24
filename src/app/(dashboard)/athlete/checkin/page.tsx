@@ -13,24 +13,23 @@ import {
   AlertCircle, ArrowRight, Heart, X,
 } from "lucide-react";
 
-
-// Design tokens — aligned to login page
-const OB = {
-  surface:   "#ffffff",
-  raised:    "#f8fafc",
-  border:    "#e2e8f0",
-  borderSub: "#f1f5f9",
-  text:      "#0f172a",
-  textSub:   "#334155",
-  textMuted: "#64748b",
-  green:     "#047857",
+// ─── Design system ─────────────────────────────────────────────────────────────
+const DS = {
+  bg:        "#F0F2F8",
+  surface:   "#FFFFFF",
+  raised:    "#F8F9FC",
+  shadow:    "0 4px 24px rgba(31,38,135,0.08)",
+  shadowSm:  "0 2px 12px rgba(31,38,135,0.05)",
+  text:      "#1C1C3D",
+  textSub:   "#5A5A8A",
+  textMuted: "#9EA3B2",
 };
 
-const PILLAR_TOP: Record<Pillar, string> = {
-  emotional:  "#059669",
-  resilience: "#2563eb",
-  recovery:   "#7c3aed",
-  support:    "#0891b2",
+const PILLAR_CONFIG: Record<Pillar, { color: string; bg: string; grad: string }> = {
+  emotional:  { color: "#5B8FF9", bg: "#EEF3FF", grad: "linear-gradient(135deg,#5B8FF9,#8BB5FF)" },
+  resilience: { color: "#9B8FF9", bg: "#F0EEFF", grad: "linear-gradient(135deg,#9B8FF9,#C4B5FF)" },
+  recovery:   { color: "#10B981", bg: "#D1FAE5", grad: "linear-gradient(135deg,#10B981,#34D399)" },
+  support:    { color: "#00C2CB", bg: "#E0FAFB", grad: "linear-gradient(135deg,#00C2CB,#4DD8DE)" },
 };
 
 function valueLabel(v: number) {
@@ -42,9 +41,9 @@ function valueLabel(v: number) {
 }
 
 function valueColor(v: number): string {
-  if (v <= 3) return "#dc2626";
-  if (v <= 5) return "#64748b";
-  return "#047857";
+  if (v <= 3) return "#F59E0B";
+  if (v <= 5) return "#9EA3B2";
+  return "#5B8FF9";
 }
 
 function ResultView({ pillarScores, triggerSupport, onDone }: {
@@ -54,57 +53,85 @@ function ResultView({ pillarScores, triggerSupport, onDone }: {
 }) {
   const pillars: Pillar[] = ["emotional", "resilience", "recovery", "support"];
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      <div className="rounded-2xl p-6 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
-        <div className="h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-4"
-             style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}>
-          <CheckCircle className="h-7 w-7 text-white" />
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* Success card */}
+      <div
+        className="rounded-[20px] p-6 text-center relative overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, #5B8FF9 0%, #9B8FF9 100%)",
+          boxShadow: "0 10px 36px rgba(91,143,249,0.35)",
+        }}
+      >
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full pointer-events-none"
+             style={{ background: "rgba(255,255,255,0.09)" }} />
+        <div
+          className="h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{ background: "rgba(255,255,255,0.2)" }}
+        >
+          <CheckCircle className="h-8 w-8 text-white" />
         </div>
-        <h2 className="text-[22px] font-bold mb-1" style={{ color: OB.text }}>Check-in complete</h2>
-        <p className="text-[14px]" style={{ color: OB.textMuted }}>Thanks for being honest. That takes courage.</p>
+        <h2 className="text-[22px] font-bold text-white mb-1">Check-in complete</h2>
+        <p className="text-[14px]" style={{ color: "rgba(255,255,255,0.75)" }}>
+          Thanks for being honest. That takes courage.
+        </p>
       </div>
 
       {triggerSupport && (
-        <div className="rounded-2xl p-4 flex items-start gap-3"
-             style={{ background: OB.raised, border: `1px solid ${OB.border}` }}>
-          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: OB.textMuted }} />
+        <div
+          className="rounded-[20px] p-4 flex items-start gap-3"
+          style={{ background: "#D1FAE5", boxShadow: DS.shadowSm }}
+        >
+          <div className="h-8 w-8 rounded-[10px] flex items-center justify-center shrink-0"
+               style={{ background: "#A7F3D0" }}>
+            <AlertCircle className="h-4 w-4" style={{ color: "#059669" }} />
+          </div>
           <div>
-            <p className="text-[14px] font-semibold" style={{ color: OB.textSub }}>We noticed you might be struggling</p>
-            <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: OB.textMuted }}>
-              A support person — not your coach — may reach out. You can also call or text <strong style={{ color: OB.textSub }}>988</strong> anytime, free and confidential.
+            <p className="text-[14px] font-bold mb-0.5" style={{ color: "#1C1C3D" }}>
+              We noticed you might be struggling
+            </p>
+            <p className="text-[13px] leading-relaxed" style={{ color: "#5A5A8A" }}>
+              A support person — not your coach — may reach out. You can also call or text{" "}
+              <strong style={{ color: "#059669" }}>988</strong> anytime, free and confidential.
             </p>
           </div>
         </div>
       )}
 
+      {/* Pillar score cards */}
       <div className="grid grid-cols-2 gap-3">
         {pillars.map(pillar => {
           const score = pillarScores[pillar];
           const pct   = Math.round((score / 10) * 100);
+          const cfg   = PILLAR_CONFIG[pillar];
           return (
-            <div key={pillar} className="rounded-2xl p-4"
-                 style={{ background: OB.surface, border: `1px solid ${OB.border}`, borderTop: `2px solid ${PILLAR_TOP[pillar]}` }}>
-              <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: OB.textMuted }}>
+            <div key={pillar} className="rounded-[20px] p-4"
+                 style={{ background: DS.surface, boxShadow: DS.shadow }}>
+              <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5"
+                 style={{ color: DS.textMuted }}>
                 {PILLAR_LABELS[pillar]}
               </p>
-              <p className="text-[28px] font-bold leading-none mb-2 tabular-nums" style={{ color: OB.text }}>{score.toFixed(1)}</p>
-              <div className="h-[2px] rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
-                <div className="h-full rounded-full transition-all duration-500"
-                     style={{ width: `${pct}%`, background: PILLAR_TOP[pillar] }} />
+              <p className="text-[28px] font-bold leading-none mb-3 tabular-nums"
+                 style={{ color: DS.text }}>
+                {score.toFixed(1)}
+              </p>
+              <div className="h-[4px] rounded-full overflow-hidden" style={{ background: "#F0F2F8" }}>
+                <div className="h-full rounded-full transition-all duration-700"
+                     style={{ width: `${pct}%`, background: cfg.grad }} />
               </div>
             </div>
           );
         })}
       </div>
 
-      <p className="text-[11px] text-center" style={{ color: OB.textMuted }}>
+      <p className="text-[11px] text-center" style={{ color: DS.textMuted }}>
         These scores are private — coaches see anonymized team averages only.
       </p>
 
       <button
         onClick={onDone}
-        className="w-full flex items-center justify-center gap-2 h-12 font-semibold text-[15px] rounded-xl transition-opacity"
-        style={{ background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
+        className="w-full flex items-center justify-center gap-2 h-12 font-semibold text-[15px] rounded-[16px] transition-opacity"
+        style={{ background: "linear-gradient(135deg,#5B8FF9,#9B8FF9)", color: "#fff",
+                 boxShadow: "0 8px 24px rgba(91,143,249,0.35)" }}
       >
         Back to Dashboard <ArrowRight className="h-4 w-4" />
       </button>
@@ -127,8 +154,6 @@ export default function WeeklyCheckinPage() {
   const [error, setError]           = useState("");
   const [outreachConsent, setOutreachConsent] = useState<boolean | null>(null);
   const [showOutreachStep, setShowOutreachStep] = useState(false);
-
-  // Store profile in state so we can use it on submit
   const [profileId, setProfileId]   = useState<string | null>(null);
   const [teamId, setTeamId]         = useState<string | null>(null);
 
@@ -151,7 +176,6 @@ export default function WeeklyCheckinPage() {
       setProfileId(prof.id);
       setTeamId(prof.team_id ?? null);
 
-      // Fetch questions directly — no API route needed
       const { data: allQuestions, error: qErr } = await supabase
         .from("questions")
         .select("*")
@@ -164,7 +188,6 @@ export default function WeeklyCheckinPage() {
         return;
       }
 
-      // Fetch recent usage for question rotation
       const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
       const { data: recentUsage } = await supabase
         .from("question_usage")
@@ -173,12 +196,8 @@ export default function WeeklyCheckinPage() {
         .gte("used_at", cutoff);
 
       const selected = selectQuestionsForSession(
-        prof.id,
-        "weekly",
-        allQuestions as Question[],
-        recentUsage ?? []
+        prof.id, "weekly", allQuestions as Question[], recentUsage ?? []
       );
-
       const qs = selected.length > 0 ? selected : (allQuestions as Question[]).slice(0, 8);
 
       setQuestions(qs);
@@ -201,38 +220,25 @@ export default function WeeklyCheckinPage() {
     const consent = consentOverride ?? outreachConsent;
     try {
       const supabase = createClient();
-
-      // Fetch the full question objects for scoring
       const questionIds = Object.keys(responses);
       const { data: questionRows } = await supabase
-        .from("questions")
-        .select("*")
-        .in("id", questionIds);
+        .from("questions").select("*").in("id", questionIds);
 
       const qs = (questionRows ?? []) as Question[];
       const scores  = computePillarScores(responses, qs);
       const trigger = evaluateSupportTrigger(scores);
 
-      // Insert checkin directly
       const checkinId = crypto.randomUUID();
       const { error: checkinErr } = await supabase.from("checkins").insert({
-        id:               checkinId,
-        athlete_id:       profileId,
-        team_id:          teamId,
-        mode:             "weekly",
-        is_private:       true,
-        emotional_score:  scores.emotional,
-        resilience_score: scores.resilience,
-        recovery_score:   scores.recovery,
-        support_score:    scores.support,
-        question_ids:     questionIds,
-        responses:        responses,
-        notes_private:    notes || null,
+        id: checkinId, athlete_id: profileId, team_id: teamId,
+        mode: "weekly", is_private: true,
+        emotional_score: scores.emotional, resilience_score: scores.resilience,
+        recovery_score: scores.recovery, support_score: scores.support,
+        question_ids: questionIds, responses, notes_private: notes || null,
       });
 
       if (checkinErr) { setError(`Submission failed: ${checkinErr.message}`); setSubmitting(false); return; }
 
-      // Insert question_usage (non-fatal)
       await supabase.from("question_usage").insert(
         questionIds.map(qid => ({
           athlete_id: profileId, question_id: qid,
@@ -240,12 +246,9 @@ export default function WeeklyCheckinPage() {
         }))
       );
 
-      // Audit log (non-fatal)
       await supabase.from("audit_logs").insert({
-        actor_profile_id: profileId,
-        action: "checkin_submitted",
-        target_type: "checkin",
-        target_id: checkinId,
+        actor_profile_id: profileId, action: "checkin_submitted",
+        target_type: "checkin", target_id: checkinId,
         metadata: { mode: "weekly", outreach_consent: consent ?? false },
       });
 
@@ -257,203 +260,259 @@ export default function WeeklyCheckinPage() {
     setSubmitting(false);
   }
 
-  if (loading) {
-    return (
-      <DashboardLayout role="athlete" userName={userName}>
-        <div className="flex items-center justify-center h-64">
-          <div className="h-5 w-5 rounded-full border-2 animate-spin"
-               style={{ borderColor: "#e2e8f0", borderTopColor: "#047857" }} />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  if (loading) return (
+    <DashboardLayout role="athlete" userName={userName}>
+      <div className="flex items-center justify-center h-64">
+        <div className="h-5 w-5 rounded-full border-2 animate-spin"
+             style={{ borderColor: "#EEF3FF", borderTopColor: "#5B8FF9" }} />
+      </div>
+    </DashboardLayout>
+  );
 
-  if (loadError) {
-    return (
-      <DashboardLayout role="athlete" userName={userName}>
-        <div className="max-w-lg mx-auto mt-8">
-          <div className="rounded-2xl p-6 text-center"
-               style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
-            <p className="text-[14px] font-medium mb-1" style={{ color: "#f87171" }}>Couldn&apos;t load check-in questions.</p>
-            <p className="text-[12px] font-mono mb-4" style={{ color: "#64748b" }}>{loadError}</p>
-            <button onClick={loadQuestions} className="text-[13px] font-semibold" style={{ color: "#047857" }}>Retry</button>
-          </div>
+  if (loadError) return (
+    <DashboardLayout role="athlete" userName={userName}>
+      <div className="max-w-lg mx-auto mt-8">
+        <div className="rounded-[20px] p-6 text-center"
+             style={{ background: DS.surface, boxShadow: DS.shadow }}>
+          <p className="text-[14px] font-semibold mb-1" style={{ color: "#EF4444" }}>
+            Couldn&apos;t load check-in questions.
+          </p>
+          <p className="text-[12px] font-mono mb-4" style={{ color: DS.textMuted }}>{loadError}</p>
+          <button onClick={loadQuestions} className="text-[13px] font-semibold"
+                  style={{ color: "#5B8FF9" }}>Retry</button>
         </div>
-      </DashboardLayout>
-    );
-  }
+      </div>
+    </DashboardLayout>
+  );
 
-  if (pillarScores) {
-    return (
-      <DashboardLayout role="athlete" userName={userName}>
-        <ResultView pillarScores={pillarScores} triggerSupport={triggerSupport} onDone={() => router.push("/athlete/dashboard")} />
-      </DashboardLayout>
-    );
-  }
+  if (pillarScores) return (
+    <DashboardLayout role="athlete" userName={userName}>
+      <ResultView pillarScores={pillarScores} triggerSupport={triggerSupport}
+                  onDone={() => router.push("/athlete/dashboard")} />
+    </DashboardLayout>
+  );
 
   const isNotesStep    = currentQ >= questions.length && !showOutreachStep;
   const isOutreachStep = showOutreachStep;
   const question       = !isNotesStep && !isOutreachStep ? questions[currentQ] : null;
   const total          = questions.length + 1;
-  const pct            = Math.round((currentQ / total) * 100);
+  const progressPct    = Math.round((currentQ / total) * 100);
+  const pillarCfg      = question ? PILLAR_CONFIG[question.pillar] : null;
 
   return (
     <DashboardLayout role="athlete" userName={userName}>
       <div className="max-w-lg mx-auto space-y-4">
 
+        {/* Header */}
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: OB.text }}>Weekly Check-In</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: OB.textMuted }}>Be honest. This is just for you.</p>
-        </div>
-
-        <div className="rounded-xl px-4 py-3" style={{ background: OB.raised, border: `1px solid ${OB.border}` }}>
-          <p className="text-[12px] leading-relaxed" style={{ color: OB.textMuted }}>
-            <strong style={{ color: OB.textSub }}>In crisis?</strong> Call or text <strong style={{ color: OB.textSub }}>988</strong> or call <strong style={{ color: OB.textSub }}>911</strong>. This app is a wellness tool, not a crisis service.
+          <h1 className="text-[22px] font-bold tracking-tight" style={{ color: DS.text }}>
+            Weekly Check-In
+          </h1>
+          <p className="text-[13px] mt-0.5" style={{ color: DS.textMuted }}>
+            Be honest. This is just for you.
           </p>
         </div>
 
+        {/* Crisis banner */}
+        <div className="rounded-[16px] px-4 py-3"
+             style={{ background: "#EEF3FF", boxShadow: DS.shadowSm }}>
+          <p className="text-[12px] leading-relaxed" style={{ color: DS.textSub }}>
+            <strong style={{ color: "#5B8FF9" }}>In crisis?</strong> Call or text{" "}
+            <strong style={{ color: "#5B8FF9" }}>988</strong> or call{" "}
+            <strong style={{ color: "#5B8FF9" }}>911</strong>. This app is a wellness tool, not a crisis service.
+          </p>
+        </div>
+
+        {/* Progress */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px]" style={{ color: OB.textMuted }}>{currentQ + 1} of {total}</span>
-            <span className="text-[11px]" style={{ color: OB.textMuted }}>{pct}%</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold" style={{ color: DS.textMuted }}>
+              {currentQ + 1} of {total}
+            </span>
+            <span className="text-[11px] font-semibold" style={{ color: DS.textMuted }}>
+              {progressPct}%
+            </span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
-            <div className="h-full rounded-full transition-all duration-300"
-                 style={{ width: `${pct}%`, background: `linear-gradient(to right,#065f46,#047857)` }} />
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: "#E8EBFF" }}>
+            <div
+              className="h-full rounded-full transition-all duration-400"
+              style={{
+                width: `${progressPct}%`,
+                background: "linear-gradient(to right, #5B8FF9, #9B8FF9)",
+              }}
+            />
           </div>
         </div>
 
-        <div className="rounded-2xl overflow-hidden" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+        {/* Main card */}
+        <div className="rounded-[20px] overflow-hidden"
+             style={{ background: DS.surface, boxShadow: DS.shadow }}>
           <div className="p-5">
             {isOutreachStep ? (
+              /* ── Outreach consent step ── */
               <div className="space-y-5">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full mx-auto"
-                     style={{ background: "#fef3c7" }}>
-                  <Heart className="h-6 w-6" style={{ color: "#d97706" }} />
+                <div
+                  className="h-14 w-14 rounded-[16px] flex items-center justify-center mx-auto"
+                  style={{ background: "#D1FAE5" }}
+                >
+                  <Heart className="h-7 w-7" style={{ color: "#059669" }} />
                 </div>
                 <div className="text-center">
-                  <p className="text-[17px] font-semibold mb-1" style={{ color: OB.text }}>
+                  <p className="text-[17px] font-bold mb-2" style={{ color: DS.text }}>
                     Would it be OK for a counselor to reach out to you?
                   </p>
-                  <p className="text-[13px] leading-relaxed" style={{ color: OB.textMuted }}>
-                    Your coach will <strong style={{ color: OB.textSub }}>never</strong> be told. This is between you and a licensed counselor only.
+                  <p className="text-[13px] leading-relaxed" style={{ color: DS.textMuted }}>
+                    Your coach will <strong style={{ color: DS.textSub }}>never</strong> be told.
+                    This is between you and a licensed counselor only.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <button
                     onClick={() => { setOutreachConsent(true); handleSubmit(true); }}
                     disabled={submitting}
-                    className="flex flex-col items-center gap-1.5 py-4 rounded-xl font-semibold text-[14px] transition-all disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
+                    className="flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-semibold text-[14px] disabled:opacity-60"
+                    style={{
+                      background: "linear-gradient(135deg,#5B8FF9,#9B8FF9)",
+                      color: "#fff",
+                      boxShadow: "0 6px 20px rgba(91,143,249,0.35)",
+                    }}
                   >
                     {submitting && outreachConsent === true
                       ? <span className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                      : <>✓ Yes, please</>
-                    }
+                      : <>✓ Yes, please</>}
                   </button>
                   <button
                     onClick={() => { setOutreachConsent(false); handleSubmit(false); }}
                     disabled={submitting}
-                    className="flex flex-col items-center gap-1.5 py-4 rounded-xl font-semibold text-[14px] transition-all disabled:opacity-60"
-                    style={{ background: OB.raised, border: `1px solid ${OB.border}`, color: OB.textSub }}
+                    className="flex items-center justify-center gap-2 py-3.5 rounded-[14px] font-semibold text-[14px] disabled:opacity-60"
+                    style={{ background: "#F0F2F8", color: DS.textSub }}
                   >
                     {submitting && outreachConsent === false
                       ? <span className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
-                      : <><X className="h-4 w-4 inline mr-1" />No thanks</>
-                    }
+                      : <><X className="h-4 w-4" />No thanks</>}
                   </button>
                 </div>
-                {error && <p className="text-[13px] px-3 py-2 rounded-lg text-center" style={{ color: "#dc2626", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.15)" }}>{error}</p>}
+                {error && (
+                  <p className="text-[13px] px-3 py-2 rounded-[12px] text-center"
+                     style={{ color: "#EF4444", background: "#FEE2E2" }}>{error}</p>
+                )}
               </div>
             ) : !isNotesStep && question ? (
-              <div className="space-y-6">
+              /* ── Question step ── */
+              <div className="space-y-5">
+                {/* Pillar badge */}
                 <div
-                  className="inline-flex items-center px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest text-white"
-                  style={{ background: PILLAR_TOP[question.pillar] }}
+                  className="inline-flex items-center px-3 py-1 rounded-[8px] text-[10px] font-bold uppercase tracking-widest text-white"
+                  style={{ background: pillarCfg?.grad ?? "#5B8FF9" }}
                 >
                   {PILLAR_LABELS[question.pillar]}
                 </div>
 
-                <p className="text-[16px] font-semibold leading-snug" style={{ color: OB.text }}>{question.text}</p>
+                <p className="text-[17px] font-semibold leading-snug" style={{ color: DS.text }}>
+                  {question.text}
+                </p>
 
-                <div>
-                  <Slider
-                    value={[responses[question.id] ?? 5]}
-                    onValueChange={([v]) => setResponses(r => ({ ...r, [question.id]: v }))}
-                    min={1} max={10} step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-[11px] mt-1.5" style={{ color: OB.textMuted }}>
-                    <span>Not at all</span>
-                    <span>Completely</span>
+                {/* Score display */}
+                <div className="flex items-center justify-center gap-4 py-3">
+                  <span
+                    className="text-[64px] font-bold tabular-nums leading-none"
+                    style={{ color: valueColor(responses[question.id] ?? 5) }}
+                  >
+                    {responses[question.id] ?? 5}
+                  </span>
+                  <div>
+                    <p className="text-[13px] font-semibold" style={{ color: DS.textSub }}>
+                      {valueLabel(responses[question.id] ?? 5)}
+                    </p>
+                    <p className="text-[11px]" style={{ color: DS.textMuted }}>out of 10</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-3 py-2">
-                  <span className="text-[52px] font-bold tabular-nums leading-none"
-                        style={{ color: valueColor(responses[question.id] ?? 5) }}>
-                    {responses[question.id] ?? 5}
-                  </span>
-                  <span className="text-[14px] font-medium" style={{ color: OB.textMuted }}>{valueLabel(responses[question.id] ?? 5)}</span>
+                <Slider
+                  value={[responses[question.id] ?? 5]}
+                  onValueChange={([v]) => setResponses(r => ({ ...r, [question.id]: v }))}
+                  min={1} max={10} step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-[11px] mt-1" style={{ color: DS.textMuted }}>
+                  <span>Not at all</span>
+                  <span>Completely</span>
                 </div>
               </div>
             ) : (
+              /* ── Notes step ── */
               <div className="space-y-4">
                 <div>
-                  <p className="text-[16px] font-semibold mb-0.5" style={{ color: OB.text }}>Anything on your mind?</p>
-                  <p className="text-[13px]" style={{ color: OB.textMuted }}>Optional · Private · Only you can see this.</p>
+                  <p className="text-[17px] font-bold mb-0.5" style={{ color: DS.text }}>
+                    Anything on your mind?
+                  </p>
+                  <p className="text-[13px]" style={{ color: DS.textMuted }}>
+                    Optional · Private · Only you can see this.
+                  </p>
                 </div>
                 <textarea
                   placeholder="Write whatever you need to get off your chest..."
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   rows={5}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-[14px] resize-none leading-relaxed focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-[14px] text-[14px] resize-none leading-relaxed focus:outline-none transition-colors"
                   style={{
-                    background: OB.raised, border: `1px solid ${OB.border}`,
-                    color: OB.textSub, caretColor: OB.green,
+                    background: "#F8F9FC",
+                    color: DS.textSub,
+                    caretColor: "#5B8FF9",
                   }}
                 />
-                {error && <p className="text-[13px] px-3 py-2 rounded-lg" style={{ color: "#dc2626", background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.15)" }}>{error}</p>}
+                {error && (
+                  <p className="text-[13px] px-3 py-2 rounded-[12px]"
+                     style={{ color: "#EF4444", background: "#FEE2E2" }}>{error}</p>
+                )}
               </div>
             )}
           </div>
 
+          {/* Nav footer */}
           {!isOutreachStep && (
-            <div className="flex items-center justify-between px-5 py-4" style={{ background: OB.raised, borderTop: `1px solid ${OB.borderSub}` }}>
+            <div
+              className="flex items-center justify-between px-5 py-4"
+              style={{ background: "#F8F9FC", borderTop: "1px solid #F0F2F8" }}
+            >
               <button
                 onClick={() => setCurrentQ(q => Math.max(0, q - 1))}
                 disabled={currentQ === 0}
-                className="flex items-center gap-1 h-9 px-3 text-[13px] font-medium rounded-lg transition-colors disabled:opacity-30"
-                style={{ color: OB.textSub, border: `1px solid ${OB.border}` }}
+                className="flex items-center gap-1.5 h-10 px-4 text-[13px] font-semibold rounded-[12px] transition-all disabled:opacity-30"
+                style={{ background: "#FFFFFF", color: DS.textSub,
+                         boxShadow: "0 2px 8px rgba(31,38,135,0.07)" }}
               >
-                <ChevronLeft className="h-4 w-4" />Back
+                <ChevronLeft className="h-4 w-4" /> Back
               </button>
 
               {!isNotesStep ? (
                 <button
                   onClick={() => setCurrentQ(q => q + 1)}
-                  className="flex items-center gap-1 h-9 px-4 text-[13px] font-semibold text-white rounded-lg transition-opacity"
-                  style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+                  className="flex items-center gap-1.5 h-10 px-5 text-[13px] font-semibold text-white rounded-[12px]"
+                  style={{ background: "linear-gradient(135deg,#5B8FF9,#9B8FF9)",
+                           boxShadow: "0 6px 20px rgba(91,143,249,0.3)" }}
                 >
-                  Next<ChevronRight className="h-4 w-4" />
+                  Next <ChevronRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button
                   onClick={() => setShowOutreachStep(true)}
-                  className="h-9 px-5 text-[13px] font-semibold text-white rounded-lg transition-opacity flex items-center gap-1.5"
-                  style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
+                  className="h-10 px-5 text-[13px] font-semibold text-white rounded-[12px] flex items-center gap-1.5"
+                  style={{ background: "linear-gradient(135deg,#5B8FF9,#9B8FF9)",
+                           boxShadow: "0 6px 20px rgba(91,143,249,0.3)" }}
                 >
-                  Next<ChevronRight className="h-4 w-4" />
+                  Next <ChevronRight className="h-4 w-4" />
                 </button>
               )}
             </div>
           )}
         </div>
 
-        <p className="text-center text-[11px] text-slate-400">
+        <p className="text-center text-[11px]" style={{ color: DS.textMuted }}>
           About 3 minutes · Coaches never see individual responses
         </p>
+
       </div>
     </DashboardLayout>
   );
