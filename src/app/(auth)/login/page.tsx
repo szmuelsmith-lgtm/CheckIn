@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, UserCheck, Loader2, CheckCircle } from "lucide-react";
+import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, Building2, Loader2 } from "lucide-react";
 
 // ─── Demo accounts ─────────────────────────────────────────────────────────────
 const DEMO_PASSWORD = "checkin-dev-2024";
@@ -32,7 +32,7 @@ const DEMO_ROLES = [
   },
   {
     id:       "psychiatrist",
-    label:    "Counselor",
+    label:    "Psychiatrist",
     email:    "checkin.psych.test@mailinator.com",
     icon:     <Stethoscope  className="h-4 w-4" />,
     redirect: "/psychiatrist/dashboard",
@@ -41,14 +41,14 @@ const DEMO_ROLES = [
     border:   "#ddd6fe",
   },
   {
-    id:       "trusted_adult",
-    label:    "Trusted Adult",
-    email:    "checkin.trusted.test@mailinator.com",
-    icon:     <UserCheck    className="h-4 w-4" />,
-    redirect: "/psychiatrist/dashboard",
-    color:    "#d97706",
-    bg:       "#fffbeb",
-    border:   "#fde68a",
+    id:       "admin",
+    label:    "Administrator",
+    email:    "checkin.admin.test@mailinator.com",
+    icon:     <Building2    className="h-4 w-4" />,
+    redirect: "/admin/dashboard",
+    color:    "#0369a1",
+    bg:       "#f0f9ff",
+    border:   "#7dd3fc",
   },
 ] as const;
 
@@ -155,21 +155,55 @@ export default function LoginPage() {
     setDemoLoading(role.id); setDemoError("");
 
     const supabase = createClient();
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
+
+    // Try sign-in first; fall back to sign-up if account doesn't exist yet
+    let userId: string | null = null;
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
       email: role.email, password: DEMO_PASSWORD,
     });
 
-    if (signInErr) {
-      // Account may not exist yet — try sign up
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: role.email, password: DEMO_PASSWORD,
-        options: { data: { full_name: role.label + " Demo" } },
-      });
-      if (signUpErr || !signUpData.session) {
-        setDemoError("Demo account needs email confirmation. Check mailinator.com for: " + role.email);
+    if (!signInErr && signInData.session) {
+      userId = signInData.session.user.id;
+    } else {
+      const msg = signInErr?.message?.toLowerCase() ?? "";
+      if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
+        setDemoError(`Demo account not confirmed. In Supabase Dashboard → Authentication → Users, find ${role.email} and click "Confirm email".`);
         setDemoLoading(null);
         return;
       }
+
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: role.email, password: DEMO_PASSWORD,
+        options: { data: { full_name: role.label + " Demo", role: role.id } },
+      });
+
+      if (signUpErr || !signUpData.session) {
+        setDemoError(`Could not create demo account for ${role.email}. Check Supabase → Authentication → Users.`);
+        setDemoLoading(null);
+        return;
+      }
+      userId = signUpData.session.user.id;
+    }
+
+    // Ensure the profile exists with the correct role — upsert so it's self-healing
+    if (userId) {
+      const dbRole = role.id; // matches user_role enum: athlete | coach | psychiatrist | trusted_adult
+      const { data: existing } = await supabase
+        .from("profiles").select("id, role").eq("auth_user_id", userId).single();
+
+      if (!existing) {
+        await supabase.from("profiles").insert({
+          auth_user_id: userId,
+          full_name: role.label + " Demo",
+          email: role.email,
+          role: dbRole,
+        });
+      } else if (existing.role !== dbRole) {
+        await supabase.from("profiles").update({ role: dbRole }).eq("auth_user_id", userId);
+      }
+
+      // Cache role in user metadata for fast path on next login
+      supabase.auth.updateUser({ data: { role: dbRole } }).catch(() => {});
     }
 
     router.push(role.redirect);
@@ -301,83 +335,64 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
-      </div>
 
-      {/* ── Beta / Demo logins ─────────────────────────────────────────── */}
-      <div className="w-full max-w-sm mt-4">
-        <button
-          onClick={() => setShowDemo(d => !d)}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-[13px] font-semibold transition-colors"
-          style={{ color: "#64748b", background: "transparent" }}
-        >
-          Beta tester? Quick login
-          <ChevronDown
-            className="h-4 w-4 transition-transform duration-200"
-            style={{ transform: showDemo ? "rotate(180deg)" : "rotate(0deg)" }}
-          />
-        </button>
-
-        {showDemo && (
-          <div
-            className="rounded-3xl p-4 mt-1 space-y-2"
-            style={{
-              background: "#ffffff",
-              border: "1px solid #e8edf2",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.05)",
-            }}
+        {/* ── Beta / Demo logins ── */}
+        <div className="mt-5 pt-5" style={{ borderTop: "1px solid #f1f5f9" }}>
+          <button
+            onClick={() => setShowDemo(d => !d)}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-2xl text-[13px] font-semibold transition-colors"
+            style={{ color: "#94a3b8" }}
           >
-            <p className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "#94a3b8" }}>
-              Demo accounts
-            </p>
+            Beta tester? Quick login
+            <ChevronDown
+              className="h-4 w-4 transition-transform duration-200"
+              style={{ transform: showDemo ? "rotate(180deg)" : "rotate(0deg)" }}
+            />
+          </button>
 
-            {DEMO_ROLES.map((role) => {
-              const isLoading = demoLoading === role.id;
-              const isDone    = demoLoading === role.id && false; // reset on nav
-              return (
-                <button
-                  key={role.id}
-                  onClick={() => handleDemoLogin(role)}
-                  disabled={demoLoading !== null}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all disabled:opacity-60 active:scale-[0.98]"
-                  style={{
-                    background: role.bg,
-                    border: `1px solid ${role.border}`,
-                  }}
-                >
-                  <div
-                    className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: role.color + "20", color: role.color }}
-                  >
-                    {isLoading
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : isDone
-                        ? <CheckCircle className="h-4 w-4" />
-                        : role.icon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold" style={{ color: role.color }}>
-                      {isLoading ? "Signing in…" : role.label}
-                    </p>
-                    <p className="text-[10px] font-mono truncate" style={{ color: "#94a3b8" }}>{role.email}</p>
-                  </div>
-                </button>
-              );
-            })}
-
-            {demoError && (
-              <p
-                className="text-[12px] px-3 py-2 rounded-xl mt-2"
-                style={{ color: "#ef4444", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}
-              >
-                {demoError}
+          {showDemo && (
+            <div className="mt-3 space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "#94a3b8" }}>
+                Demo accounts
               </p>
-            )}
 
-            <p className="text-[10px] text-center pt-1" style={{ color: "#cbd5e1" }}>
-              password: {DEMO_PASSWORD}
-            </p>
-          </div>
-        )}
+              {DEMO_ROLES.map((role) => {
+                const isLoading = demoLoading === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => handleDemoLogin(role)}
+                    disabled={demoLoading !== null}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all disabled:opacity-60 active:scale-[0.98]"
+                    style={{ background: role.bg, border: `1px solid ${role.border}` }}
+                  >
+                    <div
+                      className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: role.color + "20", color: role.color }}
+                    >
+                      {isLoading
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : role.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold" style={{ color: role.color }}>
+                        {isLoading ? "Signing in…" : role.label}
+                      </p>
+                      <p className="text-[10px] font-mono truncate" style={{ color: "#94a3b8" }}>{role.email}</p>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {demoError && (
+                <p className="text-[12px] px-3 py-2 rounded-xl"
+                   style={{ color: "#ef4444", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)" }}>
+                  {demoError}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

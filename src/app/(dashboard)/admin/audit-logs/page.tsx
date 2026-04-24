@@ -73,15 +73,18 @@ export default function AdminAuditLogsPage() {
 
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const loadSystemLogs = async (pageNum: number) => {
+  const loadSystemLogs = async (pageNum: number, orgId?: string) => {
     setLogsLoading(true);
     const supabase = createClient();
-    const { data } = await supabase
+    let query = supabase
       .from("audit_logs")
       .select(`id, action, target_type, target_id, metadata, created_at,
         actor:profiles!audit_logs_actor_profile_id_fkey(full_name)`)
       .order("created_at", { ascending: false })
       .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
+    // Belt-and-suspenders: filter by org even though RLS enforces it server-side
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data } = await query;
 
     if (data) {
       const entries: AuditLogEntry[] = data.map((d) => ({
@@ -156,7 +159,7 @@ export default function AdminAuditLogsPage() {
       if (!user) return;
       const { data: prof } = await supabase.from("profiles").select("full_name, role, organization_id").eq("auth_user_id", user.id).single();
       if (prof) setProfile(prof);
-      await loadSystemLogs(0);
+      await loadSystemLogs(0, prof?.organization_id ?? undefined);
       setInitialLoading(false);
     }
     load();
@@ -171,7 +174,7 @@ export default function AdminAuditLogsPage() {
   const handleLoadMore = () => {
     const next = logsPage + 1;
     setLogsPage(next);
-    loadSystemLogs(next);
+    loadSystemLogs(next, profile?.organization_id ?? undefined);
   };
 
   const handleExportCSV = () => {
