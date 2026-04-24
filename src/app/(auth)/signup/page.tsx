@@ -7,14 +7,28 @@ import Link from "next/link";
 import { Anchor, Check } from "lucide-react";
 import { UserRole } from "@/types/database";
 
+const T = {
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e8edf2",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#059669",
+  greenDeep: "#065f46",
+};
+
+const inputCls = "w-full h-10 px-3.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors";
+
 export default function SignupPage() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [fullName, setFullName]         = useState("");
+  const [email, setEmail]               = useState("");
+  const [password, setPassword]         = useState("");
+  const [inviteCode, setInviteCode]     = useState("");
+  const [error, setError]               = useState("");
+  const [loading, setLoading]           = useState(false);
+  const [success, setSuccess]           = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const router = useRouter();
 
@@ -54,9 +68,9 @@ export default function SignupPage() {
         return;
       }
 
-      orgId = invite.organization_id;
+      orgId  = invite.organization_id;
       teamId = invite.team_id;
-      role = invite.role;
+      role   = invite.role;
 
       if (invite.uses_remaining !== null) {
         await supabase
@@ -79,29 +93,25 @@ export default function SignupPage() {
     }
 
     if (authData.user) {
-      // Try the SECURITY DEFINER RPC first (works even without an active session,
-      // which happens when Supabase email confirmation is required).
-      // Falls back to a direct insert (works when email confirmation is disabled).
       let profileError: { message: string } | null = null;
 
       const { error: rpcError } = await supabase.rpc("create_signup_profile", {
-        p_auth_user_id: authData.user.id,
-        p_full_name: fullName,
-        p_email: email,
-        p_role: role,
+        p_auth_user_id:    authData.user.id,
+        p_full_name:       fullName,
+        p_email:           email,
+        p_role:            role,
         p_organization_id: orgId,
-        p_team_id: teamId,
+        p_team_id:         teamId,
       });
 
       if (rpcError) {
-        // RPC not deployed yet — fall back to direct insert (requires active session)
         const { error: insertError } = await supabase.from("profiles").insert({
-          auth_user_id: authData.user.id,
-          full_name: fullName,
+          auth_user_id:    authData.user.id,
+          full_name:       fullName,
           email,
           role,
           organization_id: orgId,
-          team_id: teamId,
+          team_id:         teamId,
         });
         profileError = insertError;
       }
@@ -120,8 +130,8 @@ export default function SignupPage() {
 
       const redirectMap: Record<string, string> = {
         athlete: "/athlete/dashboard",
-        coach: "/coach/dashboard",
-        admin: "/admin/dashboard",
+        coach:   "/coach/dashboard",
+        admin:   "/admin/dashboard",
         support: "/admin/dashboard",
       };
       router.push(redirectMap[role] || "/athlete/dashboard");
@@ -132,20 +142,23 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
-          <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
-            <Check className="h-6 w-6 text-emerald-600" strokeWidth={2.5} />
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: T.raised }}>
+        <div className="w-full max-w-sm rounded-3xl p-8 text-center"
+             style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <div className="h-12 w-12 rounded-2xl flex items-center justify-center mx-auto mb-5"
+               style={{ background: "linear-gradient(135deg, #065f46, #059669)", boxShadow: "0 4px 14px rgba(5,150,105,0.3)" }}>
+            <Check className="h-6 w-6 text-white" strokeWidth={2.5} />
           </div>
-          <h2 className="text-[20px] font-bold text-slate-900 mb-2">Check your email</h2>
-          <p className="text-[14px] text-slate-500 leading-relaxed">
+          <h2 className="text-[20px] font-bold mb-2" style={{ color: T.text }}>Check your email</h2>
+          <p className="text-[14px] leading-relaxed" style={{ color: T.textMuted }}>
             We sent a confirmation link to{" "}
-            <span className="font-medium text-slate-700">{email}</span>.
+            <span className="font-medium" style={{ color: T.textSub }}>{email}</span>.
             Click it to activate your account.
           </p>
           <Link
             href="/login"
-            className="inline-block mt-6 text-[13px] font-medium text-emerald-700 hover:underline"
+            className="inline-block mt-6 text-[13px] font-medium hover:underline"
+            style={{ color: T.green }}
           >
             Back to sign in
           </Link>
@@ -155,99 +168,98 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 py-12">
-      {/* Logo */}
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: T.raised }}>
+      {/* Logo — matches login page */}
       <div className="flex flex-col items-center mb-8">
-        <div className="h-12 w-12 rounded-2xl bg-emerald-700 flex items-center justify-center mb-3 shadow-sm">
+        <div className="h-12 w-12 rounded-2xl flex items-center justify-center mb-3"
+             style={{ background: "linear-gradient(135deg, #065f46, #059669)", boxShadow: "0 4px 14px rgba(5,150,105,0.3)" }}>
           <Anchor className="h-6 w-6 text-white" strokeWidth={2.5} />
         </div>
-        <p className="text-[15px] font-semibold text-slate-800 tracking-tight">Check-In</p>
-        <p className="text-[11px] text-slate-400 tracking-widest uppercase mt-0.5">Athlete Anchor</p>
+        <p className="text-[15px] font-bold tracking-tight" style={{ color: T.text }}>Check-In</p>
+        <p className="text-[11px] tracking-widest uppercase mt-0.5" style={{ color: T.textMuted }}>Athlete Anchor</p>
       </div>
 
-      <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-        <h1 className="text-[22px] font-bold text-slate-900 tracking-tight mb-1">Create account</h1>
-        <p className="text-sm text-slate-500 mb-7">Join Check-In by Athlete Anchor</p>
+      <div className="w-full max-w-sm rounded-3xl p-8"
+           style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
+        <h1 className="text-[22px] font-bold tracking-tight mb-1" style={{ color: T.text }}>Create account</h1>
+        <p className="text-[13px] mb-7" style={{ color: T.textMuted }}>Join Check-In by Athlete Anchor</p>
 
         <form onSubmit={handleSignup} className="space-y-4">
           {/* Full name */}
           <div>
-            <label htmlFor="fullName" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+            <label htmlFor="fullName" className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                   style={{ color: T.textMuted }}>
               Full Name
             </label>
             <input
-              id="fullName"
-              type="text"
-              placeholder="Alex Johnson"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              id="fullName" type="text" placeholder="Alex Johnson"
+              value={fullName} onChange={(e) => setFullName(e.target.value)}
               required
-              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+              className={inputCls}
+              style={{ borderColor: T.border, color: T.text }}
             />
           </div>
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+            <label htmlFor="email" className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                   style={{ color: T.textMuted }}>
               Email
             </label>
             <input
-              id="email"
-              type="email"
-              placeholder="you@school.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="email" type="email" placeholder="you@school.edu"
+              value={email} onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+              className={inputCls}
+              style={{ borderColor: T.border, color: T.text }}
             />
           </div>
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-[13px] font-medium text-slate-700 mb-1.5">
+            <label htmlFor="password" className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                   style={{ color: T.textMuted }}>
               Password
             </label>
             <input
-              id="password"
-              type="password"
-              placeholder="At least 6 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+              id="password" type="password" placeholder="At least 6 characters"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              required minLength={6}
+              className={inputCls}
+              style={{ borderColor: T.border, color: T.text }}
             />
           </div>
 
           {/* Invite code */}
           <div>
-            <label htmlFor="inviteCode" className="block text-[13px] font-medium text-slate-700 mb-1.5">
-              Invite Code
-              <span className="text-slate-400 font-normal ml-1">— optional</span>
+            <label htmlFor="inviteCode" className="block text-[12px] font-semibold uppercase tracking-wide mb-1.5"
+                   style={{ color: T.textMuted }}>
+              Invite Code <span className="normal-case font-normal" style={{ color: T.textMuted }}>— optional</span>
             </label>
             <input
-              id="inviteCode"
-              type="text"
-              placeholder="Team invite code"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value)}
-              className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
+              id="inviteCode" type="text" placeholder="Team invite code"
+              value={inviteCode} onChange={(e) => setInviteCode(e.target.value)}
+              className={inputCls}
+              style={{ borderColor: T.border, color: T.text }}
             />
           </div>
 
           {/* FERPA / Privacy notice */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-            <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Privacy Notice (FERPA)</p>
+          <div className="rounded-2xl p-4 space-y-3"
+               style={{ background: T.raised, border: `1px solid ${T.border}` }}>
+            <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: T.textSub }}>
+              Privacy Notice (FERPA)
+            </p>
             <ul className="space-y-1.5">
               {[
                 "Coaches see only anonymized team averages — never your individual scores",
-                "Counselors / support staff may see your data only if you grant consent or a health-safety alert is triggered",
+                "Counselors may see your data only if you grant consent or an alert is triggered",
                 "Journal entries are private to you only",
                 "You may inspect, amend, or request deletion of your records at any time",
                 "Staff may be mandatory reporters under state law",
               ].map(item => (
-                <li key={item} className="flex items-start gap-2 text-[11px] text-slate-600">
-                  <span className="text-emerald-600 mt-0.5 shrink-0 font-bold">·</span>
+                <li key={item} className="flex items-start gap-2 text-[11px]" style={{ color: T.textMuted }}>
+                  <span className="font-bold shrink-0 mt-0.5" style={{ color: T.green }}>·</span>
                   {item}
                 </li>
               ))}
@@ -261,22 +273,29 @@ export default function SignupPage() {
                   className="peer sr-only"
                   required
                 />
-                <div className="h-4 w-4 rounded border-2 border-slate-300 peer-checked:bg-emerald-600 peer-checked:border-emerald-600 transition-colors flex items-center justify-center">
+                <div
+                  className="h-4 w-4 rounded flex items-center justify-center transition-colors"
+                  style={{
+                    border: `2px solid ${consentChecked ? T.green : T.border}`,
+                    background: consentChecked ? T.green : T.surface,
+                  }}
+                >
                   {consentChecked && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
                 </div>
               </div>
-              <span className="text-[12px] text-slate-700 leading-relaxed font-medium">
+              <span className="text-[12px] leading-relaxed font-medium" style={{ color: T.textSub }}>
                 I am 18 or older. I have read the privacy notice above and agree to the{" "}
-                <Link href="/terms" className="text-emerald-700 underline" target="_blank">Terms of Service</Link>
+                <Link href="/terms" className="underline" style={{ color: T.green }} target="_blank">Terms of Service</Link>
                 {" "}and{" "}
-                <Link href="/privacy" className="text-emerald-700 underline" target="_blank">Privacy Policy</Link>
-                . I understand my FERPA rights and how my wellness data will be used and protected.
+                <Link href="/privacy" className="underline" style={{ color: T.green }} target="_blank">Privacy Policy</Link>
+                . I understand my FERPA rights and how my wellness data will be used.
               </span>
             </label>
           </div>
 
           {error && (
-            <p className="text-[13px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2" role="alert">
+            <p className="text-[13px] rounded-xl px-3 py-2" role="alert"
+               style={{ color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca" }}>
               {error}
             </p>
           )}
@@ -284,19 +303,18 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading || !consentChecked}
-            className="w-full h-10 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-semibold text-[14px] rounded-lg transition-colors flex items-center justify-center"
+            className="w-full h-11 font-semibold text-[14px] rounded-2xl text-white flex items-center justify-center transition-opacity disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #065f46, #059669)", boxShadow: "0 4px 14px rgba(5,150,105,0.25)" }}
           >
-            {loading ? (
-              <span className="inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            ) : (
-              "Create account"
-            )}
+            {loading
+              ? <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              : "Create account"}
           </button>
         </form>
 
-        <p className="text-center text-[13px] text-slate-500 mt-5">
+        <p className="text-center text-[13px] mt-5" style={{ color: T.textMuted }}>
           Already have an account?{" "}
-          <Link href="/login" className="text-emerald-700 font-medium hover:underline">
+          <Link href="/login" className="font-semibold hover:underline" style={{ color: T.green }}>
             Sign in
           </Link>
         </p>

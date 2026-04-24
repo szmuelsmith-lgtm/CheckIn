@@ -2,15 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { Download, FileText } from "lucide-react";
 
+const T = {
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e8edf2",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#059669",
+  greenDeep: "#065f46",
+};
+
 type ActiveTab = "system" | "consent" | "access";
 
-// --- System Logs ---
 interface AuditLogEntry {
   id: string;
   actor_name: string | null;
@@ -21,15 +29,14 @@ interface AuditLogEntry {
   created_at: string;
 }
 
-const ACTION_BADGE: Record<string, string> = {
-  create: "bg-green-100 text-green-700 border-green-200",
-  update: "bg-teal-100 text-teal-700 border-teal-200",
-  delete: "bg-red-100 text-red-700 border-red-200",
-  notify: "bg-purple-100 text-purple-700 border-purple-200",
-  view:   "bg-slate-100 text-slate-700 border-slate-200",
+const ACTION_STYLE: Record<string, { color: string; bg: string }> = {
+  create: { color: "#047857", bg: "#d1fae5" },
+  update: { color: "#0f766e", bg: "#ccfbf1" },
+  delete: { color: "#dc2626", bg: "#fee2e2" },
+  notify: { color: "#7c3aed", bg: "#ede9fe" },
+  view:   { color: T.textMuted, bg: T.borderSub },
 };
 
-// --- Consent History ---
 interface ConsentEntry {
   id: string;
   athlete_name: string | null;
@@ -40,7 +47,6 @@ interface ConsentEntry {
   is_active: boolean;
 }
 
-// --- Access Logs ---
 interface AccessEntry {
   id: string;
   viewer_name: string | null;
@@ -53,39 +59,32 @@ export default function AdminAuditLogsPage() {
   const [profile, setProfile] = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("system");
 
-  // System Logs state
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsPage, setLogsPage] = useState(0);
   const [logsHasMore, setLogsHasMore] = useState(true);
   const PAGE_SIZE = 50;
 
-  // Consent History state
   const [consentLogs, setConsentLogs] = useState<ConsentEntry[]>([]);
   const [consentLoading, setConsentLoading] = useState(false);
 
-  // Access Logs state
   const [accessLogs, setAccessLogs] = useState<AccessEntry[]>([]);
   const [accessLoading, setAccessLoading] = useState(false);
 
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const loadSystemLogs = async (pageNum: number) => {
+  const loadSystemLogs = async (pageNum: number, orgId?: string) => {
     setLogsLoading(true);
     const supabase = createClient();
-    const { data } = await supabase
+    let query = supabase
       .from("audit_logs")
-      .select(`
-        id,
-        action,
-        target_type,
-        target_id,
-        metadata,
-        created_at,
-        actor:profiles!audit_logs_actor_profile_id_fkey(full_name)
-      `)
+      .select(`id, action, target_type, target_id, metadata, created_at,
+        actor:profiles!audit_logs_actor_profile_id_fkey(full_name)`)
       .order("created_at", { ascending: false })
       .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
+    // Belt-and-suspenders: filter by org even though RLS enforces it server-side
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data } = await query;
 
     if (data) {
       const entries: AuditLogEntry[] = data.map((d) => ({
@@ -107,36 +106,16 @@ export default function AdminAuditLogsPage() {
   const loadConsentLogs = async (orgId: string) => {
     setConsentLoading(true);
     const supabase = createClient();
-
-    // Get athlete IDs in org
-    const { data: athletes } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("organization_id", orgId)
-      .eq("role", "athlete");
-
+    const { data: athletes } = await supabase.from("profiles").select("id").eq("organization_id", orgId).eq("role", "athlete");
     const athleteIds = (athletes || []).map((a) => a.id);
-    if (athleteIds.length === 0) {
-      setConsentLoading(false);
-      return;
-    }
-
+    if (athleteIds.length === 0) { setConsentLoading(false); return; }
     const { data } = await supabase
       .from("consent_logs")
-      .select(`
-        id,
-        scope,
-        granted_at,
-        expires_at,
-        is_active,
-        athlete:athlete_id(full_name),
-        target:target_profile_id(full_name)
-      `)
+      .select(`id, scope, granted_at, expires_at, is_active, athlete:athlete_id(full_name), target:target_profile_id(full_name)`)
       .in("athlete_id", athleteIds)
       .order("granted_at", { ascending: false });
-
     if (data) {
-      const entries: ConsentEntry[] = data.map((d) => ({
+      setConsentLogs(data.map((d) => ({
         id: d.id,
         athlete_name: (d.athlete as unknown as { full_name: string } | null)?.full_name || null,
         shared_with_name: (d.target as unknown as { full_name: string } | null)?.full_name || null,
@@ -144,8 +123,7 @@ export default function AdminAuditLogsPage() {
         granted_at: d.granted_at,
         expires_at: d.expires_at,
         is_active: d.is_active,
-      }));
-      setConsentLogs(entries);
+      })));
     }
     setConsentLoading(false);
   };
@@ -153,41 +131,23 @@ export default function AdminAuditLogsPage() {
   const loadAccessLogs = async (orgId: string) => {
     setAccessLoading(true);
     const supabase = createClient();
-
-    const { data: athletes } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("organization_id", orgId)
-      .eq("role", "athlete");
-
+    const { data: athletes } = await supabase.from("profiles").select("id").eq("organization_id", orgId).eq("role", "athlete");
     const athleteIds = (athletes || []).map((a) => a.id);
-    if (athleteIds.length === 0) {
-      setAccessLoading(false);
-      return;
-    }
-
+    if (athleteIds.length === 0) { setAccessLoading(false); return; }
     const { data } = await supabase
       .from("access_logs")
-      .select(`
-        id,
-        access_type,
-        accessed_at,
-        viewer:viewer_profile_id(full_name),
-        athlete:athlete_id(full_name)
-      `)
+      .select(`id, access_type, accessed_at, viewer:viewer_profile_id(full_name), athlete:athlete_id(full_name)`)
       .in("athlete_id", athleteIds)
       .order("accessed_at", { ascending: false })
       .limit(200);
-
     if (data) {
-      const entries: AccessEntry[] = data.map((d) => ({
+      setAccessLogs(data.map((d) => ({
         id: d.id,
         viewer_name: (d.viewer as unknown as { full_name: string } | null)?.full_name || null,
         athlete_name: (d.athlete as unknown as { full_name: string } | null)?.full_name || null,
         access_type: d.access_type,
         accessed_at: d.accessed_at,
-      }));
-      setAccessLogs(entries);
+      })));
     }
     setAccessLoading(false);
   };
@@ -197,15 +157,9 @@ export default function AdminAuditLogsPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name, role, organization_id")
-        .eq("auth_user_id", user.id)
-        .single();
-
+      const { data: prof } = await supabase.from("profiles").select("full_name, role, organization_id").eq("auth_user_id", user.id).single();
       if (prof) setProfile(prof);
-      await loadSystemLogs(0);
+      await loadSystemLogs(0, prof?.organization_id ?? undefined);
       setInitialLoading(false);
     }
     load();
@@ -213,29 +167,21 @@ export default function AdminAuditLogsPage() {
 
   useEffect(() => {
     if (!profile?.organization_id) return;
-    if (activeTab === "consent" && consentLogs.length === 0) {
-      loadConsentLogs(profile.organization_id);
-    }
-    if (activeTab === "access" && accessLogs.length === 0) {
-      loadAccessLogs(profile.organization_id);
-    }
+    if (activeTab === "consent" && consentLogs.length === 0) loadConsentLogs(profile.organization_id);
+    if (activeTab === "access"  && accessLogs.length === 0)  loadAccessLogs(profile.organization_id);
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLoadMore = () => {
     const next = logsPage + 1;
     setLogsPage(next);
-    loadSystemLogs(next);
+    loadSystemLogs(next, profile?.organization_id ?? undefined);
   };
 
   const handleExportCSV = () => {
     const headers = ["Timestamp", "Actor", "Action", "Target Type", "Target ID", "Metadata"];
     const rows = logs.map((log) => [
-      new Date(log.created_at).toISOString(),
-      log.actor_name || "System",
-      log.action,
-      log.target_type,
-      log.target_id || "",
-      JSON.stringify(log.metadata),
+      new Date(log.created_at).toISOString(), log.actor_name || "System",
+      log.action, log.target_type, log.target_id || "", JSON.stringify(log.metadata),
     ]);
     const csv = [headers, ...rows].map((row) => row.map((v) => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -251,7 +197,7 @@ export default function AdminAuditLogsPage() {
     return (
       <DashboardLayout role="admin" userName="...">
         <div className="flex items-center justify-center h-64">
-          <p className="text-slate-500">Loading audit logs...</p>
+          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
@@ -263,33 +209,46 @@ export default function AdminAuditLogsPage() {
     { key: "access",  label: "Access Logs" },
   ];
 
+  const thStyle: React.CSSProperties = {
+    textAlign: "left", padding: "12px 16px",
+    fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const,
+    letterSpacing: "0.05em", color: T.textMuted,
+    borderBottom: `1px solid ${T.borderSub}`,
+  };
+  const tdStyle: React.CSSProperties = { padding: "12px 16px", fontSize: 13, color: T.textSub };
+
   return (
     <DashboardLayout role={(profile?.role as "admin") || "admin"} userName={profile?.full_name || "Admin"}>
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-start justify-between mb-6">
+      <div className="max-w-5xl mx-auto space-y-4">
+
+        {/* Header */}
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Audit Logs</h1>
-            <p className="text-slate-500 mt-1">Complete record of all system actions and access</p>
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Audit Logs</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>Complete record of all system actions and access</p>
           </div>
           {activeTab === "system" && (
-            <Button variant="outline" onClick={handleExportCSV} disabled={logs.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
+            <button
+              onClick={handleExportCSV}
+              disabled={logs.length === 0}
+              className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl border transition-colors disabled:opacity-40"
+              style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
+            >
+              <Download className="h-4 w-4" />Export CSV
+            </button>
           )}
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6 w-fit">
+        <div className="flex gap-1 rounded-2xl p-1 w-fit" style={{ background: T.raised, border: `1px solid ${T.borderSub}` }}>
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
+              className="px-4 py-2 rounded-xl text-[13px] font-medium transition-colors"
+              style={activeTab === tab.key
+                ? { background: T.surface, color: T.text, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
+                : { color: T.textMuted }}
             >
               {tab.label}
             </button>
@@ -300,50 +259,58 @@ export default function AdminAuditLogsPage() {
         {activeTab === "system" && (
           <>
             {logs.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-lg font-medium text-slate-900">No audit logs yet</p>
-                  <p className="text-slate-500 mt-1">Actions will be recorded here as users interact with the system.</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-3xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: "#cbd5e1" }} />
+                <p className="text-[16px] font-semibold mb-1" style={{ color: T.text }}>No audit logs yet</p>
+                <p className="text-[13px]" style={{ color: T.textMuted }}>Actions will be recorded here as users interact with the system.</p>
+              </div>
             ) : (
               <>
-                <Card>
-                  <CardContent className="py-0">
-                    <div className="divide-y divide-slate-100">
-                      {logs.map((log) => {
-                        const date = new Date(log.created_at);
-                        const actionBadge = ACTION_BADGE[log.action] || ACTION_BADGE.view;
-                        return (
-                          <div key={log.id} className="flex items-start gap-4 py-3">
-                            <div className="text-xs text-slate-400 w-32 shrink-0 tabular-nums pt-0.5">
-                              {date.toLocaleDateString()}<br />
-                              {date.toLocaleTimeString()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-medium text-slate-900">{log.actor_name}</span>
-                                <Badge variant="outline" className={actionBadge}>{log.action}</Badge>
-                                <span className="text-sm text-slate-500">{log.target_type}</span>
-                              </div>
-                              {Object.keys(log.metadata).length > 0 && (
-                                <p className="text-xs text-slate-400 mt-0.5 font-mono truncate">
-                                  {JSON.stringify(log.metadata)}
-                                </p>
-                              )}
-                            </div>
+                <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                  {logs.map((log, idx) => {
+                    const date = new Date(log.created_at);
+                    const actionStyle = ACTION_STYLE[log.action] || ACTION_STYLE.view;
+                    return (
+                      <div
+                        key={log.id}
+                        className="flex items-start gap-4 px-5 py-3"
+                        style={{ borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined }}
+                      >
+                        <div className="text-[11px] w-32 shrink-0 tabular-nums pt-0.5" style={{ color: T.textMuted }}>
+                          {date.toLocaleDateString()}<br />
+                          {date.toLocaleTimeString()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[13px] font-semibold" style={{ color: T.text }}>{log.actor_name}</span>
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: actionStyle.bg, color: actionStyle.color }}
+                            >
+                              {log.action}
+                            </span>
+                            <span className="text-[13px]" style={{ color: T.textMuted }}>{log.target_type}</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                          {Object.keys(log.metadata).length > 0 && (
+                            <p className="text-[11px] mt-0.5 font-mono truncate" style={{ color: T.textMuted }}>
+                              {JSON.stringify(log.metadata)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 {logsHasMore && (
-                  <div className="text-center mt-6">
-                    <Button variant="outline" onClick={handleLoadMore} disabled={logsLoading}>
+                  <div className="text-center">
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={logsLoading}
+                      className="h-9 px-5 text-[13px] font-semibold rounded-xl border transition-colors disabled:opacity-50"
+                      style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
+                    >
                       {logsLoading ? "Loading..." : "Load More"}
-                    </Button>
+                    </button>
                   </div>
                 )}
               </>
@@ -356,73 +323,65 @@ export default function AdminAuditLogsPage() {
           <>
             {consentLoading ? (
               <div className="flex items-center justify-center h-32">
-                <p className="text-slate-500 text-sm">Loading consent history...</p>
+                <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
               </div>
             ) : consentLogs.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-lg font-medium text-slate-900">No consent records yet</p>
-                  <p className="text-slate-500 mt-1">Athlete sharing grants will appear here.</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-3xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: "#cbd5e1" }} />
+                <p className="text-[16px] font-semibold mb-1" style={{ color: T.text }}>No consent records yet</p>
+                <p className="text-[13px]" style={{ color: T.textMuted }}>Athlete sharing grants will appear here.</p>
+              </div>
             ) : (
-              <Card>
-                <CardContent className="py-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100">
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Athlete</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Shared With</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Scope</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Granted</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Expires</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Status</th>
+              <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th style={thStyle}>Athlete</th>
+                        <th style={thStyle}>Shared With</th>
+                        <th style={thStyle}>Scope</th>
+                        <th style={thStyle}>Granted</th>
+                        <th style={thStyle}>Expires</th>
+                        <th style={thStyle}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {consentLogs.map((entry, idx) => (
+                        <tr key={entry.id} style={{ borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined }}>
+                          <td style={{ ...tdStyle, fontWeight: 600, color: T.text }}>{entry.athlete_name || "—"}</td>
+                          <td style={tdStyle}>{entry.shared_with_name || "—"}</td>
+                          <td style={tdStyle}>
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={entry.scope === "full"
+                                ? { background: "#ede9fe", color: "#6d28d9" }
+                                : { background: "#eff6ff", color: "#1d4ed8" }}
+                            >
+                              {entry.scope === "full" ? "FULL REPORT" : "SUMMARY"}
+                            </span>
+                          </td>
+                          <td style={{ ...tdStyle, fontFamily: "var(--font-mono, monospace)" }}>
+                            {new Date(entry.granted_at).toLocaleDateString()}
+                          </td>
+                          <td style={{ ...tdStyle, fontFamily: "var(--font-mono, monospace)" }}>
+                            {entry.expires_at ? new Date(entry.expires_at).toLocaleDateString() : "No expiry"}
+                          </td>
+                          <td style={tdStyle}>
+                            <span
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={entry.is_active
+                                ? { background: "#d1fae5", color: "#047857" }
+                                : { background: T.borderSub, color: T.textMuted }}
+                            >
+                              {entry.is_active ? "Active" : "Revoked"}
+                            </span>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {consentLogs.map((entry) => (
-                          <tr key={entry.id} className="hover:bg-slate-50">
-                            <td className="py-3 px-4 font-medium text-slate-900">{entry.athlete_name || "—"}</td>
-                            <td className="py-3 px-4 text-slate-600">{entry.shared_with_name || "—"}</td>
-                            <td className="py-3 px-4">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  entry.scope === "full"
-                                    ? "bg-violet-50 text-violet-700 border-violet-200"
-                                    : "bg-blue-50 text-blue-700 border-blue-200"
-                                }
-                              >
-                                {entry.scope === "full" ? "FULL REPORT" : "SUMMARY"}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4 text-slate-600 tabular-nums">
-                              {new Date(entry.granted_at).toLocaleDateString()}
-                            </td>
-                            <td className="py-3 px-4 text-slate-600 tabular-nums">
-                              {entry.expires_at ? new Date(entry.expires_at).toLocaleDateString() : "No expiry"}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  entry.is_active
-                                    ? "bg-green-50 text-green-700 border-green-200"
-                                    : "bg-slate-100 text-slate-500 border-slate-200"
-                                }
-                              >
-                                {entry.is_active ? "Active" : "Revoked"}
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
           </>
         )}
@@ -432,49 +391,48 @@ export default function AdminAuditLogsPage() {
           <>
             {accessLoading ? (
               <div className="flex items-center justify-center h-32">
-                <p className="text-slate-500 text-sm">Loading access logs...</p>
+                <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
               </div>
             ) : accessLogs.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-lg font-medium text-slate-900">No access records yet</p>
-                  <p className="text-slate-500 mt-1">Data access events will be logged here.</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-3xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <FileText className="h-10 w-10 mx-auto mb-4" style={{ color: "#cbd5e1" }} />
+                <p className="text-[16px] font-semibold mb-1" style={{ color: T.text }}>No access records yet</p>
+                <p className="text-[13px]" style={{ color: T.textMuted }}>Data access events will be logged here.</p>
+              </div>
             ) : (
-              <Card>
-                <CardContent className="py-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-100">
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Viewer</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Athlete</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Access Type</th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Timestamp</th>
+              <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th style={thStyle}>Viewer</th>
+                        <th style={thStyle}>Athlete</th>
+                        <th style={thStyle}>Access Type</th>
+                        <th style={thStyle}>Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accessLogs.map((entry, idx) => (
+                        <tr key={entry.id} style={{ borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined }}>
+                          <td style={{ ...tdStyle, fontWeight: 600, color: T.text }}>{entry.viewer_name || "System"}</td>
+                          <td style={tdStyle}>{entry.athlete_name || "—"}</td>
+                          <td style={tdStyle}>
+                            <span
+                              className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg"
+                              style={{ background: T.borderSub, color: T.textMuted }}
+                            >
+                              {entry.access_type}
+                            </span>
+                          </td>
+                          <td style={{ ...tdStyle, fontSize: 11, fontFamily: "var(--font-mono, monospace)" }}>
+                            {new Date(entry.accessed_at).toLocaleString()}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {accessLogs.map((entry) => (
-                          <tr key={entry.id} className="hover:bg-slate-50">
-                            <td className="py-3 px-4 font-medium text-slate-900">{entry.viewer_name || "System"}</td>
-                            <td className="py-3 px-4 text-slate-600">{entry.athlete_name || "—"}</td>
-                            <td className="py-3 px-4">
-                              <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 font-mono text-xs">
-                                {entry.access_type}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4 text-slate-500 tabular-nums text-xs">
-                              {new Date(entry.accessed_at).toLocaleString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
           </>
         )}

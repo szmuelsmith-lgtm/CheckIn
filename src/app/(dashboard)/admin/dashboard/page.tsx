@@ -11,16 +11,16 @@ import {
 } from "lucide-react";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const OB = {
+const T = {
   bg:        "#f8fafc",
   surface:   "#ffffff",
   raised:    "#f8fafc",
-  border:    "#e2e8f0",
+  border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#047857",
+  green:     "#059669",
   red:       "#dc2626",
 };
 
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
       <DashboardLayout role="admin" userName="...">
         <div className="flex items-center justify-center h-64">
           <div className="h-5 w-5 rounded-full border-2 animate-spin"
-               style={{ borderColor: OB.border, borderTopColor: OB.green }} />
+               style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
@@ -172,9 +172,9 @@ export default function AdminDashboard() {
     return (
       <DashboardLayout role="admin" userName="...">
         <div className="max-w-4xl mx-auto">
-          <div className="rounded-2xl p-10 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
-            <p className="mb-3 text-[14px]" style={{ color: OB.textMuted }}>Couldn&apos;t load dashboard data.</p>
-            <button onClick={load} className="text-[13px] font-medium" style={{ color: OB.green }}>Retry</button>
+          <div className="rounded-2xl p-10 text-center" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <p className="mb-3 text-[14px]" style={{ color: T.textMuted }}>Couldn&apos;t load dashboard data.</p>
+            <button onClick={load} className="text-[13px] font-medium" style={{ color: T.green }}>Retry</button>
           </div>
         </div>
       </DashboardLayout>
@@ -188,8 +188,8 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: OB.text }}>{roleName} Dashboard</h1>
-            <p className="text-[13px] mt-0.5" style={{ color: OB.textMuted }}>Program overview · athlete wellness status</p>
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>{roleName} Dashboard</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>Program overview · athlete wellness status</p>
           </div>
           {isDemo && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold"
@@ -202,47 +202,47 @@ export default function AdminDashboard() {
         {/* Stat cards */}
         <div className="grid grid-cols-2 gap-3">
           {/* Athletes */}
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#dbeafe" }}>
                 <Users className="h-[18px] w-[18px]" style={{ color: "#2563eb" }} />
               </div>
-              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Athletes</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: T.textMuted }}>Athletes</p>
             </div>
-            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.totalAthletes}</p>
+            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: T.text }}>{stats?.totalAthletes}</p>
           </div>
 
           {/* Check-in rate */}
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#d1fae5" }}>
-                <ClipboardCheck className="h-[18px] w-[18px]" style={{ color: OB.green }} />
+                <ClipboardCheck className="h-[18px] w-[18px]" style={{ color: T.green }} />
               </div>
-              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Check-in Rate</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: T.textMuted }}>Check-in Rate</p>
             </div>
-            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.checkinRate}%</p>
-            <div className="mt-3 h-[2px] rounded-full overflow-hidden" style={{ background: OB.borderSub }}>
-              <div className="h-full rounded-full" style={{ width: `${stats?.checkinRate}%`, background: `linear-gradient(to right,#065f46,${OB.green})` }} />
+            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: T.text }}>{stats?.checkinRate}%</p>
+            <div className="mt-3 h-[2px] rounded-full overflow-hidden" style={{ background: T.borderSub }}>
+              <div className="h-full rounded-full" style={{ width: `${stats?.checkinRate}%`, background: `linear-gradient(135deg,#065f46,${T.green})` }} />
             </div>
-            <p className="text-[11px] mt-1.5" style={{ color: OB.textMuted }}>7-day rolling</p>
+            <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>7-day rolling</p>
           </div>
 
           {/* Open alerts */}
           <Link href="/admin/alerts">
-            <div className="rounded-2xl p-5 transition-shadow hover:shadow-sm cursor-pointer" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div className="rounded-3xl p-5 transition-shadow hover:shadow-sm cursor-pointer" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#fee2e2" }}>
-                  <AlertTriangle className="h-[18px] w-[18px]" style={{ color: OB.red }} />
+                  <AlertTriangle className="h-[18px] w-[18px]" style={{ color: T.red }} />
                 </div>
-                <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Open Alerts</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: T.textMuted }}>Open Alerts</p>
               </div>
               <div className="flex items-end justify-between">
-                <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{stats?.openAlerts}</p>
-                <ChevronRight className="h-4 w-4 mb-1" style={{ color: OB.textMuted }} />
+                <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: T.text }}>{stats?.openAlerts}</p>
+                <ChevronRight className="h-4 w-4 mb-1" style={{ color: T.textMuted }} />
               </div>
               {(stats?.redAlerts || 0) > 0 && (
                 <div className="flex gap-2 mt-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fee2e2", color: OB.red }}>{stats?.redAlerts} RED</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fee2e2", color: T.red }}>{stats?.redAlerts} RED</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fefce8", color: "#ca8a04" }}>{stats?.yellowAlerts} YELLOW</span>
                 </div>
               )}
@@ -250,25 +250,25 @@ export default function AdminDashboard() {
           </Link>
 
           {/* Wellness snapshot */}
-          <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-3xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: "#f0fdf4" }}>
-                <Activity className="h-[18px] w-[18px]" style={{ color: OB.green }} />
+                <Activity className="h-[18px] w-[18px]" style={{ color: T.green }} />
               </div>
-              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: OB.textMuted }}>Checked In (7d)</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: T.textMuted }}>Checked In (7d)</p>
             </div>
-            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: OB.text }}>{totalRisk}</p>
+            <p className="text-[34px] font-bold tabular-nums leading-none" style={{ color: T.text }}>{totalRisk}</p>
           </div>
         </div>
 
         {/* Team health distribution */}
-        <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+        <div className="rounded-3xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-4 w-4" style={{ color: OB.textMuted }} />
-            <p className="text-[13px] font-semibold" style={{ color: OB.textSub }}>Team Wellness Distribution</p>
+            <TrendingUp className="h-4 w-4" style={{ color: T.textMuted }} />
+            <p className="text-[13px] font-semibold" style={{ color: T.textSub }}>Team Wellness Distribution</p>
           </div>
           {totalRisk === 0 ? (
-            <p className="text-[13px] text-center py-6" style={{ color: OB.textMuted }}>No check-in data yet this week.</p>
+            <p className="text-[13px] text-center py-6" style={{ color: T.textMuted }}>No check-in data yet this week.</p>
           ) : (
             <>
               {/* Stacked bar */}
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
                   <div className="transition-all" style={{ width: `${((stats?.yellowCount || 0) / totalRisk) * 100}%`, background: "#eab308" }} />
                 )}
                 {(stats?.redCount || 0) > 0 && (
-                  <div className="transition-all" style={{ width: `${((stats?.redCount || 0) / totalRisk) * 100}%`, background: OB.red }} />
+                  <div className="transition-all" style={{ width: `${((stats?.redCount || 0) / totalRisk) * 100}%`, background: T.red }} />
                 )}
               </div>
               {/* Legend */}
@@ -288,7 +288,7 @@ export default function AdminDashboard() {
                 {[
                   { label: "Stable",           count: stats?.greenCount  || 0, color: "#059669", bg: "#f0fdf4" },
                   { label: "Needs attention",  count: stats?.yellowCount || 0, color: "#ca8a04", bg: "#fefce8" },
-                  { label: "Support triggered", count: stats?.redCount   || 0, color: OB.red,   bg: "#fee2e2" },
+                  { label: "Support triggered", count: stats?.redCount   || 0, color: T.red,   bg: "#fee2e2" },
                 ].map(item => (
                   <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: item.bg }}>
                     <p className="text-[20px] font-bold tabular-nums" style={{ color: item.color }}>{item.count}</p>
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
         {/* Compliance / privacy notice */}
         <div className="rounded-2xl p-4" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
           <div className="flex items-start gap-3">
-            <Shield className="h-4 w-4 mt-0.5 shrink-0" style={{ color: OB.green }} />
+            <Shield className="h-4 w-4 mt-0.5 shrink-0" style={{ color: T.green }} />
             <div>
               <p className="text-[12px] font-semibold mb-1" style={{ color: "#065f46" }}>Privacy & Compliance</p>
               <p className="text-[11px] leading-relaxed" style={{ color: "#047857" }}>
@@ -317,22 +317,22 @@ export default function AdminDashboard() {
         </div>
 
         {/* Semester Screening */}
-        <div className="rounded-2xl p-5" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+        <div className="rounded-3xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
           <div className="flex items-center gap-2 mb-4">
-            <CalendarCheck className="h-4 w-4" style={{ color: OB.green }} />
-            <p className="text-[13px] font-semibold" style={{ color: OB.textSub }}>Semester Screening</p>
+            <CalendarCheck className="h-4 w-4" style={{ color: T.green }} />
+            <p className="text-[13px] font-semibold" style={{ color: T.textSub }}>Semester Screening</p>
           </div>
 
           {orgData === null ? (
-            <p className="text-[13px]" style={{ color: OB.textMuted }}>Loading screening status…</p>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>Loading screening status…</p>
           ) : orgData.screening_active ? (
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: T.green }} />
                   <p className="text-[13px] font-semibold" style={{ color: "#065f46" }}>Screening Active</p>
                 </div>
-                <p className="text-[12px]" style={{ color: OB.textMuted }}>Athletes will see the full semester screening check-in form.</p>
+                <p className="text-[12px]" style={{ color: T.textMuted }}>Athletes will see the full semester screening check-in form.</p>
               </div>
               <button
                 disabled={screeningLoading}
@@ -346,7 +346,7 @@ export default function AdminDashboard() {
                   } finally { setScreeningLoading(false); }
                 }}
                 className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl border transition-colors disabled:opacity-50"
-                style={{ borderColor: OB.border, color: OB.textSub, background: OB.raised }}
+                style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
               >
                 <StopCircle className="h-4 w-4" />
                 {screeningLoading ? "Deactivating…" : "Deactivate"}
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <p className="text-[13px]" style={{ color: OB.textMuted }}>
+              <p className="text-[13px]" style={{ color: T.textMuted }}>
                 Activate semester check-in to send a full screening to all athletes.
               </p>
               <button

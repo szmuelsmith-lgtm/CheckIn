@@ -5,16 +5,16 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle, Plus, X, User, Calendar, Clock } from "lucide-react";
 
-const OB = {
+const T = {
   bg:        "#f8fafc",
   surface:   "#ffffff",
   raised:    "#f8fafc",
-  border:    "#e2e8f0",
+  border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#047857",
+  green:     "#059669",
   red:       "#dc2626",
   amber:     "#d97706",
 };
@@ -45,9 +45,9 @@ interface AlertForFollowup {
 interface StaffMember { id: string; full_name: string; role: string; }
 
 const STATUS_CONFIG = {
-  open:        { label: "Open",        color: OB.amber,     bg: "#fef3c7" },
+  open:        { label: "Open",        color: T.amber,     bg: "#fef3c7" },
   in_progress: { label: "In Progress", color: "#2563eb",    bg: "#dbeafe" },
-  completed:   { label: "Completed",   color: OB.green,     bg: "#d1fae5" },
+  completed:   { label: "Completed",   color: T.green,     bg: "#d1fae5" },
 };
 
 export default function AdminFollowupsPage() {
@@ -152,13 +152,13 @@ export default function AdminFollowupsPage() {
     return (
       <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName="...">
         <div className="flex items-center justify-center h-64">
-          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: OB.border, borderTopColor: OB.green }} />
+          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
   }
 
-  const inputCls = "w-full h-10 px-3.5 rounded-lg border text-[13px] bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors";
+  const inputCls = "w-full h-10 px-3.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors";
 
   return (
     <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
@@ -167,13 +167,13 @@ export default function AdminFollowupsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: OB.text }}>Follow-ups</h1>
-            <p className="text-[13px] mt-0.5" style={{ color: OB.textMuted }}>{activeCount} active follow-up{activeCount !== 1 ? "s" : ""}</p>
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Follow-ups</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>{activeCount} active follow-up{activeCount !== 1 ? "s" : ""}</p>
           </div>
           <button
             onClick={() => setShowCreate(!showCreate)}
             className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all"
-            style={showCreate ? { border: `1px solid ${OB.border}`, color: OB.textSub, background: OB.raised } : { background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
+            style={showCreate ? { border: `1px solid ${T.border}`, color: T.textSub, background: T.raised } : { background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
           >
             {showCreate ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {showCreate ? "Cancel" : "Create Follow-up"}
@@ -186,9 +186,9 @@ export default function AdminFollowupsPage() {
             <p className="text-[13px] font-semibold" style={{ color: "#065f46" }}>Create Follow-up from Alert</p>
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="block text-[12px] font-medium mb-1.5" style={{ color: OB.textSub }}>Alert</label>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Alert</label>
                 <select value={selectedAlertId} onChange={e => setSelectedAlertId(e.target.value)}
-                  className={inputCls} style={{ borderColor: OB.border, color: OB.text }}>
+                  className={inputCls} style={{ borderColor: T.border, color: T.text }}>
                   <option value="">Select an alert…</option>
                   {alerts.map(a => (
                     <option key={a.id} value={a.id}>
@@ -198,26 +198,26 @@ export default function AdminFollowupsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[12px] font-medium mb-1.5" style={{ color: OB.textSub }}>Assign To</label>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Assign To</label>
                 <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)}
-                  className={inputCls} style={{ borderColor: OB.border, color: OB.text }}>
+                  className={inputCls} style={{ borderColor: T.border, color: T.text }}>
                   <option value="">Unassigned</option>
                   {staff.map(s => <option key={s.id} value={s.id}>{s.full_name} ({s.role})</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[12px] font-medium mb-1.5" style={{ color: OB.textSub }}>Reason / Notes</label>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Reason / Notes</label>
                 <textarea
                   placeholder="Describe the follow-up action needed..."
                   value={reason} onChange={e => setReason(e.target.value)} rows={3}
-                  className="w-full px-3.5 py-2.5 rounded-lg border text-[13px] bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors resize-none"
-                  style={{ borderColor: OB.border, color: OB.text }}
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors resize-none"
+                  style={{ borderColor: T.border, color: T.text }}
                 />
               </div>
               <div>
-                <label className="block text-[12px] font-medium mb-1.5" style={{ color: OB.textSub }}>Due Date <span style={{ color: OB.textMuted, fontWeight: 400 }}>(optional)</span></label>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Due Date <span style={{ color: T.textMuted, fontWeight: 400 }}>(optional)</span></label>
                 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
-                  className={inputCls} style={{ borderColor: OB.border, color: OB.text }} />
+                  className={inputCls} style={{ borderColor: T.border, color: T.text }} />
               </div>
             </div>
             <button
@@ -240,7 +240,7 @@ export default function AdminFollowupsPage() {
               className="h-8 px-3 text-[12px] font-semibold rounded-full border transition-all"
               style={filter === f
                 ? { background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff", borderColor: "transparent" }
-                : { background: OB.surface, color: OB.textMuted, borderColor: OB.border }}
+                : { background: T.surface, color: T.textMuted, borderColor: T.border }}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
               {f === "active" && activeCount > 0 && (
@@ -254,12 +254,12 @@ export default function AdminFollowupsPage() {
 
         {/* Follow-up list */}
         {filtered.length === 0 ? (
-          <div className="rounded-2xl p-14 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-2xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "#d1fae5" }}>
-              <CheckCircle className="h-6 w-6" style={{ color: OB.green }} />
+              <CheckCircle className="h-6 w-6" style={{ color: T.green }} />
             </div>
-            <p className="text-[17px] font-semibold mb-1" style={{ color: OB.text }}>{filter === "active" ? "All caught up!" : "No follow-ups"}</p>
-            <p className="text-[13px]" style={{ color: OB.textMuted }}>{filter === "active" ? "No active follow-ups at this time." : "Create follow-ups from the alert queue."}</p>
+            <p className="text-[17px] font-semibold mb-1" style={{ color: T.text }}>{filter === "active" ? "All caught up!" : "No follow-ups"}</p>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>{filter === "active" ? "No active follow-ups at this time." : "Create follow-ups from the alert queue."}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -267,30 +267,30 @@ export default function AdminFollowupsPage() {
               const cfg = STATUS_CONFIG[followup.status];
               const isOverdue = followup.due_date && new Date(followup.due_date) < new Date() && followup.status !== "completed";
               return (
-                <div key={followup.id} className="rounded-2xl p-4" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+                <div key={followup.id} className="rounded-2xl p-4" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <div className="flex items-center gap-2">
-                          <User className="h-3.5 w-3.5" style={{ color: OB.textMuted }} />
-                          <span className="font-semibold text-[14px]" style={{ color: OB.text }}>{followup.athlete_name}</span>
+                          <User className="h-3.5 w-3.5" style={{ color: T.textMuted }} />
+                          <span className="font-semibold text-[14px]" style={{ color: T.text }}>{followup.athlete_name}</span>
                         </div>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
-                        {isOverdue && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fee2e2", color: OB.red }}>Overdue</span>}
+                        {isOverdue && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fee2e2", color: T.red }}>Overdue</span>}
                       </div>
-                      <p className="text-[13px] mb-2" style={{ color: OB.textSub }}>{followup.reason}</p>
+                      <p className="text-[13px] mb-2" style={{ color: T.textSub }}>{followup.reason}</p>
                       <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-1 text-[11px]" style={{ color: OB.textMuted }}>
+                        <div className="flex items-center gap-1 text-[11px]" style={{ color: T.textMuted }}>
                           <Clock className="h-3 w-3" />
                           Created {new Date(followup.created_at).toLocaleDateString()}
                         </div>
                         {followup.due_date && (
-                          <div className="flex items-center gap-1 text-[11px]" style={{ color: isOverdue ? OB.red : OB.textMuted }}>
+                          <div className="flex items-center gap-1 text-[11px]" style={{ color: isOverdue ? T.red : T.textMuted }}>
                             <Calendar className="h-3 w-3" />
                             Due {new Date(followup.due_date).toLocaleDateString()}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-[11px]" style={{ color: OB.textMuted }}>
+                        <div className="flex items-center gap-1 text-[11px]" style={{ color: T.textMuted }}>
                           <User className="h-3 w-3" />
                           {followup.assigned_to_name || "Unassigned"}
                         </div>
@@ -301,7 +301,7 @@ export default function AdminFollowupsPage() {
                         <button
                           onClick={() => handleStatusChange(followup.id, "in_progress")}
                           className="h-8 px-3 text-[12px] font-semibold rounded-lg border transition-colors"
-                          style={{ borderColor: OB.border, color: OB.textSub, background: OB.raised }}
+                          style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
                         >
                           Start
                         </button>
@@ -310,7 +310,7 @@ export default function AdminFollowupsPage() {
                         <button
                           onClick={() => handleStatusChange(followup.id, "completed")}
                           className="h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90"
-                          style={{ background: `linear-gradient(135deg,#065f46,${OB.green})` }}
+                          style={{ background: `linear-gradient(135deg,#065f46,${T.green})` }}
                         >
                           Complete
                         </button>

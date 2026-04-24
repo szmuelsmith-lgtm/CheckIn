@@ -2,14 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, X, Trash2, ExternalLink } from "lucide-react";
+
+const T = {
+  surface:   "#ffffff",
+  raised:    "#f8fafc",
+  border:    "#e8edf2",
+  borderSub: "#f1f5f9",
+  text:      "#0f172a",
+  textSub:   "#334155",
+  textMuted: "#64748b",
+  green:     "#059669",
+  greenDeep: "#065f46",
+};
 
 interface Resource {
   id: string;
@@ -21,25 +27,26 @@ interface Resource {
 }
 
 const CATEGORY_OPTIONS = [
-  { value: "crisis", label: "Crisis" },
+  { value: "crisis",     label: "Crisis" },
   { value: "counseling", label: "Counseling" },
-  { value: "wellness", label: "Wellness" },
-  { value: "other", label: "Other" },
+  { value: "wellness",   label: "Wellness" },
+  { value: "other",      label: "Other" },
 ];
 
-const CATEGORY_BADGE: Record<string, string> = {
-  crisis: "bg-red-100 text-red-700 border-red-200",
-  counseling: "bg-teal-100 text-teal-700 border-teal-200",
-  wellness: "bg-green-100 text-green-700 border-green-200",
-  other: "bg-slate-100 text-slate-700 border-slate-200",
+const CATEGORY_STYLE: Record<string, { color: string; bg: string }> = {
+  crisis:     { color: "#dc2626", bg: "#fee2e2" },
+  counseling: { color: "#0f766e", bg: "#ccfbf1" },
+  wellness:   { color: "#047857", bg: "#d1fae5" },
+  other:      { color: T.textMuted, bg: T.borderSub },
 };
+
+const inputCls = "w-full h-10 px-3.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors";
 
 export default function AdminResourcesPage() {
   const [profile, setProfile] = useState<{ full_name: string; id: string; role: string; organization_id: string | null } | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState("");
   const [formDesc, setFormDesc] = useState("");
@@ -49,11 +56,7 @@ export default function AdminResourcesPage() {
 
   const loadResources = async () => {
     const supabase = createClient();
-    const { data } = await supabase
-      .from("resources")
-      .select("*")
-      .order("category")
-      .order("title");
+    const { data } = await supabase.from("resources").select("*").order("category").order("title");
     if (data) setResources(data);
   };
 
@@ -62,13 +65,7 @@ export default function AdminResourcesPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, organization_id")
-        .eq("auth_user_id", user.id)
-        .single();
-
+      const { data: prof } = await supabase.from("profiles").select("id, full_name, role, organization_id").eq("auth_user_id", user.id).single();
       if (prof) setProfile(prof);
       await loadResources();
       setLoading(false);
@@ -79,30 +76,18 @@ export default function AdminResourcesPage() {
   const handleCreate = async () => {
     if (!profile || !formTitle.trim() || !formUrl.trim()) return;
     setSaving(true);
-
     const supabase = createClient();
     await supabase.from("resources").insert({
       organization_id: profile.organization_id,
-      title: formTitle.trim(),
-      description: formDesc.trim(),
-      category: formCategory,
-      url: formUrl.trim(),
-      created_by: profile.id,
+      title: formTitle.trim(), description: formDesc.trim(),
+      category: formCategory, url: formUrl.trim(), created_by: profile.id,
     });
-
     await supabase.from("audit_logs").insert({
-      actor_profile_id: profile.id,
-      action: "create",
-      target_type: "resource",
+      actor_profile_id: profile.id, action: "create", target_type: "resource",
       metadata: { title: formTitle.trim(), category: formCategory },
     });
-
     await loadResources();
-    setShowForm(false);
-    setFormTitle("");
-    setFormDesc("");
-    setFormCategory("wellness");
-    setFormUrl("");
+    setShowForm(false); setFormTitle(""); setFormDesc(""); setFormCategory("wellness"); setFormUrl("");
     setSaving(false);
   };
 
@@ -110,14 +95,9 @@ export default function AdminResourcesPage() {
     if (!profile) return;
     const supabase = createClient();
     await supabase.from("resources").delete().eq("id", id);
-
     await supabase.from("audit_logs").insert({
-      actor_profile_id: profile.id,
-      action: "delete",
-      target_type: "resource",
-      target_id: id,
+      actor_profile_id: profile.id, action: "delete", target_type: "resource", target_id: id,
     });
-
     setResources((prev) => prev.filter((r) => r.id !== id));
   };
 
@@ -127,7 +107,7 @@ export default function AdminResourcesPage() {
     return (
       <DashboardLayout role="admin" userName="...">
         <div className="flex items-center justify-center h-64">
-          <p className="text-slate-500">Loading resources...</p>
+          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
@@ -135,121 +115,137 @@ export default function AdminResourcesPage() {
 
   return (
     <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-start justify-between mb-8">
+      <div className="max-w-4xl mx-auto space-y-4">
+
+        {/* Header */}
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Resources</h1>
-            <p className="text-slate-500 mt-1">
-              Manage support resources visible to athletes
-            </p>
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Resources</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>Manage support resources visible to athletes</p>
           </div>
-          <Button onClick={() => setShowForm(!showForm)}>
-            {showForm ? <X className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all"
+            style={showForm
+              ? { border: `1px solid ${T.border}`, color: T.textSub, background: T.raised }
+              : { background: `linear-gradient(135deg, ${T.greenDeep}, ${T.green})`, color: "#fff" }}
+          >
+            {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {showForm ? "Cancel" : "Add Resource"}
-          </Button>
+          </button>
         </div>
 
         {/* Create form */}
         {showForm && (
-          <Card className="mb-8 border-emerald-200 bg-emerald-50/50">
-            <CardHeader>
-              <CardTitle className="text-lg">Add Resource</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Title</Label>
-                <Input
+          <div className="rounded-3xl p-5 space-y-4" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[14px] font-semibold" style={{ color: T.greenDeep }}>Add Resource</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Title</label>
+                <input
                   placeholder="Resource name"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
+                  className={inputCls}
+                  style={{ borderColor: T.border, color: T.text }}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
+              <div>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Description</label>
+                <textarea
                   placeholder="Brief description..."
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
                   rows={2}
+                  className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors resize-none"
+                  style={{ borderColor: T.border, color: T.text }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Category</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Category</label>
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={inputCls}
+                    style={{ borderColor: T.border, color: T.text }}
                   >
                     {CATEGORY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label>URL</Label>
-                  <Input
+                <div>
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>URL</label>
+                  <input
                     placeholder="https://..."
                     value={formUrl}
                     onChange={(e) => setFormUrl(e.target.value)}
+                    className={inputCls}
+                    style={{ borderColor: T.border, color: T.text }}
                   />
                 </div>
               </div>
-              <Button onClick={handleCreate} disabled={!formTitle.trim() || !formUrl.trim() || saving}>
+              <button
+                onClick={handleCreate}
+                disabled={!formTitle.trim() || !formUrl.trim() || saving}
+                className="h-9 px-5 text-[13px] font-semibold text-white rounded-xl disabled:opacity-50 transition-opacity hover:opacity-90"
+                style={{ background: `linear-gradient(135deg, ${T.greenDeep}, ${T.green})` }}
+              >
                 {saving ? "Saving..." : "Add Resource"}
-              </Button>
-            </CardContent>
-          </Card>
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Resource list */}
         {resources.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-lg font-medium text-slate-900">No resources yet</p>
-              <p className="text-slate-500 mt-1">Add resources that athletes can access for support.</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-3xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[16px] font-semibold mb-1" style={{ color: T.text }}>No resources yet</p>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>Add resources that athletes can access for support.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {resources.map((resource) => (
-              <Card key={resource.id}>
-                <CardContent className="py-4">
+          <div className="space-y-2">
+            {resources.map((resource) => {
+              const cat = CATEGORY_STYLE[resource.category] || CATEGORY_STYLE.other;
+              return (
+                <div key={resource.id} className="rounded-3xl p-4" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                   <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-slate-900">{resource.title}</h3>
-                        <Badge variant="outline" className={CATEGORY_BADGE[resource.category] || CATEGORY_BADGE.other}>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-[14px]" style={{ color: T.text }}>{resource.title}</h3>
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: cat.bg, color: cat.color }}
+                        >
                           {resource.category}
-                        </Badge>
+                        </span>
                       </div>
                       {resource.description && (
-                        <p className="text-sm text-slate-500 mt-1">{resource.description}</p>
+                        <p className="text-[13px] mt-1" style={{ color: T.textMuted }}>{resource.description}</p>
                       )}
                       <a
                         href={resource.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline mt-1"
+                        className="inline-flex items-center gap-1 text-[12px] mt-1 hover:underline"
+                        style={{ color: T.green }}
                       >
                         {resource.url}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:bg-red-50 shrink-0"
+                    <button
                       onClick={() => handleDelete(resource.id)}
+                      className="h-8 w-8 flex items-center justify-center rounded-xl border shrink-0 transition-colors"
+                      style={{ borderColor: "#fca5a5", color: "#dc2626", background: "#fff" }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

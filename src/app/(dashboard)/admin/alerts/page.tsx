@@ -5,16 +5,16 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle, AlertTriangle, Clock, User } from "lucide-react";
 
-const OB = {
+const T = {
   bg:        "#f8fafc",
   surface:   "#ffffff",
   raised:    "#f8fafc",
-  border:    "#e2e8f0",
+  border:    "#e8edf2",
   borderSub: "#f1f5f9",
   text:      "#0f172a",
   textSub:   "#334155",
   textMuted: "#64748b",
-  green:     "#047857",
+  green:     "#059669",
   red:       "#dc2626",
   amber:     "#d97706",
 };
@@ -89,7 +89,7 @@ export default function AdminAlertsPage() {
     return (
       <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName="...">
         <div className="flex items-center justify-center h-64">
-          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: OB.border, borderTopColor: OB.green }} />
+          <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
       </DashboardLayout>
     );
@@ -101,8 +101,8 @@ export default function AdminAlertsPage() {
 
         {/* Header */}
         <div>
-          <h1 className="text-[24px] font-bold tracking-tight" style={{ color: OB.text }}>Alert Queue</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: OB.textMuted }}>
+          <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Alert Queue</h1>
+          <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>
             {openAlerts.length} open alert{openAlerts.length !== 1 ? "s" : ""} requiring attention
           </p>
         </div>
@@ -110,28 +110,28 @@ export default function AdminAlertsPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Open",         count: openAlerts.length,         color: OB.red,   bg: "#fee2e2", icon: <AlertTriangle className="h-4 w-4" /> },
-            { label: "Acknowledged", count: acknowledgedAlerts.length, color: OB.amber, bg: "#fef3c7", icon: <Clock className="h-4 w-4" /> },
-            { label: "Resolved",     count: resolvedAlerts.length,     color: OB.green, bg: "#d1fae5", icon: <CheckCircle className="h-4 w-4" /> },
+            { label: "Open",         count: openAlerts.length,         color: T.red,   bg: "#fee2e2", icon: <AlertTriangle className="h-4 w-4" /> },
+            { label: "Acknowledged", count: acknowledgedAlerts.length, color: T.amber, bg: "#fef3c7", icon: <Clock className="h-4 w-4" /> },
+            { label: "Resolved",     count: resolvedAlerts.length,     color: T.green, bg: "#d1fae5", icon: <CheckCircle className="h-4 w-4" /> },
           ].map(item => (
-            <div key={item.label} className="rounded-2xl p-4 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+            <div key={item.label} className="rounded-2xl p-4 text-center" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
               <div className="h-8 w-8 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: item.bg, color: item.color }}>
                 {item.icon}
               </div>
               <p className="text-[28px] font-bold tabular-nums leading-none" style={{ color: item.color }}>{item.count}</p>
-              <p className="text-[11px] font-medium mt-1" style={{ color: OB.textMuted }}>{item.label}</p>
+              <p className="text-[11px] font-medium mt-1" style={{ color: T.textMuted }}>{item.label}</p>
             </div>
           ))}
         </div>
 
         {/* Alert list */}
         {alerts.length === 0 ? (
-          <div className="rounded-2xl p-14 text-center" style={{ background: OB.surface, border: `1px solid ${OB.border}` }}>
+          <div className="rounded-2xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "#d1fae5" }}>
-              <CheckCircle className="h-6 w-6" style={{ color: OB.green }} />
+              <CheckCircle className="h-6 w-6" style={{ color: T.green }} />
             </div>
-            <p className="text-[17px] font-semibold mb-1" style={{ color: OB.text }}>All clear</p>
-            <p className="text-[13px]" style={{ color: OB.textMuted }}>No alerts at this time.</p>
+            <p className="text-[17px] font-semibold mb-1" style={{ color: T.text }}>All clear</p>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>No alerts at this time.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -139,13 +139,13 @@ export default function AdminAlertsPage() {
               const isSevere  = alert.severity === "red";
               const isOpen    = alert.status === "open";
               const isResolved = alert.status === "resolved";
-              const severityColor = isSevere ? OB.red : OB.amber;
+              const severityColor = isSevere ? T.red : T.amber;
               const severityBg    = isSevere ? "#fee2e2" : "#fef3c7";
               const statusLabel   = isOpen ? "Open" : alert.status === "acknowledged" ? "Acknowledged" : "Resolved";
-              const statusColor   = isOpen ? OB.red : isResolved ? OB.green : OB.amber;
+              const statusColor   = isOpen ? T.red : isResolved ? T.green : T.amber;
 
               return (
-                <div key={alert.id} className="rounded-2xl p-4" style={{ background: OB.surface, border: `1px solid ${isOpen ? severityColor + "40" : OB.border}` }}>
+                <div key={alert.id} className="rounded-2xl p-4" style={{ background: T.surface, border: `1px solid ${isOpen ? severityColor + "40" : T.border}` }}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                       <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: severityBg }}>
@@ -153,13 +153,13 @@ export default function AdminAlertsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-[14px]" style={{ color: OB.text }}>{alert.athlete?.full_name || "Unknown Athlete"}</span>
+                          <span className="font-semibold text-[14px]" style={{ color: T.text }}>{alert.athlete?.full_name || "Unknown Athlete"}</span>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: severityBg, color: severityColor }}>
                             {alert.severity.toUpperCase()}
                           </span>
                           <span className="text-[11px] font-medium" style={{ color: statusColor }}>{statusLabel}</span>
                         </div>
-                        <p className="text-[12px] mt-1" style={{ color: OB.textMuted }}>
+                        <p className="text-[12px] mt-1" style={{ color: T.textMuted }}>
                           {alert.trigger_type === "wants_followup" ? "Requested follow-up" : "Risk score triggered"} · {getTimeAgo(alert.created_at)}
                         </p>
                         {alert.checkin && (
@@ -170,9 +170,9 @@ export default function AdminAlertsPage() {
                               { label: "Recovery",   val: alert.checkin.recovery_score },
                               { label: "Support",    val: alert.checkin.support_score },
                             ].map(({ label, val }) => (
-                              <div key={label} className="flex items-center gap-1 px-2 py-0.5 rounded-lg" style={{ background: OB.raised }}>
-                                <span className="text-[10px] font-medium" style={{ color: OB.textMuted }}>{label}</span>
-                                <span className="text-[11px] font-bold tabular-nums" style={{ color: val !== null && val > 7 ? OB.red : OB.textSub }}>{val ?? "—"}</span>
+                              <div key={label} className="flex items-center gap-1 px-2 py-0.5 rounded-lg" style={{ background: T.raised }}>
+                                <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</span>
+                                <span className="text-[11px] font-bold tabular-nums" style={{ color: val !== null && val > 7 ? T.red : T.textSub }}>{val ?? "—"}</span>
                               </div>
                             ))}
                           </div>
@@ -185,7 +185,7 @@ export default function AdminAlertsPage() {
                         <button
                           onClick={() => handleStatusChange(alert.id, "acknowledged")}
                           className="h-8 px-3 text-[12px] font-semibold rounded-lg border transition-colors"
-                          style={{ borderColor: OB.border, color: OB.textSub, background: OB.raised }}
+                          style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
                         >
                           Acknowledge
                         </button>
@@ -194,7 +194,7 @@ export default function AdminAlertsPage() {
                         <button
                           onClick={() => handleStatusChange(alert.id, "resolved")}
                           className="h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90"
-                          style={{ background: `linear-gradient(135deg,#065f46,${OB.green})` }}
+                          style={{ background: `linear-gradient(135deg,#065f46,${T.green})` }}
                         >
                           Resolve
                         </button>
