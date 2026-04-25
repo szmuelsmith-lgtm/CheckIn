@@ -115,6 +115,7 @@ export default function LandingPage() {
             <a href="#problem" className="hover:text-slate-800 transition-colors">The Problem</a>
             <a href="#solution" className="hover:text-slate-800 transition-colors">How It Works</a>
             <a href="#roles" className="hover:text-slate-800 transition-colors">For Your Program</a>
+            <Link href="/research" className="hover:text-slate-800 transition-colors">Research</Link>
             <a href="#compliance" className="hover:text-slate-800 transition-colors">Compliance</a>
             <a href="#demo" className="hover:text-slate-800 transition-colors">Demo</a>
           </nav>
@@ -854,6 +855,24 @@ export default function LandingPage() {
             <p className="text-white text-[18px] md:text-[22px] font-semibold leading-relaxed max-w-3xl mx-auto">
               &ldquo;Institutions should implement ongoing mental health screening — not limited to pre-participation physicals — with structured referral pathways and documented follow-up for all flagged student-athletes.&rdquo;
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Research CTA ── */}
+      <section className="py-16 bg-white border-b border-slate-100">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-8">
+            <div className="flex-1">
+              <p className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase mb-3">40+ Peer-Reviewed Sources</p>
+              <h3 className="text-2xl font-bold text-white tracking-tight mb-3">The full evidence base, documented.</h3>
+              <p className="text-slate-300 text-[15px] leading-relaxed max-w-xl">
+                Epidemiology, barriers to help-seeking, sport-specific risk profiles, intervention efficacy, institutional obligations, and the economic case — all cited to primary sources. Built for the athletic directors, compliance officers, and institutional reviewers who need more than a stat card.
+              </p>
+            </div>
+            <Link href="/research" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[15px] px-7 py-3.5 rounded-xl transition-colors shadow-lg shrink-0 whitespace-nowrap">
+              Read the Research <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
