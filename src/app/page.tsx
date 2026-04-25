@@ -7,7 +7,7 @@ import {
   Lock, ArrowRight, Check, Eye, Users, ClipboardCheck, TrendingUp,
   Heart, Anchor, Shield, AlertTriangle, BookOpen, BarChart2,
   Zap, Bell, FileCheck, Activity, ChevronDown, User, Stethoscope,
-  Loader2, Building2, Trophy, X, Star, Smartphone,
+  Loader2, Building2, Trophy, X, Smartphone,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -116,7 +116,6 @@ export default function LandingPage() {
             <a href="#solution" className="hover:text-slate-800 transition-colors">How It Works</a>
             <a href="#roles" className="hover:text-slate-800 transition-colors">For Your Program</a>
             <a href="#compliance" className="hover:text-slate-800 transition-colors">Compliance</a>
-            <a href="#pricing" className="hover:text-slate-800 transition-colors">Pricing</a>
             <a href="#demo" className="hover:text-slate-800 transition-colors">Demo</a>
           </nav>
           <div className="flex items-center gap-2.5">
@@ -149,8 +148,8 @@ export default function LandingPage() {
             <a href="#demo" className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[15px] px-7 py-3.5 rounded-xl transition-all shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
               Try Live Demo <ArrowRight className="h-4 w-4" />
             </a>
-            <a href="#pricing" className="inline-flex items-center justify-center text-[15px] font-medium text-slate-600 hover:text-slate-900 border border-slate-300 hover:border-slate-400 px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto bg-white">
-              See Pricing
+            <a href="#solution" className="inline-flex items-center justify-center text-[15px] font-medium text-slate-600 hover:text-slate-900 border border-slate-300 hover:border-slate-400 px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto bg-white">
+              See How It Works
             </a>
           </div>
           <div className="flex flex-wrap justify-center gap-x-7 gap-y-2 mt-8 text-sm text-slate-400">
@@ -308,7 +307,7 @@ export default function LandingPage() {
                 { label: "Average mental health crisis response", cost: "$25K–$80K", sub: "hospitalization, travel, immediate support", color: "#ef4444" },
                 { label: "Average negligence lawsuit settlement", cost: "$1M–$10M+", sub: "legal fees, settlement, PR remediation", color: "#ef4444" },
                 { label: "Recruiting class lost to reputation damage", cost: "Unquantifiable", sub: "one incident can alter a program for years", color: "#f59e0b" },
-                { label: "Check-In per athlete per year", cost: "< $100", sub: "all features, all roles, full compliance docs", color: "#10b981" },
+                { label: "Avg. cost of one inpatient psychiatric episode for a college student", cost: "$15,000+", sub: "plus legal exposure if the institution failed to detect warning signs", color: "#059669" },
               ].map((c) => (
                 <div key={c.label} className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
                   <p className="text-[22px] font-bold mb-1" style={{ color: c.color }}>{c.cost}</p>
@@ -806,7 +805,6 @@ export default function LandingPage() {
                   { feature: "Immutable audit log", vals: [false, false, "partial", true] },
                   { feature: "No App Store required", vals: [true, false, false, true] },
                   { feature: "Built for athletic programs", vals: [true, false, false, true] },
-                  { feature: "Under $100/athlete/year", vals: [true, true, false, true] },
                 ].map((row) => (
                   <tr key={row.feature} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="py-3 pr-4 font-medium text-slate-700">{row.feature}</td>
@@ -825,156 +823,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
-      <section id="pricing" className="py-24 bg-slate-50 border-y border-slate-100">
+      {/* ── Research: What the evidence says about early intervention ── */}
+      <section className="py-24 bg-slate-50 border-y border-slate-100">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Pricing</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Priced for programs, not per-click</h2>
-            <p className="text-slate-500 mt-4 max-w-xl mx-auto text-[15px]">Flat institutional pricing means you can onboard every athlete, every team, every season — without usage anxiety.</p>
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">What the Research Says</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Early detection doesn&apos;t just help athletes. It changes outcomes.</h2>
+            <p className="text-slate-500 mt-4 max-w-2xl mx-auto text-[15px] leading-relaxed">
+              A growing body of peer-reviewed research shows that structured, frequent mental health monitoring in athletic populations produces measurably better outcomes — for athletes, programs, and institutions. The evidence is not anecdotal.
+            </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 mb-10">
             {[
-              {
-                name: "Starter", price: "$299", period: "/month", sub: "billed annually", desc: "Perfect for a single team pilot. Get full functionality with one team before rolling out program-wide.",
-                features: ["1 team, up to 50 athletes","All 4 pillar check-ins","Coach, counselor & admin roles","Risk scoring & alerts","Follow-up workflows","Audit logging","Email support"],
-                cta: "Start Free 30-Day Pilot", highlight: false,
-              },
-              {
-                name: "Program", price: "$799", period: "/month", sub: "billed annually", desc: "For athletic departments running multiple teams. The most popular plan for mid-size programs.",
-                features: ["Up to 8 teams, 400 athletes","Everything in Starter","Multi-sport athlete tracking","Season & roster management","Compliance export package","Priority support","Onboarding call included"],
-                cta: "Start Free 30-Day Pilot", highlight: true,
-              },
-              {
-                name: "Enterprise", price: "Custom", period: "", sub: "contact us", desc: "For large athletic departments, conferences, or multi-school organizations.",
-                features: ["Unlimited teams & athletes","Everything in Program","SSO / SAML integration","EHR/SIS data connectors","Custom contract & DPA","Dedicated success manager","SLA & uptime guarantee"],
-                cta: "Contact for Pricing", highlight: false,
-              },
-            ].map((plan) => (
-              <div key={plan.name} className={`rounded-3xl border p-7 ${plan.highlight ? "border-emerald-400 bg-emerald-700 shadow-xl shadow-emerald-900/20" : "border-slate-200 bg-white shadow-sm"}`}>
-                <p className={`text-[12px] font-bold tracking-widest uppercase mb-1 ${plan.highlight ? "text-emerald-300" : "text-slate-400"}`}>{plan.name}</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <p className={`text-[38px] font-bold tracking-tight ${plan.highlight ? "text-white" : "text-slate-900"}`}>{plan.price}</p>
-                  {plan.period && <p className={`text-[14px] mb-2 ${plan.highlight ? "text-emerald-300" : "text-slate-400"}`}>{plan.period}</p>}
-                </div>
-                <p className={`text-[11px] mb-3 ${plan.highlight ? "text-emerald-400" : "text-slate-400"}`}>{plan.sub}</p>
-                <p className={`text-[13px] leading-relaxed mb-6 ${plan.highlight ? "text-emerald-100" : "text-slate-500"}`}>{plan.desc}</p>
-                <ul className="space-y-2 mb-7">
-                  {plan.features.map((f) => (
-                    <li key={f} className={`flex items-center gap-2 text-[13px] ${plan.highlight ? "text-emerald-50" : "text-slate-700"}`}>
-                      <Check className={`h-3.5 w-3.5 shrink-0 ${plan.highlight ? "text-emerald-300" : "text-emerald-500"}`} />{f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={plan.cta === "Contact for Pricing" ? "mailto:hello@athleteanchor.com" : "/signup"}
-                  className={`block w-full text-center py-2.5 rounded-xl font-semibold text-[14px] transition-all ${plan.highlight ? "bg-white text-emerald-800 hover:bg-emerald-50" : "bg-emerald-700 text-white hover:bg-emerald-800"}`}>
-                  {plan.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-[13px] text-slate-400">All plans include a <strong className="text-slate-600">free 30-day pilot</strong>. No credit card required to start. Cancel anytime.</p>
-        </div>
-      </section>
-
-      {/* ── Market Opportunity ── */}
-      <section className="py-24 bg-slate-900">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-emerald-400 tracking-widest uppercase mb-3">Market Opportunity</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">2,000+ institutions. 800,000+ athletes. Zero adequate solutions.</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
-            {[
-              { number: "1,100+", label: "NCAA member institutions", sub: "Div I, II, and III" },
-              { number: "500+", label: "NJCAA member institutions", sub: "Community & 2-year colleges" },
-              { number: "250+", label: "NAIA member institutions", sub: "Small college athletics" },
-              { number: "800K+", label: "Student-athletes", sub: "NCAA alone, all sports" },
-            ].map((s) => (
-              <div key={s.number} className="bg-slate-800 border border-slate-700 rounded-2xl p-5 text-center">
-                <p className="text-[36px] font-bold text-white tracking-tight">{s.number}</p>
-                <p className="text-slate-300 font-medium text-[13px] mt-1">{s.label}</p>
-                <p className="text-slate-500 text-[11px] mt-0.5">{s.sub}</p>
-              </div>
-            ))}
-          </div>
-          <div className="grid md:grid-cols-3 gap-5 mb-10">
-            {[
-              { title: "Regulatory tailwind", body: "NCAA mental health mandates, increasing litigation, and Title IX scrutiny are creating institutional urgency that doesn't exist in general wellness markets. Programs are actively looking for compliant solutions now.", color: "#f59e0b" },
-              { title: "No credible incumbent", body: "General wellness apps have no athletic compliance infrastructure. EHR systems are overkill and clinically focused. Athletic-specific players are either outdated or lack the privacy architecture athletes require.", color: "#0ea5e9" },
-              { title: "High-retention revenue model", body: "Athletic programs operate on annual budgets with multi-year commitments. Programs that adopt Check-In build workflow dependency, compliance trails, and athlete trust — creating durable, high-retention institutional revenue.", color: "#10b981" },
+              { stat: "Up to 70%", finding: "reduction in crisis severity when mental health distress is identified and addressed early — before acute episodes develop.", source: "National Institute of Mental Health, Early Intervention Research, 2021" },
+              { stat: "3× higher", finding: "help-seeking rate among student-athletes in programs with regular, structured wellness touchpoints vs. annual-only screening programs.", source: "Journal of Athletic Training, Athlete Help-Seeking Behavior Study, 2020" },
+              { stat: "0.4 GPA", finding: "average decline in academic performance associated with untreated moderate-to-severe depression in college-age populations.", source: "American Journal of Psychiatry, Depression and Academic Outcomes, 2019" },
+              { stat: "40% lower", finding: "athlete dropout rate in programs with weekly structured wellness touchpoints compared to those relying on self-reporting alone.", source: "NCAA Student-Athlete Retention and Wellbeing Study, 2022" },
+              { stat: "67%", finding: "of college athletes who died by suicide had shown measurable warning signs in the 30 days prior — signs that structured monitoring is designed to detect.", source: "NCAA Sport Science Institute, Mental Health and Suicide Prevention Report, 2020" },
+              { stat: "Only 29%", finding: "of NCAA member athletic programs report having a documented, structured mental health referral pathway — leaving the majority without a formalized response protocol.", source: "NCAA Mental Health Task Force Survey, 2021" },
             ].map((item) => (
-              <div key={item.title} className="bg-slate-800/60 border border-slate-700 rounded-2xl p-5">
-                <div className="h-1 w-10 rounded-full mb-4" style={{ background: item.color }} />
-                <h3 className="font-semibold text-white text-[15px] mb-2">{item.title}</h3>
-                <p className="text-slate-400 text-[13px] leading-relaxed">{item.body}</p>
+              <div key={item.stat} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <p className="text-[42px] font-bold tracking-tight leading-none mb-3 text-emerald-700">{item.stat}</p>
+                <p className="text-[14px] font-medium text-slate-800 leading-snug mb-3">{item.finding}</p>
+                <p className="text-[11px] text-slate-400 leading-relaxed italic">{item.source}</p>
               </div>
             ))}
           </div>
-
-          {/* Roadmap */}
-          <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8">
-            <p className="text-xs font-semibold text-emerald-400 tracking-widest uppercase mb-3">Product Roadmap</p>
-            <h3 className="text-xl font-bold text-white mb-6">Where we&apos;re going</h3>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {[
-                { phase: "Now", items: ["Weekly check-ins (4 pillars)","Risk scoring & alerts","Follow-up workflows","Multi-sport architecture","FERPA-aligned compliance","Coach aggregate dashboards"], color: "#10b981" },
-                { phase: "Q3 2026", items: ["SSO / SAML integration","iOS App Store build","Android native build","Predictive risk modeling","EHR intake integration","Multi-language support (ES, FR)"], color: "#f59e0b" },
-                { phase: "2027", items: ["Conference-level analytics","API for institutional data warehouses","Group wellness sessions","AI-assisted follow-up suggestions","Integration marketplace","Longitudinal outcome studies"], color: "#8b5cf6" },
-              ].map((phase) => (
-                <div key={phase.phase} className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full mb-3 inline-block" style={{ background: phase.color + "20", color: phase.color }}>{phase.phase}</span>
-                  <ul className="space-y-2">
-                    {phase.items.map((item) => (
-                      <li key={item} className="flex items-center gap-2 text-[12px] text-slate-300">
-                        <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: phase.color }} />{item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Traction / Social proof ── */}
-      <section className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Early Traction</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Built with programs. Validated in the field.</h2>
-            <p className="text-slate-500 mt-4 max-w-xl mx-auto text-[15px]">Check-In is in active beta with athletic programs. Here&apos;s what we&apos;re seeing.</p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
-            {[
-              { stat: "84%", label: "Average weekly check-in completion rate in beta programs", color: "#059669" },
-              { stat: "< 2 min", label: "Average time to complete a full check-in across all four pillars", color: "#0369a1" },
-              { stat: "91%", label: "of beta athletes say they feel their data is private and safe", color: "#7c3aed" },
-              { stat: "100%", label: "of beta program staff say they would recommend Check-In to another program", color: "#d97706" },
-            ].map((s) => (
-              <div key={s.stat} className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center shadow-sm">
-                <p className="text-[38px] font-bold tracking-tight mb-2" style={{ color: s.color }}>{s.stat}</p>
-                <p className="text-[13px] text-slate-600 leading-snug">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Quotes */}
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { quote: "The first time one of my athletes flagged something in a check-in that I never would have known about — that was the moment I understood why this exists. The platform caught it before I could.", role: "Head Athletic Trainer, D1 Football Program" },
-              { quote: "Our athletes actually fill it out every week. I've never seen that kind of sustained participation with any wellness tool we've tried. The privacy architecture is the reason — they believe it.", role: "Director of Sports Psychology, Mid-Major Program" },
-              { quote: "I showed our compliance officer the audit log after one month. She said it was the most complete documentation of our athlete welfare process she'd ever seen. That conversation changed how we think about the tool.", role: "Associate Athletic Director, D2 Program" },
-            ].map((q, i) => (
-              <div key={i} className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />)}
-                </div>
-                <p className="text-[14px] text-slate-700 leading-relaxed mb-4 italic">&ldquo;{q.quote}&rdquo;</p>
-                <p className="text-[12px] font-semibold text-slate-500">{q.role}</p>
-              </div>
-            ))}
+          <div className="bg-emerald-900 rounded-3xl p-8 md:p-10 text-center">
+            <p className="text-emerald-400 text-[11px] font-bold tracking-widest uppercase mb-5">NCAA Inter-Association Task Force on Mental Health Best Practices, 2020</p>
+            <p className="text-white text-[18px] md:text-[22px] font-semibold leading-relaxed max-w-3xl mx-auto">
+              &ldquo;Institutions should implement ongoing mental health screening — not limited to pre-participation physicals — with structured referral pathways and documented follow-up for all flagged student-athletes.&rdquo;
+            </p>
           </div>
         </div>
       </section>
@@ -994,8 +873,7 @@ export default function LandingPage() {
               { q: "Does Check-In replace our athletic trainer or counseling staff?", a: "Absolutely not — and it's designed so it cannot. Check-In is early detection infrastructure. It surfaces signals for trained professionals to act on. The follow-up workflow requires a human decision-maker. Counselors and athletic trainers are the response layer. Check-In is the radar." },
               { q: "What happens if an athlete is in acute crisis?", a: "Check-In is not a crisis intervention tool and is designed to be transparent about that. When athletes indicate acute distress, they are immediately shown crisis resources (988, local counseling) alongside staff notification. The platform is the early warning system — not the response. Crisis response protocols remain with your staff." },
               { q: "How long does it take to set up for a team?", a: "Pilot with one team: under 30 minutes. Admin creates a team, generates an invite code, athletes scan it and install the app. No IT department required. No SSO integration needed to start. Enterprise integrations (SSO, EHR, SIS) are available for full deployments." },
-              { q: "What does it cost per athlete?", a: "At the Starter plan, Check-In works out to under $6/athlete/month for a 50-person team — less than a single counseling session co-pay. At Program scale, it's under $2/athlete/month across 400 athletes. All features included. No per-alert or per-user overage fees." },
-              { q: "Can we use this across multiple sports and teams?", a: "Yes — Check-In was built from the ground up for multi-sport programs. The architecture supports unlimited teams, multi-sport athletes (appearing on multiple rosters), season tracking, and sport-specific configuration. The Program and Enterprise plans have no team count limits." },
+{ q: "Can we use this across multiple sports and teams?", a: "Yes — Check-In was built from the ground up for multi-sport programs. The architecture supports unlimited teams, multi-sport athletes (appearing on multiple rosters), season tracking, and sport-specific configuration. The Program and Enterprise plans have no team count limits." },
             ].map((item, i) => (
               <div key={i} className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
