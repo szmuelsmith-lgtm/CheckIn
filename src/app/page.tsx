@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Lock, ArrowRight, Check, Eye, Users, ClipboardCheck, TrendingUp,
-  Heart, Anchor, Shield, AlertTriangle, BookOpen, BarChart2,
-  Zap, Bell, FileCheck, Activity, ChevronDown, User, Stethoscope,
+  Heart, Anchor, Shield, BarChart2,
+  Zap, Bell, Activity, ChevronDown, User, Stethoscope,
   Building2, Trophy, X, Smartphone,
 } from "lucide-react";
 
