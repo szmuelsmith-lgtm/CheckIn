@@ -7,43 +7,12 @@ import {
   Lock, ArrowRight, Check, Eye, Users, ClipboardCheck, TrendingUp,
   Heart, Anchor, Shield, AlertTriangle, BookOpen, BarChart2,
   Zap, Bell, FileCheck, Activity, ChevronDown, User, Stethoscope,
-  Loader2, Building2, Trophy, X, Smartphone,
+  Building2, Trophy, X, Smartphone,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-
-const DEMO_PASSWORD = "checkin-dev-2024";
-const DEMO_ROLES = [
-  {
-    id: "athlete", label: "Athlete", email: "checkin.athlete.test@mailinator.com",
-    icon: <User className="h-5 w-5" />, redirect: "/athlete/dashboard",
-    color: "#059669", bg: "#f0fdf4", border: "#86efac",
-    description: "Complete a check-in, view your wellbeing trends, manage privacy settings.",
-  },
-  {
-    id: "coach", label: "Coach", email: "checkin.coach.test@mailinator.com",
-    icon: <Trophy className="h-5 w-5" />, redirect: "/coach/dashboard",
-    color: "#2563eb", bg: "#eff6ff", border: "#93c5fd",
-    description: "See team completion rates and aggregate risk status — zero individual details.",
-  },
-  {
-    id: "psychiatrist", label: "Psychiatrist / Counselor", email: "checkin.psych.test@mailinator.com",
-    icon: <Stethoscope className="h-5 w-5" />, redirect: "/psychiatrist/dashboard",
-    color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd",
-    description: "Review athlete alerts, follow-up workflows, and consented wellness data.",
-  },
-  {
-    id: "admin", label: "Athletic Administrator", email: "checkin.admin.test@mailinator.com",
-    icon: <Building2 className="h-5 w-5" />, redirect: "/admin/dashboard",
-    color: "#0369a1", bg: "#f0f9ff", border: "#7dd3fc",
-    description: "Manage teams, audit logs, compliance reporting, and org-wide analytics.",
-  },
-] as const;
 
 export default function LandingPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<string | null>(null);
-  const [demoError, setDemoError] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
 
@@ -56,42 +25,6 @@ export default function LandingPage() {
     if (isNative) { router.replace("/login"); return; }
     setReady(true);
   }, [router]);
-
-  const handleDemoLogin = async (role: typeof DEMO_ROLES[number]) => {
-    setDemoLoading(role.id); setDemoError("");
-    const supabase = createClient();
-    let userId: string | null = null;
-    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email: role.email, password: DEMO_PASSWORD });
-    if (!signInErr && signInData.session) {
-      userId = signInData.session.user.id;
-    } else {
-      const msg = signInErr?.message?.toLowerCase() ?? "";
-      if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
-        setDemoError(`Demo account needs confirmation in Supabase Dashboard.`);
-        setDemoLoading(null); return;
-      }
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: role.email, password: DEMO_PASSWORD,
-        options: { data: { full_name: role.label + " Demo", role: role.id } },
-      });
-      if (signUpErr || !signUpData.session) {
-        setDemoError(`Demo unavailable right now. Try again in a moment.`);
-        setDemoLoading(null); return;
-      }
-      userId = signUpData.session.user.id;
-    }
-    if (userId) {
-      const dbRole = role.id;
-      const { data: existing } = await supabase.from("profiles").select("id, role").eq("auth_user_id", userId).single();
-      if (!existing) {
-        await supabase.from("profiles").insert({ auth_user_id: userId, full_name: role.label + " Demo", email: role.email, role: dbRole });
-      } else if (existing.role !== dbRole) {
-        await supabase.from("profiles").update({ role: dbRole }).eq("auth_user_id", userId);
-      }
-      supabase.auth.updateUser({ data: { role: dbRole } }).catch(() => {});
-    }
-    router.push(role.redirect);
-  };
 
   if (!ready) return null;
 
@@ -121,9 +54,9 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-2.5">
             <Link href="/login" className="hidden sm:block text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5">Sign in</Link>
-            <a href="#demo" className="inline-flex items-center gap-1.5 text-sm font-semibold bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg transition-colors">
+            <Link href="/demo" className="inline-flex items-center gap-1.5 text-sm font-semibold bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg transition-colors">
               Try Demo <ArrowRight className="h-3.5 w-3.5" />
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -909,42 +842,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Live Demo ── */}
+      {/* ── Live Demo CTA ── */}
       <section id="demo" className="py-24 bg-white border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-4">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Live Demo</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Experience every role in seconds</h2>
-          </div>
-          <p className="text-slate-500 text-[15px] leading-relaxed max-w-2xl mx-auto text-center mb-12">
-            Live accounts connected to a real database with realistic sample data. Sign in as any role to see exactly what that stakeholder sees — on mobile or desktop.
+        <div className="max-w-3xl mx-auto px-5 md:px-8 text-center">
+          <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Live Demo</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-4">
+            See the app in action
+          </h2>
+          <p className="text-slate-500 text-[15px] leading-relaxed max-w-xl mx-auto mb-10">
+            Four roles. Four completely different views. Live accounts connected to a real database with synthetic sample data — no setup required, instant access on any device.
           </p>
-          <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto mb-8">
-            {DEMO_ROLES.map((role) => {
-              const isLoading = demoLoading === role.id;
-              return (
-                <button key={role.id} onClick={() => handleDemoLogin(role)} disabled={demoLoading !== null}
-                  className="flex items-start gap-4 p-5 rounded-2xl text-left transition-all disabled:opacity-60 hover:shadow-md active:scale-[0.99] border-2"
-                  style={{ background: role.bg, borderColor: role.border }}>
-                  <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: role.color + "20", color: role.color }}>
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : role.icon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="font-bold text-[15px]" style={{ color: role.color }}>{isLoading ? "Signing in…" : role.label}</p>
-                      {!isLoading && <ArrowRight className="h-4 w-4 shrink-0" style={{ color: role.color }} />}
-                    </div>
-                    <p className="text-[12px] text-slate-500 leading-relaxed">{role.description}</p>
-                    <p className="text-[10px] font-mono mt-2" style={{ color: role.color + "99" }}>{role.email}</p>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mb-6">
+            <Link href="/demo" className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[15px] px-8 py-3.5 rounded-xl transition-all shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+              Open the Live Demo <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/signup" className="inline-flex items-center justify-center text-[15px] font-medium text-slate-600 hover:text-slate-900 border border-slate-300 hover:border-slate-400 px-8 py-3.5 rounded-xl transition-colors w-full sm:w-auto bg-white">
+              Start Free Pilot
+            </Link>
           </div>
-          {demoError && (
-            <p className="text-center text-[13px] text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 max-w-md mx-auto">{demoError}</p>
-          )}
-          <p className="text-center text-[12px] text-slate-400 mt-6">Demo accounts contain realistic but entirely synthetic data. No real athlete information is ever used.</p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[13px] text-slate-400">
+            {["Athlete", "Coach", "Counselor", "Administrator"].map((role) => (
+              <span key={role} className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> {role} view
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -958,9 +880,9 @@ export default function LandingPage() {
             <Link href="/signup" className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold text-[15px] px-8 py-3.5 rounded-xl transition-colors shadow-lg w-full sm:w-auto justify-center">
               Start Free Pilot <ArrowRight className="h-4 w-4" />
             </Link>
-            <a href="#demo" className="inline-flex items-center justify-center text-[15px] font-medium text-emerald-200 hover:text-white border border-emerald-700 hover:border-emerald-500 px-8 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
+            <Link href="/demo" className="inline-flex items-center justify-center text-[15px] font-medium text-emerald-200 hover:text-white border border-emerald-700 hover:border-emerald-500 px-8 py-3.5 rounded-xl transition-colors w-full sm:w-auto">
               See Live Demo First
-            </a>
+            </Link>
           </div>
         </div>
       </section>
