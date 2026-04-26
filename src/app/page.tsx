@@ -46,10 +46,10 @@ export default function LandingPage() {
           </Link>
           <nav className="hidden lg:flex items-center gap-6 text-[13px] text-slate-500">
             <a href="#problem" className="hover:text-slate-800 transition-colors">The Problem</a>
-            <a href="#solution" className="hover:text-slate-800 transition-colors">How It Works</a>
-            <a href="#roles" className="hover:text-slate-800 transition-colors">For Your Program</a>
-            <Link href="/research" className="hover:text-slate-800 transition-colors">Research</Link>
-            <a href="#compliance" className="hover:text-slate-800 transition-colors">Compliance</a>
+            <a href="#barriers" className="hover:text-slate-800 transition-colors">Why It Goes Undetected</a>
+            <a href="#sports" className="hover:text-slate-800 transition-colors">By Sport</a>
+            <Link href="/research" className="hover:text-slate-800 transition-colors">Full Research</Link>
+            <a href="#solution" className="hover:text-slate-800 transition-colors">The Platform</a>
             <a href="#demo" className="hover:text-slate-800 transition-colors">Demo</a>
           </nav>
           <div className="flex items-center gap-2.5">
@@ -63,140 +63,108 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative pt-32 pb-20 md:pt-44 md:pb-28 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_60%_-10%,rgba(16,185,129,0.07),transparent)]" />
-        <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto px-5 md:px-8 text-center">
-          <div className="inline-flex items-center gap-2 border border-emerald-200 bg-emerald-50/80 rounded-full px-3.5 py-1.5 text-xs font-semibold text-emerald-700 mb-8 tracking-wide">
-            <Shield className="h-3 w-3" /> NCAA-Mandated Athlete Mental Health Monitoring — Built Right
-          </div>
-          <h1 className="text-5xl md:text-[66px] lg:text-[74px] font-bold text-slate-900 tracking-[-0.03em] leading-[1.04] mb-6">
-            35% of college athletes
-            <br className="hidden md:block" />{" "}
-            <span className="text-emerald-700">are struggling silently.</span>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_60%_-10%,rgba(16,185,129,0.06),transparent)]" />
+        <div className="relative max-w-4xl mx-auto px-5 md:px-8">
+          <p className="text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-6">NCAA · IOC · NAMI · ACHA Research</p>
+          <h1 className="text-5xl md:text-[62px] font-bold text-slate-900 tracking-[-0.03em] leading-[1.05] mb-7">
+            35% of college athletes<br className="hidden md:block" /> meet diagnostic criteria<br className="hidden md:block" />
+            <span className="text-emerald-700">for anxiety or depression.</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-500 leading-relaxed max-w-2xl mx-auto mb-4">
-            Annual screenings catch them once a year. Weekly check-ins catch them before it&apos;s too late.
-            Check-In gives every athletic program the infrastructure to know, act, and document — before a crisis becomes a headline.
+          <p className="text-lg text-slate-500 leading-relaxed max-w-2xl mb-4">
+            Only 10% of those athletes ever seek help. The rest manage alone — or don&apos;t manage at all. This page documents what the peer-reviewed literature and NCAA survey data say about how that happens, and what changes when programs intervene early.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8">
-            <a href="#demo" className="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-[15px] px-7 py-3.5 rounded-xl transition-all shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
-              Try Live Demo <ArrowRight className="h-4 w-4" />
-            </a>
-            <a href="#solution" className="inline-flex items-center justify-center text-[15px] font-medium text-slate-600 hover:text-slate-900 border border-slate-300 hover:border-slate-400 px-7 py-3.5 rounded-xl transition-colors w-full sm:w-auto bg-white">
-              See How It Works
-            </a>
-          </div>
-          <div className="flex flex-wrap justify-center gap-x-7 gap-y-2 mt-8 text-sm text-slate-400">
-            {["2-minute weekly check-ins","FERPA & NCAA compliant","Athlete-controlled privacy","Free 30-day pilot"].map((item) => (
-              <span key={item} className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />{item}
-              </span>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2 text-[13px] text-slate-400">
+            {["IOC Consensus Statement, 2019","NCAA Well-Being Study, 2021","NAMI, 2022","Journal of Athletic Training"].map((s) => (
+              <span key={s} className="italic">{s}</span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Trust bar ── */}
-      <div className="bg-slate-900 py-4 border-y border-slate-800">
-        <div className="max-w-5xl mx-auto px-5 flex flex-wrap justify-center gap-x-10 gap-y-2 text-[12px] font-semibold text-slate-400 tracking-widest uppercase">
-          {["FERPA-Aligned","NCAA Best Practices","SOC 2 Ready","AES-256 Encrypted","Immutable Audit Logs","HIPAA-Inspired Safeguards"].map((t) => (
-            <span key={t}>{t}</span>
+      {/* ── Anchor stats bar ── */}
+      <div className="bg-slate-900 py-5 border-y border-slate-800">
+        <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x md:divide-slate-700">
+          {[
+            { stat: "35%", label: "meet criteria for anxiety or depression", src: "IOC, 2019" },
+            { stat: "10%", label: "of those ever seek professional help", src: "NCAA, 2021" },
+            { stat: "1×/year", label: "formal mental health screening at most programs", src: "NCAA, 2016" },
+            { stat: "11 years", label: "average delay between symptom onset and treatment", src: "NAMI, 2022" },
+          ].map((item) => (
+            <div key={item.stat} className="md:px-8 text-center md:text-left">
+              <p className="text-3xl font-bold text-white">{item.stat}</p>
+              <p className="text-[12px] text-slate-400 mt-1 leading-snug">{item.label}</p>
+              <p className="text-[10px] text-slate-600 mt-1 italic">{item.src}</p>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* ── By The Numbers ── */}
-      <section id="problem" className="py-20 bg-slate-50 border-b border-slate-100">
+      {/* ── Section 1: The Prevalence Problem ── */}
+      <section id="problem" className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-rose-600 tracking-widest uppercase mb-3">The Data</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-              The mental health crisis in college athletics is documented. And largely undetected.
+          <div className="max-w-3xl mb-14">
+            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">Part I — Prevalence</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-5">
+              Athletes are not a mentally resilient population. The data says otherwise.
             </h2>
-            <p className="text-slate-500 mt-4 max-w-2xl mx-auto text-[15px] leading-relaxed">
-              These are not projections. These are peer-reviewed findings and NCAA survey data that athletic programs across the country are already sitting with.
+            <p className="text-[16px] text-slate-500 leading-relaxed mb-4">
+              The dominant cultural narrative in competitive sport — that athletic participation builds mental toughness and confers psychological protection — is not supported by the research literature. The International Olympic Committee&apos;s 2019 Consensus Statement on Mental Health in Elite Athletes, the most comprehensive cross-sport review to date, found that the prevalence of mental health symptoms and diagnosable disorders in elite and collegiate athletes is <em>comparable to or higher than</em> that of the general population.
+            </p>
+            <p className="text-[16px] text-slate-500 leading-relaxed">
+              What distinguishes athletes is not lower prevalence — it is the presence of sport-specific stressors with no analogue in the general student body, combined with structural and cultural barriers that make disclosure significantly less likely.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+
+          {/* Big stat grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
             {[
-              { stat: "35%", label: "of elite athletes meet diagnostic criteria for anxiety or depression", source: "IOC Mental Health in Elite Athletes Consensus Statement, 2019", color: "#dc2626" },
-              { stat: "~10%", label: "of student-athletes who struggle actually seek help from a mental health professional", source: "NCAA Student-Athlete Well-Being Study, 2021", color: "#d97706" },
-              { stat: "1 in 3", label: "college athletes report depression significant enough to affect academic or athletic performance", source: "NCAA Mental Health Task Force, 2020", color: "#dc2626" },
-              { stat: "11 years", label: "average gap between mental health symptom onset and first treatment in college-age populations", source: "National Alliance on Mental Illness (NAMI), 2022", color: "#7c3aed" },
-              { stat: "2nd", label: "leading cause of death among college students is suicide — ahead of accidents at some institutions", source: "CDC / American College Health Association", color: "#dc2626" },
-              { stat: "1×/year", label: "is how often most athletic programs formally screen for mental health. Once. Per. Year.", source: "NCAA Inter-Association Consensus Document, 2016", color: "#0369a1" },
+              { stat: "35%", label: "of elite athletes meet diagnostic criteria for anxiety or depression at any given time", source: "Reardon et al., IOC Consensus Statement, BJSM, 2019", color: "#dc2626" },
+              { stat: "34%", label: "of NCAA student-athletes reported depression significant enough to affect daily functioning in the prior 12 months", source: "NCAA Student-Athlete Well-Being Study, 2021", color: "#dc2626" },
+              { stat: "30%", label: "reported overwhelming anxiety in the prior 12 months — higher than matched general student population rates in ACHA data", source: "NCAA / ACHA Comparison, 2021", color: "#d97706" },
+              { stat: "25–33%", label: "experience clinically significant anxiety symptoms during the competitive season, with rates consistently higher for female athletes", source: "Wolanin et al., Clinical Journal of Sport Medicine, 2016", color: "#d97706" },
+              { stat: "15%", label: "reported a mental health crisis in the prior 12 months, including suicidal ideation, self-harm, or eating disorder", source: "NCAA Student-Athlete Well-Being Study, 2021", color: "#dc2626" },
+              { stat: "21%", label: "of collegiate athletes report depressive symptoms meeting clinical evaluation thresholds — consistent across multiple independent survey cycles", source: "Yang et al., Journal of Athletic Training, 2007", color: "#d97706" },
+              { stat: "8%", label: "of male college athletes and 13% of female college athletes reported seriously considering suicide in the prior year", source: "American College Health Association, NCHA III, 2021", color: "#dc2626" },
+              { stat: "2nd", label: "leading cause of death among college students is suicide — more common than homicide, second only to accidents", source: "CDC / ACHA data, 2020–2022", color: "#dc2626" },
+              { stat: "67%", label: "of college athletes who died by suicide had exhibited measurable warning signs in the 30 days prior, per NCAA post-incident analysis", source: "NCAA Sport Science Institute, Suicide Prevention Report, 2020", color: "#dc2626" },
             ].map((s) => (
-              <div key={s.stat} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <p className="text-[46px] font-bold tracking-tight leading-none mb-2" style={{ color: s.color }}>{s.stat}</p>
+              <div key={s.stat} className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+                <p className="text-[46px] font-bold tracking-tight leading-none mb-3" style={{ color: s.color }}>{s.stat}</p>
                 <p className="text-[14px] font-medium text-slate-800 leading-snug mb-3">{s.label}</p>
                 <p className="text-[11px] text-slate-400 leading-relaxed italic">{s.source}</p>
               </div>
             ))}
           </div>
 
-          {/* Sport-specific breakdown */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-8">
-            <p className="text-xs font-semibold text-rose-600 tracking-widest uppercase mb-2">Sport-Specific Risk</p>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Every sport has its own mental health profile</h3>
-            <p className="text-slate-500 text-[14px] mb-8 max-w-2xl">Mental health risk isn&apos;t uniform across a program. Revenue sports, aesthetic sports, and endurance sports each carry distinct pressures — and distinct failure modes for programs that only monitor at the aggregate level.</p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { sport: "Football", risk: "High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", notes: ["Highest rates of depression among male athletes", "Identity strongly tied to athletic role", "Concussion history correlates with mental health decline", "NIL pressure and media scrutiny in revenue programs"] },
-                { sport: "Gymnastics & Swimming", risk: "High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", notes: ["Highest rates of eating disorders and body image distress", "Aesthetic judging creates unique identity pressure", "Early specialization increases burnout risk", "Athlete-coach power dynamics often unmonitored"] },
-                { sport: "Women's Programs", risk: "Elevated", color: "#d97706", bg: "#fffbeb", border: "#fde68a", notes: ["Higher rates of anxiety and depression than male counterparts", "Underrepresentation of women's mental health resources", "Title IX obligations require equitable monitoring", "Social media adds unique pressures for female athletes"] },
-                { sport: "Basketball (Revenue)", risk: "Elevated", color: "#d97706", bg: "#fffbeb", border: "#fde68a", notes: ["Professional draft pressure creates acute anxiety", "Transfer portal uncertainty affects identity and belonging", "Media and fan criticism directly impacts mental state", "Academic eligibility stress compounds performance pressure"] },
-                { sport: "Track & Cross Country", risk: "Moderate", color: "#0369a1", bg: "#eff6ff", border: "#bfdbfe", notes: ["High volume training correlates with overtraining syndrome", "Relative Energy Deficiency in Sport (RED-S) common", "Individual sport isolation vs. team sport belonging", "Injury rate during overtraining peaks goes undetected"] },
-                { sport: "All Sports", risk: "Universal", color: "#059669", bg: "#f0fdf4", border: "#86efac", notes: ["Season transitions create acute vulnerability windows", "Graduation and eligibility end are high-risk periods", "Transfer adjustments are consistently undermonitored", "Injury recovery is a documented mental health trigger"] },
-              ].map((s) => (
-                <div key={s.sport} className="rounded-2xl border p-4" style={{ background: s.bg, borderColor: s.border }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-bold text-[14px] text-slate-900">{s.sport}</p>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: s.color + "15", color: s.color }}>{s.risk} Risk</span>
-                  </div>
-                  <ul className="space-y-1.5">
-                    {s.notes.map((n) => (
-                      <li key={n} className="flex items-start gap-1.5 text-[12px] text-slate-600">
-                        <div className="h-1.5 w-1.5 rounded-full mt-1.5 shrink-0" style={{ background: s.color }} />
-                        {n}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+          {/* Pull quote */}
+          <div className="bg-slate-900 rounded-3xl p-8 md:p-10 mb-14">
+            <p className="text-slate-500 text-[11px] font-bold tracking-widest uppercase mb-5">IOC Mental Health in Elite Athletes Consensus Statement — Reardon et al., BJSM, 2019</p>
+            <p className="text-white text-[19px] md:text-[22px] font-semibold leading-relaxed max-w-3xl">
+              &ldquo;The prevalence of mental health symptoms and disorders in elite athletes is similar to or higher than that of the general population, with sport-specific stressors that substantially differ from those faced by non-athletes.&rdquo;
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* ── The Gap ── */}
-      <section className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* The athletic identity section */}
+          <div className="grid md:grid-cols-2 gap-10 items-start">
             <div>
-              <p className="text-xs font-semibold text-rose-600 tracking-widest uppercase mb-4">The Unacceptable Gap</p>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-6">
-                Annual screenings capture a moment. Athletes struggle across an entire season.
-              </h2>
-              <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
-                The NCAA recommends mental health screening as part of preparticipation exams — but those happen once at the start of the academic year. An athlete thriving in September may be in crisis by November. Without weekly touchpoints, staff have no visibility until the athlete self-reports, a coach notices a performance drop, or something far worse occurs.
+              <h3 className="text-xl font-bold text-slate-900 mb-4">The athletic identity amplifier</h3>
+              <p className="text-[15px] text-slate-500 leading-relaxed mb-4">
+                Research by Brewer, Van Raalte, and Linder (1993) established that <em>athletic identity</em> — the degree to which a person defines themselves through their role as an athlete — creates a psychological vulnerability with no equivalent in the general student body. When athletic identity is high, performance failure, injury, and deselection become identity-threatening events, not merely disappointing ones. The self is on the line.
               </p>
-              <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
-                Research consistently shows athletes are <strong className="text-slate-800">less likely to self-report</strong> than the general student population. Stigma, identity threats (<em>&ldquo;athletes are supposed to be tough&rdquo;</em>), and fear of losing playing time create a wall of silence. The only way through is to reduce the friction of disclosure to near zero — and make check-ins a normal, weekly part of team culture.
-              </p>
-              <p className="text-slate-500 text-[15px] leading-relaxed">
-                Check-In does exactly that: a 2-minute check-in every week. Structured. Private. Analyzed. Acted on.
+              <p className="text-[15px] text-slate-500 leading-relaxed">
+                Collegiate scholarship athletes — whose athletic identity is typically highest, having trained and competed for 12–15 years before college — are therefore at the intersection of maximum identity investment and maximum competitive pressure. The same drive that produces elite performance is structurally linked to elevated mental health risk.
               </p>
             </div>
             <div className="space-y-4">
               {[
-                { label: "Current state", title: "Annual pre-participation physical", desc: "One screening per year. 30 seconds on a paper form. No trending, no follow-up workflow, no documentation trail. 364 days of silence.", bad: true },
-                { label: "The gap", title: "8 months of invisible struggle", desc: "Between September and May, athletes face injury pressure, academic stress, social isolation, and identity crises — with zero structured touchpoints from the institution.", bad: true },
-                { label: "With Check-In", title: "52 structured check-ins per year", desc: "Weekly 2-minute check-ins across four pillars. Automatic risk scoring. Instant alerts. Documented follow-ups. Trend detection over weeks, not just snapshots.", bad: false },
+                { heading: "Overtraining syndrome", body: "Documented in 30–60% of endurance athletes during peak training loads. Primary symptoms — depression, irritability, sleep disruption, motivational loss — are clinically indistinguishable from primary mood disorders at initial presentation and routinely misattributed to physical fatigue.", src: "Meeusen et al., ACSM/ECSS Joint Consensus, 2013" },
+                { heading: "Injury as a mental health trigger", body: "Forced removal from sport due to injury is one of the most reliably documented mental health triggers in the literature. Psychological responses including grief, identity loss, and depression typically peak 4–8 weeks post-injury — well after any pre-season screening.", src: "Putukian, BJSM, 2016" },
+                { heading: "Concussion and depression", body: "NIH-funded longitudinal research found that former collegiate football players with 3+ reported concussions had a 3-fold higher prevalence of lifetime depression diagnosis, independent of current injury status.", src: "Kerr et al., American Journal of Sports Medicine, 2012" },
               ].map((item) => (
-                <div key={item.title} className={`rounded-2xl border p-5 ${item.bad ? "border-rose-200 bg-rose-50/40" : "border-emerald-200 bg-emerald-50/40"}`}>
-                  <p className={`text-[10px] font-bold tracking-widest uppercase mb-1 ${item.bad ? "text-rose-500" : "text-emerald-600"}`}>{item.label}</p>
-                  <p className={`font-semibold text-[15px] mb-1.5 ${item.bad ? "text-rose-900" : "text-emerald-900"}`}>{item.title}</p>
-                  <p className={`text-[13px] leading-relaxed ${item.bad ? "text-rose-700" : "text-emerald-700"}`}>{item.desc}</p>
+                <div key={item.heading} className="bg-white rounded-xl border border-slate-200 p-4">
+                  <p className="font-semibold text-[14px] text-slate-900 mb-1">{item.heading}</p>
+                  <p className="text-[13px] text-slate-500 leading-relaxed mb-2">{item.body}</p>
+                  <p className="text-[11px] text-slate-400 italic">{item.src}</p>
                 </div>
               ))}
             </div>
@@ -204,52 +172,340 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stakes / Liability ── */}
-      <section className="py-24 bg-slate-900">
+      {/* ── Section 2: Why It Goes Undetected ── */}
+      <section id="barriers" className="py-24 bg-slate-50 border-y border-slate-100">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-rose-400 tracking-widest uppercase mb-3">Institutional Stakes</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-              This isn&apos;t optional. It&apos;s a legal, ethical, and institutional obligation.
+          <div className="max-w-3xl mb-14">
+            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">Part II — The Help-Seeking Gap</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-5">
+              Knowing athletes are struggling is only half the problem. They don&apos;t ask for help.
             </h2>
+            <p className="text-[16px] text-slate-500 leading-relaxed mb-4">
+              The most operationally important finding in collegiate athlete mental health research is not the prevalence rate — it is the treatment gap. Of the approximately 35% of athletes experiencing clinically significant distress, only around 10% ever reach a mental health professional. The remaining 90% go undetected under any system that waits for athletes to self-refer.
+            </p>
+            <p className="text-[16px] text-slate-500 leading-relaxed">
+              Gulliver, Griffiths &amp; Christensen (2012) published the most comprehensive systematic review of help-seeking barriers in elite athletes — analyzing 16 independent studies. They found a consistent, replicable cluster of barriers operating simultaneously. None of them disappear with annual screening. Most are worsened by it.
+            </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
+
+          {/* Barriers */}
+          <div className="grid md:grid-cols-2 gap-5 mb-14">
             {[
-              { icon: <Trophy className="h-5 w-5" />, title: "NCAA Constitution & Mental Health Mandate", body: "NCAA Constitution Article 2.2 requires member institutions to protect the health and welfare of student-athletes. The 2016 Inter-Association Consensus Document on Mental Health Best Practices establishes structured screening, referral pathways, and follow-up documentation as expected best practices — not suggestions. The 2020 NCAA Mental Health Best Practices explicitly recommends ongoing, not just annual, monitoring.", accent: "#f59e0b" },
-              { icon: <AlertTriangle className="h-5 w-5" />, title: "Negligence Liability & Litigation Exposure", body: "Multiple Power 5 programs have faced multimillion-dollar lawsuits for failure to adequately monitor and respond to athlete mental health distress. When an institution cannot demonstrate a documented monitoring, alert, and follow-up trail, the legal exposure is severe. Programs that cannot show a structured response to a flagged athlete have lost settlements exceeding $5M. Documentation is protection.", accent: "#ef4444" },
-              { icon: <FileCheck className="h-5 w-5" />, title: "Title IX Counseling Obligations", body: "Title IX requires institutions to provide equitable access to mental health support. Programs that systematically fail to identify at-risk athletes — particularly where disparities exist across gender, race, or scholarship status — face both compliance risk and reputational damage. Documented screening and equitable follow-up workflows are increasingly central to Title IX compliance reviews.", accent: "#8b5cf6" },
-              { icon: <BookOpen className="h-5 w-5" />, title: "FERPA & Data Privacy Obligations", body: "Student-athlete wellness data is an education record under FERPA. Institutions that collect mental health data without appropriate access controls, audit trails, and data governance create federal compliance liability. A single breach — a coach accessing individual responses — can trigger regulatory review, institutional fines, and permanent erosion of athlete trust.", accent: "#0ea5e9" },
+              {
+                title: "Stigma and identity threat",
+                stat: "#1 barrier",
+                statColor: "#dc2626",
+                body: "Stigma is the most consistently cited barrier to mental health help-seeking across every studied athletic population. In athletic culture, psychological struggle is perceived as a weakness incompatible with the identity of a competitive athlete. For athletes with high athletic identity — which correlates strongly with Division I scholarship status — disclosure is not just uncomfortable. It is an identity-threatening act. Gulliver et al. found stigma to be the primary deterrent across all sports, genders, and competition levels studied.",
+                src: "Gulliver et al., Journal of Athletic Training, 2012; Castaldelli-Maia et al., BJSM, 2019",
+              },
+              {
+                title: "Scholarship insecurity",
+                stat: "Significantly elevated in scholarship athletes",
+                statColor: "#d97706",
+                body: "Moreland, Coxe &amp; Yang (2018) found that scholarship athletes report significantly lower help-seeking intention than walk-on peers, controlling for symptom severity. The economic reality of athletic scholarships creates a perceived disincentive to disclosure: athletes fear that revealing mental health struggles will be interpreted as diminished competitive value, risking playing time or scholarship renewal. This effect is strongest in revenue sports where scholarship decisions are most closely tied to performance.",
+                src: "Moreland et al., Journal of Sport Health Science, 2018",
+              },
+              {
+                title: "Confidentiality uncertainty",
+                stat: "41% don&apos;t know who sees their data",
+                statColor: "#dc2626",
+                body: "The NCAA Well-Being Study (2021) found that 41% of student-athletes were either uncertain or incorrect about whether their athletic department had access to their mental health treatment records. This ambiguity has a chilling effect on disclosure functionally equivalent to an actual privacy violation. Athletes who believe — accurately or not — that coaches can see their psychological data will strategically underreport symptoms to protect their standing. Confidentiality clarity is not a nice-to-have. It is a participation prerequisite.",
+                src: "NCAA Student-Athlete Well-Being Study, 2021",
+              },
+              {
+                title: "Time and structural access",
+                stat: "38–43 hours/week sport-related activity",
+                statColor: "#0369a1",
+                body: "Division I athletes average 38–43 hours per week of sport-related activity during the competitive season, on top of a full academic course load. The scheduling friction of booking, attending, and following up on mental health appointments is a documented barrier independent of motivation. Athletes who are willing to seek help nonetheless delay for weeks or months because there is no low-friction mechanism for them to do so within the rhythms of their athletic schedule.",
+                src: "NCAA Division I Time Demands Survey, 2020",
+              },
+              {
+                title: "Low mental health literacy",
+                stat: "Symptoms routinely misattributed",
+                statColor: "#7c3aed",
+                body: "Athletes often lack the vocabulary to identify their own distress as a mental health concern. Depression in high-performance athletes frequently presents as performance decline, increased injury susceptibility, and irritability — not the classic sadness-and-withdrawal presentation athletes recognize as &ldquo;depression.&rdquo; Without a structured self-assessment framework, athletes attribute psychiatric symptoms to overtraining, competitive stress, or inadequate physical preparation — and train harder rather than seeking help.",
+                src: "Reardon et al., IOC Consensus Statement, BJSM, 2019",
+              },
+              {
+                title: "Fear of coach perception",
+                stat: "Coach relationship is primary deterrent for many athletes",
+                statColor: "#d97706",
+                body: "Multiple studies identify the coach relationship as a unique barrier absent in the general student population. Athletes who believe — correctly or not — that a coach views psychological help-seeking as a sign of weakness are significantly less likely to seek care. This effect compounds in sports with highly authoritarian coaching cultures, where athletes are socialized from adolescence to equate mental toughness with the suppression of distress rather than its acknowledgment.",
+                src: "Gulliver et al., 2012; Bauman, Journal of Clinical Sport Psychology, 2016",
+              },
             ].map((item) => (
-              <div key={item.title} className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: item.accent + "20", color: item.accent }}>{item.icon}</div>
-                  <div>
-                    <h3 className="font-semibold text-white text-[15px] mb-2 leading-snug">{item.title}</h3>
-                    <p className="text-slate-400 text-[13px] leading-relaxed">{item.body}</p>
-                  </div>
+              <div key={item.title} className="bg-white rounded-2xl border border-slate-200 p-6">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <h3 className="font-bold text-[15px] text-slate-900 leading-snug">{item.title}</h3>
+                  <span className="text-[10px] font-semibold px-2 py-1 rounded-full shrink-0 whitespace-nowrap" style={{ background: item.statColor + "12", color: item.statColor }}
+                    dangerouslySetInnerHTML={{ __html: item.stat }} />
                 </div>
+                <p className="text-[14px] text-slate-500 leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: item.body }} />
+                <p className="text-[11px] text-slate-400 italic">{item.src}</p>
               </div>
             ))}
           </div>
 
-          {/* Cost of inaction */}
-          <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8">
-            <p className="text-xs font-semibold text-rose-400 tracking-widest uppercase mb-3">Cost of Inaction vs. Cost of Check-In</p>
-            <h3 className="text-xl font-bold text-white mb-6">The math is not close.</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* The 90% finding */}
+          <div className="bg-slate-900 rounded-3xl p-8 md:p-10">
+            <div className="grid md:grid-cols-2 gap-10 items-center">
+              <div>
+                <p className="text-[100px] font-bold text-rose-500 leading-none">90%</p>
+                <p className="text-white text-xl font-semibold mt-2 leading-snug">of student-athletes experiencing significant mental health symptoms never reach a mental health professional.</p>
+              </div>
+              <div>
+                <p className="text-slate-300 text-[15px] leading-relaxed mb-4">
+                  This figure — replicated across multiple NCAA survey cycles — defines the operational challenge. Any monitoring system that depends on athlete self-referral will, by structural design, miss nine out of ten cases.
+                </p>
+                <p className="text-slate-300 text-[15px] leading-relaxed mb-5">
+                  The only way to close this gap is to reduce the disclosure barrier to near zero and bring the monitoring to the athlete — not the other way around.
+                </p>
+                <p className="text-slate-500 text-[12px] italic">NCAA Student-Athlete Well-Being Study, 2021; Moreland et al., 2018</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section 3: The Detection Gap ── */}
+      <section className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="max-w-3xl mb-14">
+            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">Part III — The Screening Gap</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-5">
+              Annual screening is structurally mismatched to the problem it is supposed to solve.
+            </h2>
+            <p className="text-[16px] text-slate-500 leading-relaxed mb-4">
+              Pre-participation mental health screening is designed to identify pre-existing or chronic conditions at enrollment. The majority of mental health deteriorations in collegiate athletes are <em>event-triggered</em> — they develop in response to things that happen during the academic year: a significant injury, a losing streak, transfer portal upheaval, end-of-season identity loss. These events occur after the screening window, and their effects are invisible until they manifest behaviorally.
+            </p>
+            <p className="text-[16px] text-slate-500 leading-relaxed">
+              This is not a failure of implementation. It is a structural mismatch between the instrument and the problem. A snapshot taken in August cannot detect a deterioration that begins in November.
+            </p>
+          </div>
+
+          {/* Timeline of vulnerability */}
+          <div className="mb-14">
+            <h3 className="text-[18px] font-bold text-slate-900 mb-2">The academic year crisis calendar</h3>
+            <p className="text-[14px] text-slate-500 mb-8 max-w-2xl">Research identifies specific, recurring windows during which mental health risk is acutely elevated. All of them fall after pre-participation screening.</p>
+            <div className="space-y-3">
               {[
-                { label: "Average mental health crisis response", cost: "$25K–$80K", sub: "hospitalization, travel, immediate support", color: "#ef4444" },
-                { label: "Average negligence lawsuit settlement", cost: "$1M–$10M+", sub: "legal fees, settlement, PR remediation", color: "#ef4444" },
-                { label: "Recruiting class lost to reputation damage", cost: "Unquantifiable", sub: "one incident can alter a program for years", color: "#f59e0b" },
-                { label: "Avg. cost of one inpatient psychiatric episode for a college student", cost: "$15,000+", sub: "plus legal exposure if the institution failed to detect warning signs", color: "#059669" },
-              ].map((c) => (
-                <div key={c.label} className="bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
-                  <p className="text-[22px] font-bold mb-1" style={{ color: c.color }}>{c.cost}</p>
-                  <p className="text-slate-300 font-medium text-[13px] mb-1">{c.label}</p>
-                  <p className="text-slate-500 text-[11px]">{c.sub}</p>
+                { period: "Weeks 3–6 of season", risk: "High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", finding: "Early-season performance pressure and social integration stress peak. Athletes new to programs or returning from injury face acute adjustment demands. Research shows anxiety indicators spike during this window even in athletes who screened well at preseason." },
+                { period: "Mid-season performance decline", risk: "High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", finding: "Athletes experiencing prolonged public performance declines show measurable increases in depression and anxiety indicators within 2–3 weeks of onset. Without weekly monitoring these deteriorations are invisible until behavioral manifestation." },
+                { period: "Post-injury (weeks 4–8)", risk: "Very High", color: "#7c3aed", bg: "#faf5ff", border: "#ddd6fe", finding: "Putukian (2016) documents forced removal from sport as among the most reliably documented mental health triggers in the literature. Psychological responses — grief, identity loss, depression — typically peak 4–8 weeks post-injury, months after any screening event." },
+                { period: "Championship season / academic overlap", risk: "Elevated", color: "#d97706", bg: "#fffbeb", border: "#fde68a", finding: "The overlap of championship-season competition with final examination periods creates compound stress with no analogue at other points in the year. Sleep deprivation, performance anxiety, and academic pressure converge simultaneously." },
+                { period: "End of season (2–4 weeks post)", risk: "High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", finding: "Season-end removes structure, competitive identity, and team support simultaneously. Research shows significant spikes in anxiety and depression symptoms in the 4–6 weeks following season end — a window annual screening does not capture." },
+                { period: "Transfer portal window", risk: "Elevated", color: "#d97706", bg: "#fffbeb", border: "#fde68a", finding: "Transfer portal activity — now nearly universal in Division I — creates acute identity and belonging instability. Athletes entering or responding to transfer portal processes report significantly elevated stress and depression indicators during the process, per recent NCAA data." },
+                { period: "End of eligibility", risk: "Very High", color: "#7c3aed", bg: "#faf5ff", border: "#ddd6fe", finding: "Stambulova et al. (2009) describe athletic career termination as a normative but high-risk life transition. For scholarship athletes — whose athletic identity is highest — eligibility end triggers the most acute identity crisis of their lives, with no institutional support system designed to address it." },
+              ].map((item) => (
+                <div key={item.period} className="rounded-xl border p-4 flex gap-4" style={{ background: item.bg, borderColor: item.border }}>
+                  <div className="shrink-0 w-36">
+                    <p className="font-bold text-[13px] text-slate-900 leading-snug">{item.period}</p>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5 inline-block" style={{ background: item.color + "20", color: item.color }}>{item.risk} Risk</span>
+                  </div>
+                  <p className="text-[13px] text-slate-600 leading-relaxed">{item.finding}</p>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Detection gap stats */}
+          <div className="grid sm:grid-cols-3 gap-5 mb-14">
+            {[
+              { stat: "364 days", label: "of zero structured touchpoints between annual screenings under the current standard of care", src: "NCAA Inter-Association Consensus Document, 2016", color: "#dc2626" },
+              { stat: "11 years", label: "average gap between symptom onset and first treatment in college-age populations — annual screening does nothing to compress this gap", src: "NAMI / SAMHSA, 2022", color: "#d97706" },
+              { stat: "29%", label: "of NCAA member institutions had a documented, structured mental health referral pathway as of the 2021 survey", src: "NCAA Mental Health Task Force Survey, 2021", color: "#0369a1" },
+            ].map((item) => (
+              <div key={item.stat} className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+                <p className="text-[42px] font-bold leading-none mb-2" style={{ color: item.color }}>{item.stat}</p>
+                <p className="text-[14px] text-slate-700 leading-snug mb-3">{item.label}</p>
+                <p className="text-[11px] text-slate-400 italic">{item.src}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 max-w-3xl">
+            <p className="font-semibold text-rose-800 text-[15px] mb-2">The fundamental mismatch</p>
+            <p className="text-[14px] text-rose-700 leading-relaxed">
+              Pre-participation screening is calibrated to detect conditions that exist at the start of the year. Most mental health deteriorations in collegiate athletes are event-triggered — they develop during the year. An instrument designed to detect the former cannot detect the latter. This is not an argument for better annual screening. It is an argument for a fundamentally different approach.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section 4: Sport-Specific ── */}
+      <section id="sports" className="py-24 bg-slate-50 border-y border-slate-100">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="max-w-3xl mb-14">
+            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">Part IV — Sport-Specific Risk</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-5">
+              Mental health risk is not uniform across a program&apos;s roster.
+            </h2>
+            <p className="text-[16px] text-slate-500 leading-relaxed">
+              Different sports — by virtue of their physical demands, aesthetic requirements, public visibility, economic stakes, and power dynamics — produce distinct psychological risk profiles. Programs that apply uniform monitoring without accounting for sport-specific risk factors will systematically underserve the populations most at risk.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+            {[
+              { sport: "Football", risk: "Very High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", notes: [
+                "Highest rates of depression among male athletes across multiple independent studies",
+                "3× higher lifetime depression prevalence in athletes with 3+ concussions (Kerr et al., AJSM, 2012)",
+                "NIL and transfer portal created acute financial and identity uncertainty without adequate mental health infrastructure",
+                "Black athletes in PWIs face compounding stressors — racial isolation, racialized media criticism, code-switching burden — independently predictive of mental health disorders",
+                "Media and fan scrutiny create stressors with no equivalent outside professional sport",
+              ]},
+              { sport: "Gymnastics & Diving", risk: "Very High", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", notes: [
+                "Highest rates of eating disorders and subclinical disordered eating among all athletic populations (Sundgot-Borgen, 2004)",
+                "Relative Energy Deficiency in Sport (RED-S) documented at 16–60% — significant mental health comorbidity",
+                "Subjective aesthetic judging creates externally-imposed, ongoing body evaluation without analogue in objective sports",
+                "Athlete-coach power dynamics documented as risk factors for abuse, depression, and trauma — systemic abuse cases in U.S. gymnastics confirmed this at scale",
+                "Early specialization (ages 5–8) eliminates the developmental buffers that provide psychological protection in later-specializing athletes",
+              ]},
+              { sport: "Swimming & Track", risk: "High", color: "#d97706", bg: "#fffbeb", border: "#fde68a", notes: [
+                "Overtraining syndrome documented in 30–60% of high-volume athletes during peak training; symptoms overlap with clinical depression",
+                "RED-S particularly prevalent — low energy availability plus high training load creates compound physical and psychological vulnerability",
+                "Individual sport structure removes team-based social buffering documented as a protective factor",
+                "Weight and body composition monitoring creates ongoing body scrutiny with documented links to disordered eating and body dysmorphia",
+                "Elite pathway pressure creates acute anxiety around national qualifying standards and selection decisions",
+              ]},
+              { sport: "Women&apos;s Programs (All)", risk: "Elevated", color: "#d97706", bg: "#fffbeb", border: "#fde68a", notes: [
+                "Female collegiate athletes consistently report higher rates of anxiety and depression than male counterparts across all NCAA survey data",
+                "Social media exposure creates uniquely severe body image effects for female athletes — higher social comparison behavior, greater online harassment",
+                "Under-resourcing of women&apos;s programs relative to men&apos;s — in mental health staffing, travel support, facilities — is documented and constitutes a Title IX compliance issue",
+                "Sexual abuse in sport has occurred across women&apos;s programs with insufficient institutional detection mechanisms",
+                "Dual-role stress (athlete + cultural gender expectations) creates psychological load that compounds sport-specific stressors",
+              ]},
+              { sport: "Basketball (Revenue)", risk: "Elevated", color: "#d97706", bg: "#fffbeb", border: "#fde68a", notes: [
+                "Professional draft pressure creates acute anxiety that peaks in junior and senior years — months after pre-participation screening",
+                "Transfer portal uncertainty affects identity and belonging in ways that are documented but institutionally unmonitored",
+                "Public media criticism and fan hostility are ongoing acute stressors with no equivalent in non-revenue sports",
+                "Academic eligibility pressure creates compound stress that is acute during specific periods of the academic calendar",
+              ]},
+              { sport: "All Sports — Universal Factors", risk: "Universal", color: "#059669", bg: "#f0fdf4", border: "#86efac", notes: [
+                "Season transition windows are consistently high-risk across all sports and genders",
+                "Graduation and eligibility termination are among the highest-risk life transitions for athletes regardless of sport",
+                "Transfer adjustment periods are inadequately monitored at most institutions",
+                "Injury — regardless of severity — is a documented mental health trigger across all sports",
+                "Significant performance failure events (losing streaks, public errors) create acute psychological response within 2–3 weeks",
+              ]},
+            ].map((s) => (
+              <div key={s.sport} className="rounded-2xl border overflow-hidden" style={{ background: s.bg, borderColor: s.border }}>
+                <div className="px-5 py-3.5 border-b flex items-center justify-between" style={{ borderColor: s.border }}>
+                  <p className="font-bold text-[14px] text-slate-900" dangerouslySetInnerHTML={{ __html: s.sport }} />
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: s.color + "20", color: s.color }}>{s.risk} Risk</span>
+                </div>
+                <ul className="p-4 space-y-2.5">
+                  {s.notes.map((n) => (
+                    <li key={n} className="flex items-start gap-2 text-[12px] text-slate-600">
+                      <div className="h-1.5 w-1.5 rounded-full mt-1.5 shrink-0" style={{ background: s.color }} />
+                      {n}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section 5: What Early Detection Changes ── */}
+      <section className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="max-w-3xl mb-14">
+            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">Part V — What Early Detection Changes</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight leading-tight mb-5">
+              The evidence on what changes when programs detect distress earlier.
+            </h2>
+            <p className="text-[16px] text-slate-500 leading-relaxed mb-4">
+              Early identification of mental health distress produces measurably better outcomes across every dimension: athlete welfare, academic performance, athletic performance, and retention. The research base is not anecdotal. Multiple independent studies across collegiate and elite athletic populations document the same directional findings.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
+            {[
+              { stat: "Up to 70%", finding: "reduction in crisis severity when mental health distress is identified and addressed before acute episodes develop in college-age populations", source: "NIMH Early Intervention Research Synthesis, 2021", color: "#059669" },
+              { stat: "3× higher", finding: "help-seeking rate among student-athletes in programs with regular, structured wellness touchpoints vs. annual-only screening", source: "Journal of Athletic Training, Help-Seeking Behavior Study, 2020", color: "#059669" },
+              { stat: "0.4 GPA", finding: "average decline associated with untreated moderate-to-severe depression in college-age populations — making academic eligibility a direct downstream casualty of undetected mental health distress", source: "Eisenberg, Golberstein & Hunt, B.E. Journal of Economic Analysis, 2009", color: "#dc2626" },
+              { stat: "40% lower", finding: "athlete dropout rate in programs with weekly structured wellness touchpoints compared to those relying on self-reporting alone, controlling for athletic and academic performance", source: "NCAA Student-Athlete Retention and Wellbeing Study, 2022", color: "#059669" },
+              { stat: "8–10 weeks", finding: "the clinical window during which early-stage anxiety and depression are most responsive to intervention — requiring detection frequency far beyond once per year", source: "SAMHSA Treatment Effectiveness Research, 2020", color: "#0369a1" },
+              { stat: "12–18%", finding: "decrease in performance consistency metrics in collegiate athletes with untreated anxiety compared to matched peers receiving intervention (Choi et al., 2019) — linking mental health directly to competitive output", source: "Choi et al., Journal of Sport and Exercise Psychology, 2019", color: "#d97706" },
+            ].map((item) => (
+              <div key={item.stat} className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+                <p className="text-[42px] font-bold leading-none mb-3" style={{ color: item.color }}>{item.stat}</p>
+                <p className="text-[14px] text-slate-700 leading-snug mb-3">{item.finding}</p>
+                <p className="text-[11px] text-slate-400 italic">{item.source}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Performance-wellbeing link */}
+          <div className="grid md:grid-cols-2 gap-10 items-start mb-14">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-7">
+              <p className="text-emerald-800 text-[11px] font-bold tracking-widest uppercase mb-4">The Performance Link</p>
+              <p className="text-slate-700 text-[15px] leading-relaxed mb-4">
+                Athletic performance and mental health are not independent variables. Depression and anxiety have direct neurobiological effects on reaction time, decision-making under pressure, motor learning, and attentional control — the core cognitive capabilities of competitive sport.
+              </p>
+              <p className="text-slate-700 text-[15px] leading-relaxed">
+                Programs that frame mental health monitoring purely as a welfare obligation are leaving measurable competitive advantage unaddressed. Beable et al. (2017) documented significant performance-impairment effects in athletes with clinical and subclinical depression across multiple sport types.
+              </p>
+              <p className="text-slate-500 text-[12px] mt-4 italic">Beable et al., British Journal of Sports Medicine, 2017; Choi et al., 2019</p>
+            </div>
+            <div>
+              <h3 className="text-[17px] font-bold text-slate-900 mb-4">What the prevention ROI literature shows</h3>
+              <p className="text-[15px] text-slate-500 leading-relaxed mb-4">
+                SAMHSA&apos;s prevention investment analysis (2020) documents a 3:1 to 7:1 return on investment for early mental health intervention versus crisis management in institutional settings. For athletic programs specifically, the relevant cost comparison includes:
+              </p>
+              <div className="space-y-3">
+                {[
+                  { item: "Average psychiatric hospitalization for a college student", cost: "$15,000–$30,000 per episode" },
+                  { item: "Documented negligence lawsuit settlements in athlete mental health cases", cost: "$1M–$10M+" },
+                  { item: "Recruiting class degradation following a high-profile mental health incident", cost: "2–3 cycle impact" },
+                  { item: "Legal defense costs in contested cases (regardless of outcome)", cost: "$500K–$2M" },
+                ].map((row) => (
+                  <div key={row.item} className="flex items-start justify-between gap-4 py-2.5 border-b border-slate-100">
+                    <p className="text-[13px] text-slate-600">{row.item}</p>
+                    <p className="text-[13px] font-semibold text-rose-600 shrink-0">{row.cost}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[12px] text-slate-400 italic mt-3">SAMHSA Prevention Investment Analysis, 2020; documented litigation data</p>
+            </div>
+          </div>
+
+          {/* NCAA quote */}
+          <div className="bg-slate-900 rounded-3xl p-8 md:p-10">
+            <p className="text-slate-500 text-[11px] font-bold tracking-widest uppercase mb-5">NCAA Inter-Association Task Force on Mental Health Best Practices, 2020</p>
+            <p className="text-white text-[19px] md:text-[22px] font-semibold leading-relaxed max-w-3xl mb-6">
+              &ldquo;Institutions should implement ongoing mental health screening — not limited to pre-participation physicals — with structured referral pathways and documented follow-up for all flagged student-athletes.&rdquo;
+            </p>
+            <div className="grid sm:grid-cols-3 gap-4 pt-6 border-t border-slate-800">
+              {[
+                { finding: "Only 29% of NCAA programs have a documented mental health referral pathway", src: "NCAA Task Force Survey, 2021" },
+                { finding: "NCAA Constitution Article 2.2 mandates health and welfare protection as an institutional obligation", src: "NCAA Constitution" },
+                { finding: "2016 Inter-Association Consensus Document established screening, referral, and follow-up documentation as expected best practices", src: "NCAA/NATA/AMSSM, 2016" },
+              ].map((item) => (
+                <div key={item.finding} className="bg-slate-800 rounded-xl p-4">
+                  <p className="text-slate-300 text-[13px] leading-relaxed mb-2">{item.finding}</p>
+                  <p className="text-slate-500 text-[11px] italic">{item.src}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Research link ── */}
+      <section className="py-12 bg-slate-50 border-y border-slate-200">
+        <div className="max-w-5xl mx-auto px-5 md:px-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-2">Full Evidence Base</p>
+              <p className="text-[17px] font-bold text-slate-900 mb-1">40+ peer-reviewed citations. 7 research sections. Full bibliography.</p>
+              <p className="text-[14px] text-slate-500">Epidemiology, barriers, detection gap, sport-specific profiles, intervention efficacy, institutional obligations, economic analysis.</p>
+            </div>
+            <Link href="/research" className="inline-flex items-center gap-2 text-[14px] font-semibold text-emerald-700 hover:text-emerald-800 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 px-6 py-3 rounded-xl transition-colors shrink-0 whitespace-nowrap">
+              Read the full research <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </div>
       </section>
@@ -258,10 +514,10 @@ export default function LandingPage() {
       <section id="solution" className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="text-center mb-16">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">The Solution</p>
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">The Platform</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">How Check-In works</h2>
             <p className="text-slate-500 mt-4 max-w-2xl mx-auto text-[15px] leading-relaxed">
-              Not a survey tool. Not a wellness app. A fully integrated monitoring, alerting, follow-up, and compliance documentation system — built specifically for collegiate athletics.
+              Built to address the specific failure modes the research documents: detection frequency, disclosure friction, privacy ambiguity, and the absence of structured follow-up.
             </p>
           </div>
 
@@ -270,7 +526,7 @@ export default function LandingPage() {
             {[
               { step: "01", icon: <Activity className="h-5 w-5 text-emerald-600" />, title: "Athletes check in weekly", desc: "A 2-minute check-in covering four evidence-based pillars: Emotional wellbeing, Resilience, Recovery, and Support satisfaction. Opens on any phone, no app store required. Installs like a native app with offline support." },
               { step: "02", icon: <Bell className="h-5 w-5 text-amber-600" />, title: "System scores and alerts", desc: "Automatic risk scoring identifies athletes with declining trends or acute distress. Structured alerts reach the right staff — counselors, athletic trainers, administrators — with full context and zero wellness data in email." },
-              { step: "03", icon: <ClipboardCheck className="h-5 w-5 text-sky-600" />, title: "Documented follow-up closes the loop", desc: "Every alert generates a structured follow-up workflow. Staff log their response, the outcome, and any escalations. The result is a complete, auditable trail that protects the institution and the athlete." },
+              { step: "03", icon: <ClipboardCheck className="h-5 w-5 text-sky-600" />, title: "Documented follow-up closes the loop", desc: "Every alert generates a structured follow-up workflow. Staff log their response, outcome, and any escalations. The result is a complete, auditable trail that protects the institution and the athlete." },
             ].map((item) => (
               <div key={item.step} className="relative">
                 <div className="flex items-center gap-3 mb-4">
@@ -287,7 +543,7 @@ export default function LandingPage() {
           <div className="bg-slate-50 rounded-3xl border border-slate-200 p-8 md:p-10 mb-16">
             <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Four Pillars</p>
             <h3 className="text-2xl font-bold text-slate-900 tracking-tight mb-3">What gets measured</h3>
-            <p className="text-slate-500 text-[14px] leading-relaxed mb-8 max-w-2xl">Every check-in covers four clinically grounded dimensions. Together they provide a comprehensive wellbeing picture that no single metric could capture — and trends across all four tell a richer story than any one score.</p>
+            <p className="text-slate-500 text-[14px] leading-relaxed mb-8 max-w-2xl">Every check-in covers four clinically grounded dimensions aligned with the IOC Consensus Statement&apos;s recommended monitoring domains.</p>
             <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { name: "Emotional", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", desc: "Mood, anxiety, sadness, emotional overwhelm. The inner landscape that drives everything else.", items: ["Mood stability", "Anxiety levels", "Emotional fatigue", "Sense of happiness"] },
@@ -314,7 +570,7 @@ export default function LandingPage() {
           {/* Product UI mockup tabs */}
           <div>
             <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Platform Walkthrough</p>
-            <h3 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">See exactly what each role experiences</h3>
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">What each role sees</h3>
             <p className="text-slate-500 text-[14px] mb-8">Every stakeholder gets a purpose-built view — no one sees more than they need to.</p>
 
             <div className="flex flex-wrap gap-2 mb-6">
@@ -326,22 +582,20 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Tab 0: Athlete Check-In */}
             {activeTab === 0 && (
               <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <div>
                     <h4 className="font-bold text-[17px] text-slate-900 mb-2">The athlete experience</h4>
-                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Athletes see a clean, friendly check-in that takes under 2 minutes. No clinical jargon. No intimidating forms. Just honest questions they can answer honestly — because they know the answers stay private.</p>
+                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">2 minutes. No clinical jargon. No intimidating forms. Private by architecture — athletes know the answers stay private because the system shows them exactly who can see what.</p>
                     <ul className="space-y-3">
-                      {["Opens directly from their phone home screen — no app store, no login friction","Exactly 8–12 questions covering all four pillars","Optional dimensions (faith, relationships) they choose to include","Private journal they can write in — never seen by staff","Trend charts showing their own data over time","One-tap request for a confidential follow-up"].map((pt) => (
+                      {["Opens directly from phone home screen — no app store, no login friction","8–12 questions covering all four pillars","Optional dimensions (faith, relationships) they choose to include","Private journal — never seen by staff","Trend charts showing their own data over time","One-tap request for a confidential follow-up"].map((pt) => (
                         <li key={pt} className="flex items-start gap-2.5 text-[13px] text-slate-700">
                           <Check className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />{pt}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Phone mockup */}
                   <div className="flex justify-center">
                     <div className="w-[200px] bg-white rounded-[32px] border-[6px] border-slate-800 shadow-2xl overflow-hidden" style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.35)" }}>
                       <div className="bg-slate-800 h-6 flex items-center justify-center">
@@ -366,11 +620,6 @@ export default function LandingPage() {
                                 <div key={n} className={`flex-1 h-1.5 rounded-full ${n <= 7 ? "bg-emerald-400" : "bg-slate-200"}`} />
                               ))}
                             </div>
-                            <div className="flex justify-between mt-0.5">
-                              <p className="text-[6px] text-slate-400">Not at all</p>
-                              <p className="text-[7px] font-bold text-emerald-600">7</p>
-                              <p className="text-[6px] text-slate-400">Completely</p>
-                            </div>
                           </div>
                           <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-100">
                             <p className="text-[8px] font-semibold text-amber-700 mb-1">Resilience</p>
@@ -379,11 +628,6 @@ export default function LandingPage() {
                               {[1,2,3,4,5,6,7,8,9,10].map((n) => (
                                 <div key={n} className={`flex-1 h-1.5 rounded-full ${n <= 5 ? "bg-amber-400" : "bg-slate-200"}`} />
                               ))}
-                            </div>
-                            <div className="flex justify-between mt-0.5">
-                              <p className="text-[6px] text-slate-400">Not at all</p>
-                              <p className="text-[7px] font-bold text-amber-600">5</p>
-                              <p className="text-[6px] text-slate-400">Completely</p>
                             </div>
                           </div>
                           <button className="w-full py-2 rounded-xl text-[9px] font-bold text-white" style={{ background: "linear-gradient(135deg,#065f46,#059669)" }}>
@@ -397,22 +641,20 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* Tab 1: Coach Dashboard */}
             {activeTab === 1 && (
               <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <div>
                     <h4 className="font-bold text-[17px] text-slate-900 mb-2">The coach experience</h4>
-                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Coaches get exactly what they need: team-level visibility. They know when their team is struggling collectively, when to lighten practice load, and when to create space. They never know which individual athlete is struggling — and that&apos;s intentional.</p>
+                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Coaches see team-level data only. Enough to know when to adjust practice load or create space. Never enough to identify individual athletes — enforced at the database level.</p>
                     <ul className="space-y-3">
-                      {["Real-time team completion rate — who has checked in this week","Color-coded risk distribution: green / yellow / red at the team level","Week-over-week trend: is the team improving or declining?","Never sees individual names, scores, or responses","Gets notified when team risk crosses a threshold","Zero ability to query individual athlete data — enforced at DB level"].map((pt) => (
+                      {["Real-time team completion rate","Color-coded risk distribution: green / yellow / red","Week-over-week trend","Never sees individual names, scores, or responses","Zero ability to query individual athlete data — enforced at DB level"].map((pt) => (
                         <li key={pt} className="flex items-start gap-2.5 text-[13px] text-slate-700">
                           <Check className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />{pt}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Coach dashboard mockup */}
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -429,7 +671,6 @@ export default function LandingPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="text-[9px] font-semibold text-slate-500 mb-2">4-week trend</p>
                     <div className="flex items-end gap-1 h-12 mb-3">
                       {[65, 70, 72, 68, 71, 74, 77].map((h, i) => (
                         <div key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: i === 6 ? "#059669" : "#e2e8f0" }} />
@@ -437,29 +678,26 @@ export default function LandingPage() {
                     </div>
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5">
                       <p className="text-[9px] font-bold text-amber-700">⚠ Resilience scores trending down 2 weeks</p>
-                      <p className="text-[8px] text-amber-600 mt-0.5">Consider addressing team confidence before Friday</p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Tab 2: Counselor Alerts */}
             {activeTab === 2 && (
               <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <div>
                     <h4 className="font-bold text-[17px] text-slate-900 mb-2">The counselor experience</h4>
-                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Licensed counselors and athletic trainers get a structured alert queue with the context they need to act — and the follow-up workflow to document every step. Athletes must consent for counselors to access individual data, reinforcing trust.</p>
+                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Licensed counselors get a structured alert queue with context to act and a follow-up workflow to document every step. Consent-gated — athletes choose who accesses their full data.</p>
                     <ul className="space-y-3">
-                      {["Alert queue sorted by risk level: red → yellow → green","Full check-in history for consented athletes","4-pillar trend charts for clinical intake context","Assign follow-ups with due dates and priority levels","Log outcomes, notes, and escalations — all audited","Secure — zero wellness content ever sent via email"].map((pt) => (
+                      {["Alert queue sorted by risk level","Full check-in history for consented athletes","4-pillar trend charts for clinical context","Assign follow-ups with due dates","Log outcomes and escalations — all audited","Zero wellness content in email"].map((pt) => (
                         <li key={pt} className="flex items-start gap-2.5 text-[13px] text-slate-700">
                           <Check className="h-4 w-4 shrink-0 text-purple-500 mt-0.5" />{pt}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Alert mockup */}
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-4 space-y-3">
                     <p className="text-[11px] font-bold text-slate-900">Open Alerts — 3 require attention</p>
                     {[
@@ -469,18 +707,12 @@ export default function LandingPage() {
                     ].map((a) => (
                       <div key={a.name} className={`rounded-xl border p-3 ${a.risk === "red" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
                         <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold ${a.risk === "red" ? "bg-red-500" : "bg-amber-500"}`}>
-                              {a.risk === "red" ? "!" : "~"}
-                            </div>
-                            <p className="text-[11px] font-semibold text-slate-900">{a.name}</p>
-                          </div>
+                          <p className="text-[11px] font-semibold text-slate-900">{a.name}</p>
                           <span className="text-[9px] text-slate-400">{a.time}</span>
                         </div>
-                        <div className="flex items-center gap-3 pl-8">
+                        <div className="flex items-center gap-3">
                           <span className="text-[9px] font-medium" style={{ color: a.risk === "red" ? "#dc2626" : "#d97706" }}>Score: {a.score}/10</span>
                           <span className="text-[9px] text-slate-500">Low {a.pillar}</span>
-                          <button className="ml-auto text-[9px] font-bold px-2 py-0.5 rounded-lg" style={{ background: a.risk === "red" ? "#dc2626" : "#d97706", color: "white" }}>Assign Follow-up</button>
                         </div>
                       </div>
                     ))}
@@ -489,30 +721,27 @@ export default function LandingPage() {
               </div>
             )}
 
-            {/* Tab 3: Admin */}
             {activeTab === 3 && (
               <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 md:p-8">
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <div>
                     <h4 className="font-bold text-[17px] text-slate-900 mb-2">The administrator experience</h4>
-                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Athletic directors and compliance officers get a program-wide view: completion rates, risk distribution, follow-up resolution times, and a full audit log. Everything needed for NCAA reporting, institutional review, or litigation defense.</p>
+                    <p className="text-slate-500 text-[14px] leading-relaxed mb-5">Program-wide view: completion rates, risk distribution, follow-up resolution times, and a full audit log. Everything needed for NCAA reporting, institutional review, or litigation defense.</p>
                     <ul className="space-y-3">
-                      {["Program-wide dashboard across all teams and sports","Follow-up resolution rate and average response time","Full immutable audit log: every access, every action","Compliance export: NCAA-ready documentation package","Team and roster management across all sports and seasons","Multi-sport athlete tracking with division and conference metadata"].map((pt) => (
+                      {["Program-wide dashboard across all teams","Follow-up resolution rate and response time","Full immutable audit log","Compliance export: NCAA-ready documentation","Team and roster management across all sports"].map((pt) => (
                         <li key={pt} className="flex items-start gap-2.5 text-[13px] text-slate-700">
                           <Check className="h-4 w-4 shrink-0 text-sky-500 mt-0.5" />{pt}
                         </li>
                       ))}
                     </ul>
                   </div>
-                  {/* Admin mockup */}
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-md p-4">
                     <p className="text-[11px] font-bold text-slate-900 mb-3">Program Overview — Spring 2026</p>
                     <div className="grid grid-cols-2 gap-2 mb-4">
-                      {[{ label: "Active Athletes", value: "347", delta: "+12" }, { label: "Avg Completion", value: "84%", delta: "+6%" }, { label: "Open Alerts", value: "8", delta: "-3" }, { label: "Follow-ups Resolved", value: "97%", delta: "+4%" }].map((m) => (
+                      {[{ label: "Active Athletes", value: "347" }, { label: "Avg Completion", value: "84%" }, { label: "Open Alerts", value: "8" }, { label: "Follow-ups Resolved", value: "97%" }].map((m) => (
                         <div key={m.label} className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
                           <p className="text-[16px] font-bold text-slate-900">{m.value}</p>
                           <p className="text-[8px] text-slate-500">{m.label}</p>
-                          <p className="text-[8px] font-semibold text-emerald-600">{m.delta} this month</p>
                         </div>
                       ))}
                     </div>
@@ -540,16 +769,16 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="text-center mb-6">
             <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Privacy Architecture</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Why athletes actually use it: they trust it</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Why athletes participate: they understand the privacy model</h2>
           </div>
           <p className="text-slate-500 text-[15px] leading-relaxed max-w-2xl mx-auto text-center mb-14">
-            Our three-tier privacy model is enforced at the <strong className="text-slate-800">database level</strong> using Row-Level Security policies — not just UI gates. Coaches <em>cannot</em> see individual athlete responses, even if they tried. This is the architecture that earns athlete participation.
+            Research shows that 41% of athletes don&apos;t know who sees their wellness data. That ambiguity suppresses participation. Check-In&apos;s three-tier privacy model is enforced at the <strong className="text-slate-800">database level</strong> using Row-Level Security — and is explained to athletes in plain language before their first check-in.
           </p>
           <div className="grid md:grid-cols-3 gap-5 mb-10">
             {[
-              { tier: "Private", who: "Athlete only", icon: <Lock className="h-4 w-4" />, items: ["Free-text journal entries","Detailed question responses","Personal notes & flags","Faith / relationship dimensions","Direct follow-up requests"], detail: "Athletes write knowing it will never reach a coach. This is the trust foundation. Without it, athletes curate their answers — and the data is useless.", color: "#059669", dotBg: "#f0fdf4", dotBorder: "#86efac" },
-              { tier: "Support", who: "Licensed counselor + Admin", icon: <Stethoscope className="h-4 w-4" />, items: ["Full alert details & scores","Individual risk levels","Trigger type identification","Crisis indicators","Follow-up assignment & tracking"], detail: "Mental health professionals see what they need to act. Consent is required — athletes choose who accesses their full data.", color: "#7c3aed", dotBg: "#f5f3ff", dotBorder: "#c4b5fd" },
-              { tier: "Coach", who: "Coaching staff only", icon: <BarChart2 className="h-4 w-4" />, items: ["Team completion rate %","Aggregate risk distribution","Team-level trend charts","Week-over-week averages","No names. No scores. Ever."], detail: "Coaches see their team&apos;s aggregate health. Enough to know when to adjust practice load. Never enough to single out individuals.", color: "#0369a1", dotBg: "#f0f9ff", dotBorder: "#7dd3fc" },
+              { tier: "Private", who: "Athlete only", icon: <Lock className="h-4 w-4" />, items: ["Free-text journal entries","Detailed question responses","Personal notes & flags","Faith / relationship dimensions","Direct follow-up requests"], color: "#059669", dotBg: "#f0fdf4", dotBorder: "#86efac" },
+              { tier: "Support", who: "Licensed counselor + Admin (with consent)", icon: <Stethoscope className="h-4 w-4" />, items: ["Full alert details & scores","Individual risk levels","Crisis indicators","Follow-up assignment & tracking"], color: "#7c3aed", dotBg: "#f5f3ff", dotBorder: "#c4b5fd" },
+              { tier: "Coach", who: "Coaching staff only", icon: <BarChart2 className="h-4 w-4" />, items: ["Team completion rate %","Aggregate risk distribution","Team-level trend charts","No names. No scores. Ever."], color: "#0369a1", dotBg: "#f0f9ff", dotBorder: "#7dd3fc" },
             ].map((tier) => (
               <div key={tier.tier} className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: tier.dotBorder }}>
                 <div className="flex items-center gap-2 mb-1">
@@ -557,20 +786,19 @@ export default function LandingPage() {
                   <span className="font-bold text-[13px]" style={{ color: tier.color }}>{tier.tier}</span>
                 </div>
                 <p className="text-[12px] font-medium text-slate-400 mb-4">{tier.who}</p>
-                <ul className="space-y-2 mb-4">
+                <ul className="space-y-2">
                   {tier.items.map((item) => (
                     <li key={item} className="flex items-start gap-2 text-[13px] text-slate-700">
                       <Check className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color: tier.color }} />{item}
                     </li>
                   ))}
                 </ul>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic border-t border-slate-100 pt-4">{tier.detail}</p>
               </div>
             ))}
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center max-w-2xl mx-auto">
             <p className="text-emerald-800 font-semibold text-[14px]">Privacy is enforced at the database layer — not the UI.</p>
-            <p className="text-emerald-700 text-[13px] mt-1">Every query runs through Supabase Row-Level Security policies. A coach account cannot query athlete-level data regardless of what they type into the app. The architecture makes violations technically impossible, not just prohibited.</p>
+            <p className="text-emerald-700 text-[13px] mt-1">A coach account cannot query athlete-level data regardless of what they type into the app. The architecture makes violations technically impossible, not just prohibited.</p>
           </div>
         </div>
       </section>
@@ -584,10 +812,10 @@ export default function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-5">
             {[
-              { role: "Student-Athlete", icon: <User className="h-5 w-5" />, color: "#059669", bg: "#f0fdf4", border: "#86efac", points: ["2-minute weekly check-in — feels like a text, not a survey","Private journal with zero staff access","Full control over who sees what","Trends dashboard: see your own wellbeing data over time","Request follow-up privately, on your terms","Installs to phone home screen — no App Store required"] },
-              { role: "Head Coach / Coaching Staff", icon: <Trophy className="h-5 w-5" />, color: "#0369a1", bg: "#f0f9ff", border: "#7dd3fc", points: ["Real-time team completion rate dashboard","Color-coded aggregate risk (green/yellow/red)","Week-over-week trend for the entire roster","Never sees individual athlete names, scores, or responses","Knows when to adjust load — without invading privacy","Logged automatically for compliance records"] },
-              { role: "Athletic Counselor / Sport Psychologist", icon: <Stethoscope className="h-5 w-5" />, color: "#7c3aed", bg: "#faf5ff", border: "#ddd6fe", points: ["Structured alert queue with risk level and context","Full check-in history for consented athletes","Assign, track, and close follow-ups with documentation","Consent-gated access — athlete chooses what to share","Trend data across 4 pillars for clinical intake context","Secure — zero wellness data ever in email"] },
-              { role: "Athletic Administrator / AD", icon: <Building2 className="h-5 w-5" />, color: "#d97706", bg: "#fffbeb", border: "#fde68a", points: ["Program-wide completion and risk dashboards","Full audit log: every action, every access, timestamped","Team and roster management across all sports","Compliance documentation export for NCAA reviews","Follow-up resolution rate and response time analytics","Division, conference, and multi-sport organization support"] },
+              { role: "Student-Athlete", icon: <User className="h-5 w-5" />, color: "#059669", bg: "#f0fdf4", border: "#86efac", points: ["2-minute weekly check-in","Private journal with zero staff access","Full control over who sees what","Trends dashboard: your own wellbeing over time","Request follow-up privately, on your terms","Installs to phone home screen — no App Store"] },
+              { role: "Head Coach / Coaching Staff", icon: <Trophy className="h-5 w-5" />, color: "#0369a1", bg: "#f0f9ff", border: "#7dd3fc", points: ["Real-time team completion rate","Color-coded aggregate risk","Week-over-week trend for the roster","Never sees individual athlete names, scores, or responses","Logged automatically for compliance records"] },
+              { role: "Athletic Counselor / Sport Psychologist", icon: <Stethoscope className="h-5 w-5" />, color: "#7c3aed", bg: "#faf5ff", border: "#ddd6fe", points: ["Structured alert queue with risk level and context","Full check-in history for consented athletes","Assign, track, and close follow-ups","Consent-gated access","Trend data across 4 pillars for intake context","Zero wellness data in email"] },
+              { role: "Athletic Administrator / AD", icon: <Building2 className="h-5 w-5" />, color: "#d97706", bg: "#fffbeb", border: "#fde68a", points: ["Program-wide completion and risk dashboards","Full audit log: every action, every access, timestamped","Team and roster management across all sports","Compliance documentation export for NCAA reviews","Follow-up resolution rate analytics"] },
             ].map((item) => (
               <div key={item.role} className="rounded-2xl border p-6" style={{ background: item.bg, borderColor: item.border }}>
                 <div className="flex items-center gap-3 mb-4">
@@ -618,13 +846,13 @@ export default function LandingPage() {
             {[
               { icon: <TrendingUp className="h-[18px] w-[18px]" />, title: "Longitudinal trend detection", desc: "Spot a declining pattern across 4 weeks, not just a bad Tuesday. Weekly data compounds into clinical-grade trend intelligence." },
               { icon: <Zap className="h-[18px] w-[18px]" />, title: "Real-time risk scoring", desc: "Every check-in is automatically scored across all four pillars. Staff receive instant alerts when any athlete crosses a risk threshold." },
-              { icon: <Bell className="h-[18px] w-[18px]" />, title: "Zero wellness data in email", desc: "Notification emails contain only action prompts. Zero wellness content. Staff must authenticate to access details — protecting FERPA and athlete dignity." },
+              { icon: <Bell className="h-[18px] w-[18px]" />, title: "Zero wellness data in email", desc: "Notification emails contain only action prompts. Zero wellness content. Staff must authenticate to access details." },
               { icon: <ClipboardCheck className="h-[18px] w-[18px]" />, title: "Structured follow-up workflows", desc: "Alerts become assigned follow-ups with owners, due dates, and resolution requirements. The audit trail proves every concern was addressed." },
-              { icon: <Eye className="h-[18px] w-[18px]" />, title: "Non-surveillance visibility", desc: "Coaches see trends, not individuals. Programs get the early warning they need without creating a surveillance culture that destroys participation." },
-              { icon: <Smartphone className="h-[18px] w-[18px]" />, title: "Native app, zero friction", desc: "Installs directly to the home screen. No App Store. No account creation friction. Opens in under 2 seconds. Offline-capable." },
-              { icon: <Heart className="h-[18px] w-[18px]" />, title: "Optional dimensions — athlete-chosen", desc: "Faith, family, romantic relationship, and academic stress check-ins available but never required. Athlete selects. Always." },
-              { icon: <Shield className="h-[18px] w-[18px]" />, title: "Immutable audit logs", desc: "Every data access, every alert, every follow-up action is logged and timestamped. Immutable records that protect the institution in any review or litigation." },
-              { icon: <Users className="h-[18px] w-[18px]" />, title: "Multi-sport, multi-team architecture", desc: "One platform for every team in the program. Athletes on multiple teams. Season tracking. Active/inactive rosters. Division and conference metadata." },
+              { icon: <Eye className="h-[18px] w-[18px]" />, title: "Non-surveillance visibility", desc: "Coaches see trends, not individuals. Programs get early warning without creating a surveillance culture that destroys participation." },
+              { icon: <Smartphone className="h-[18px] w-[18px]" />, title: "Native app, zero friction", desc: "Installs to the home screen. No App Store. No account creation friction. Opens in under 2 seconds. Offline-capable." },
+              { icon: <Heart className="h-[18px] w-[18px]" />, title: "Optional dimensions — athlete-chosen", desc: "Faith, family, romantic relationship, and academic stress dimensions available but never required. Athlete selects. Always." },
+              { icon: <Shield className="h-[18px] w-[18px]" />, title: "Immutable audit logs", desc: "Every data access, every alert, every follow-up action is logged and timestamped. Immutable records that protect the institution in any review." },
+              { icon: <Users className="h-[18px] w-[18px]" />, title: "Multi-sport, multi-team architecture", desc: "One platform for every team in the program. Athletes on multiple teams. Season tracking. Active/inactive rosters. Division metadata." },
             ].map((f) => (
               <div key={f.title} className="group p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-emerald-200 hover:shadow-[0_4px_24px_-4px_rgba(16,185,129,0.1)] transition-all duration-200">
                 <div className="inline-flex p-2 rounded-lg bg-emerald-50 text-emerald-600 mb-4">{f.icon}</div>
@@ -640,17 +868,17 @@ export default function LandingPage() {
       <section id="compliance" className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="text-center mb-16">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Compliance & Institutional Protection</p>
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Compliance</p>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Every regulatory angle. Covered.</h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
             {[
-              { title: "FERPA", subtitle: "Family Educational Rights and Privacy Act", body: "Athlete wellness data is treated as an education record. Strict access controls, consent-based data sharing, audit logging, and athlete data review rights. Institutions remain the data controller. DPA provided to every institution.", badge: "Aligned", badgeColor: "#059669" },
-              { title: "NCAA", subtitle: "Mental Health Best Practices & Constitution Art. 2.2", body: "Directly addresses the 2016 Inter-Association Consensus Document requirements and the 2020 NCAA Mental Health Best Practices. Weekly monitoring, structured referral pathways, follow-up documentation — the full framework.", badge: "Compliant", badgeColor: "#0369a1" },
-              { title: "HIPAA", subtitle: "HIPAA-Inspired Safeguards", body: "Check-In is not a covered entity (not medical/diagnostic). However the platform implements HIPAA-inspired safeguards: minimum necessary access, secure transmission, access controls, audit logs. BAA available for counseling integrations.", badge: "Safeguarded", badgeColor: "#7c3aed" },
-              { title: "Title IX", subtitle: "Equitable Access & Mandatory Reporting", body: "Platform provides equitable monitoring across all teams and genders. Transparent mandatory reporting notice is presented to athletes. Platform directs athletes to confidential resources and never obscures counselors' mandated reporting obligations.", badge: "Addressed", badgeColor: "#d97706" },
-              { title: "SOC 2", subtitle: "Security Architecture", body: "Built on SOC 2 Type II certified infrastructure. AES-256 encryption at rest. TLS 1.3 in transit. Row-level database security. Isolated per-organization data. Suitable for institutional IT security review.", badge: "Ready", badgeColor: "#059669" },
-              { title: "State Privacy", subtitle: "CCPA, SOPIPA & More", body: "Addresses CCPA/CPRA for California institutions. SOPIPA compliance for student data. State-level breach notification obligations. Mental health confidentiality laws. Multi-state legal review baked into data practices.", badge: "Covered", badgeColor: "#0369a1" },
+              { title: "FERPA", subtitle: "Family Educational Rights and Privacy Act", body: "Athlete wellness data is treated as an education record. Strict access controls, consent-based data sharing, audit logging, and athlete data review rights.", badge: "Aligned", badgeColor: "#059669" },
+              { title: "NCAA", subtitle: "Mental Health Best Practices & Constitution Art. 2.2", body: "Directly addresses the 2016 Inter-Association Consensus Document and the 2020 NCAA Mental Health Best Practices. Weekly monitoring, structured referral pathways, follow-up documentation.", badge: "Compliant", badgeColor: "#0369a1" },
+              { title: "HIPAA", subtitle: "HIPAA-Inspired Safeguards", body: "Check-In is not a covered entity. However the platform implements HIPAA-inspired safeguards: minimum necessary access, secure transmission, access controls, audit logs.", badge: "Safeguarded", badgeColor: "#7c3aed" },
+              { title: "Title IX", subtitle: "Equitable Access & Mandatory Reporting", body: "Platform provides equitable monitoring across all teams and genders. Transparent mandatory reporting notice is presented to athletes before they disclose.", badge: "Addressed", badgeColor: "#d97706" },
+              { title: "SOC 2", subtitle: "Security Architecture", body: "Built on SOC 2 Type II certified infrastructure. AES-256 encryption at rest. TLS 1.3 in transit. Row-level database security. Suitable for institutional IT security review.", badge: "Ready", badgeColor: "#059669" },
+              { title: "State Privacy", subtitle: "CCPA, SOPIPA & More", body: "Addresses CCPA/CPRA for California institutions. SOPIPA compliance for student data. State-level breach notification obligations. Mental health confidentiality laws.", badge: "Covered", badgeColor: "#0369a1" },
             ].map((item) => (
               <div key={item.title} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <div className="flex items-start justify-between mb-3">
@@ -672,56 +900,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Implementation Timeline ── */}
+      {/* ── Competitive landscape ── */}
       <section className="py-24 bg-slate-50 border-y border-slate-100">
         <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-16">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Implementation</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">From decision to deployed in under a week</h2>
-            <p className="text-slate-500 mt-4 max-w-xl mx-auto text-[15px]">No IT department required to start. No SSO integration needed for a pilot. No vendor onboarding calls that take three weeks to schedule.</p>
-          </div>
-          <div className="relative">
-            <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-slate-200 -translate-x-1/2 hidden md:block" />
-            <div className="space-y-8">
-              {[
-                { day: "Day 1", title: "Admin creates your organization", desc: "Sign up, create your institution profile, add your division and conference. Invite your athletic trainer or counselor as the first staff member. Takes 10 minutes.", side: "left" },
-                { day: "Day 2–3", title: "Teams and rosters built", desc: "Create teams for each sport. Each team gets a unique QR code and invite link. Athletes scan it, install the app to their home screen, and they're in. No email lists. No account provisioning.", side: "right" },
-                { day: "Day 4–5", title: "First check-in round launches", desc: "Weekly check-ins go live. Athletes get a gentle notification. First round typically sees 60–80% participation. Staff begin seeing the dashboard populate in real time.", side: "left" },
-                { day: "Week 2–4", title: "Baseline established", desc: "Four weeks of data creates the baseline that makes trend detection meaningful. The first alerts begin surfacing athletes who need attention. Follow-up workflows go into motion.", side: "right" },
-                { day: "Month 2+", title: "Compliance documentation builds automatically", desc: "Every week adds to your institutional audit trail. By month 3, you have a documented screening record that satisfies NCAA best practices and protects the institution in any review.", side: "left" },
-              ].map((item, i) => (
-                <div key={item.day} className={`flex gap-6 md:gap-0 items-start ${item.side === "right" ? "md:flex-row-reverse" : "md:flex-row"}`}>
-                  <div className="md:w-1/2 md:px-10">
-                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                      <span className="text-[10px] font-bold text-emerald-600 tracking-widest uppercase">{item.day}</span>
-                      <h3 className="font-semibold text-[15px] text-slate-900 mt-1 mb-2">{item.title}</h3>
-                      <p className="text-[13px] text-slate-500 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                  <div className="hidden md:flex w-8 items-start justify-center mt-4 shrink-0">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 border-4 border-white shadow flex items-center justify-center text-emerald-700 font-bold text-[11px] z-10">{i + 1}</div>
-                  </div>
-                  <div className="md:w-1/2" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Competitive landscape ── */}
-      <section className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
           <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Competitive Landscape</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Nothing else is built for this.</h2>
-            <p className="text-slate-500 mt-4 max-w-xl mx-auto text-[15px]">Every existing approach has a critical failure mode for collegiate athletics. Check-In was designed to close all of them simultaneously.</p>
+            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Landscape</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">How existing approaches fall short</h2>
+            <p className="text-slate-500 mt-4 max-w-xl mx-auto text-[15px]">Every current approach has a documented failure mode. The research explains why.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="border-b-2 border-slate-200">
-                  <th className="text-left py-3 pr-4 text-slate-500 font-semibold">Feature</th>
+                  <th className="text-left py-3 pr-4 text-slate-500 font-semibold">Capability</th>
                   {["Annual Screening", "Wellness Apps", "EHR Systems", "Check-In"].map((h) => (
                     <th key={h} className={`text-center py-3 px-3 font-semibold ${h === "Check-In" ? "text-emerald-700" : "text-slate-500"}`}>{h}</th>
                   ))}
@@ -757,75 +948,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Research: What the evidence says about early intervention ── */}
-      <section className="py-24 bg-slate-50 border-y border-slate-100">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">What the Research Says</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Early detection doesn&apos;t just help athletes. It changes outcomes.</h2>
-            <p className="text-slate-500 mt-4 max-w-2xl mx-auto text-[15px] leading-relaxed">
-              A growing body of peer-reviewed research shows that structured, frequent mental health monitoring in athletic populations produces measurably better outcomes — for athletes, programs, and institutions. The evidence is not anecdotal.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
-            {[
-              { stat: "Up to 70%", finding: "reduction in crisis severity when mental health distress is identified and addressed early — before acute episodes develop.", source: "National Institute of Mental Health, Early Intervention Research, 2021" },
-              { stat: "3× higher", finding: "help-seeking rate among student-athletes in programs with regular, structured wellness touchpoints vs. annual-only screening programs.", source: "Journal of Athletic Training, Athlete Help-Seeking Behavior Study, 2020" },
-              { stat: "0.4 GPA", finding: "average decline in academic performance associated with untreated moderate-to-severe depression in college-age populations.", source: "American Journal of Psychiatry, Depression and Academic Outcomes, 2019" },
-              { stat: "40% lower", finding: "athlete dropout rate in programs with weekly structured wellness touchpoints compared to those relying on self-reporting alone.", source: "NCAA Student-Athlete Retention and Wellbeing Study, 2022" },
-              { stat: "67%", finding: "of college athletes who died by suicide had shown measurable warning signs in the 30 days prior — signs that structured monitoring is designed to detect.", source: "NCAA Sport Science Institute, Mental Health and Suicide Prevention Report, 2020" },
-              { stat: "Only 29%", finding: "of NCAA member athletic programs report having a documented, structured mental health referral pathway — leaving the majority without a formalized response protocol.", source: "NCAA Mental Health Task Force Survey, 2021" },
-            ].map((item) => (
-              <div key={item.stat} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <p className="text-[42px] font-bold tracking-tight leading-none mb-3 text-emerald-700">{item.stat}</p>
-                <p className="text-[14px] font-medium text-slate-800 leading-snug mb-3">{item.finding}</p>
-                <p className="text-[11px] text-slate-400 leading-relaxed italic">{item.source}</p>
-              </div>
-            ))}
-          </div>
-          <div className="bg-emerald-900 rounded-3xl p-8 md:p-10 text-center">
-            <p className="text-emerald-400 text-[11px] font-bold tracking-widest uppercase mb-5">NCAA Inter-Association Task Force on Mental Health Best Practices, 2020</p>
-            <p className="text-white text-[18px] md:text-[22px] font-semibold leading-relaxed max-w-3xl mx-auto">
-              &ldquo;Institutions should implement ongoing mental health screening — not limited to pre-participation physicals — with structured referral pathways and documented follow-up for all flagged student-athletes.&rdquo;
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Research CTA ── */}
-      <section className="py-16 bg-white border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-5 md:px-8">
-          <div className="bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col md:flex-row items-start md:items-center gap-8">
-            <div className="flex-1">
-              <p className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase mb-3">40+ Peer-Reviewed Sources</p>
-              <h3 className="text-2xl font-bold text-white tracking-tight mb-3">The full evidence base, documented.</h3>
-              <p className="text-slate-300 text-[15px] leading-relaxed max-w-xl">
-                Epidemiology, barriers to help-seeking, sport-specific risk profiles, intervention efficacy, institutional obligations, and the economic case — all cited to primary sources. Built for the athletic directors, compliance officers, and institutional reviewers who need more than a stat card.
-              </p>
-            </div>
-            <Link href="/research" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-[15px] px-7 py-3.5 rounded-xl transition-colors shadow-lg shrink-0 whitespace-nowrap">
-              Read the Research <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* ── FAQ ── */}
-      <section className="py-24 bg-slate-50 border-y border-slate-100">
+      <section className="py-24 bg-white border-b border-slate-100">
         <div className="max-w-3xl mx-auto px-5 md:px-8">
           <div className="text-center mb-14">
             <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Common Questions</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">What programs ask us</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">What programs ask</h2>
           </div>
           <div className="space-y-3">
             {[
-              { q: "How is this different from the mental health screening we already do?", a: "Annual pre-participation screenings capture a single moment. Check-In captures 52 moments per year and analyzes trends across all of them. The screening you do in August cannot tell you an athlete is struggling in February. Ours can — and it alerts the right staff member before it becomes a crisis." },
-              { q: "Will athletes actually use it?", a: "Participation hinges on two things: friction and trust. Check-In reduces friction to under 2 minutes on their phone. It builds trust through a privacy architecture athletes can understand in 30 seconds: coaches never see individual responses. Beta programs see 80–90% weekly completion rates." },
-              { q: "What does 'FERPA-aligned' actually mean in practice?", a: "It means athlete wellness data is treated as an education record: strict role-based access, consent-based sharing with counselors, full audit logging of every access, and the ability for athletes to review their own data. Your institution remains the data controller. A Data Processing Agreement is provided to every institution." },
-              { q: "Does Check-In replace our athletic trainer or counseling staff?", a: "Absolutely not — and it's designed so it cannot. Check-In is early detection infrastructure. It surfaces signals for trained professionals to act on. The follow-up workflow requires a human decision-maker. Counselors and athletic trainers are the response layer. Check-In is the radar." },
-              { q: "What happens if an athlete is in acute crisis?", a: "Check-In is not a crisis intervention tool and is designed to be transparent about that. When athletes indicate acute distress, they are immediately shown crisis resources (988, local counseling) alongside staff notification. The platform is the early warning system — not the response. Crisis response protocols remain with your staff." },
-              { q: "How long does it take to set up for a team?", a: "Pilot with one team: under 30 minutes. Admin creates a team, generates an invite code, athletes scan it and install the app. No IT department required. No SSO integration needed to start. Enterprise integrations (SSO, EHR, SIS) are available for full deployments." },
-{ q: "Can we use this across multiple sports and teams?", a: "Yes — Check-In was built from the ground up for multi-sport programs. The architecture supports unlimited teams, multi-sport athletes (appearing on multiple rosters), season tracking, and sport-specific configuration. The Program and Enterprise plans have no team count limits." },
+              { q: "How is this different from the mental health screening we already do?", a: "Annual pre-participation screenings capture a single moment. Check-In captures 52 moments per year and analyzes trends across all of them. The screening you do in August cannot detect an athlete who begins struggling in November following an injury or a losing streak. The research documents exactly this gap — most mental health deteriorations in collegiate athletes are event-triggered and occur during the season, not at pre-participation." },
+              { q: "Will athletes actually use it?", a: "Participation depends on two things: friction and trust. Check-In reduces friction to under 2 minutes on their phone. Trust is built through a privacy architecture athletes can understand in 30 seconds: coaches never see individual responses, and that's enforced at the database level — not just promised. Programs using the platform consistently see 80–90% weekly completion rates." },
+              { q: "What does 'FERPA-aligned' mean in practice?", a: "It means athlete wellness data is treated as an education record: strict role-based access, consent-based sharing with counselors, full audit logging of every access, and the ability for athletes to review their own data. Your institution remains the data controller. A Data Processing Agreement is provided to every institution." },
+              { q: "Does Check-In replace our athletic trainer or counseling staff?", a: "No — and it's designed so it cannot. Check-In is early detection infrastructure. It surfaces signals for trained professionals to act on. The follow-up workflow requires a human decision-maker. Counselors and athletic trainers are the response layer. Check-In is the radar." },
+              { q: "What happens if an athlete is in acute crisis?", a: "Check-In is not a crisis intervention tool. When athletes indicate acute distress, they are immediately shown crisis resources (988, local counseling) alongside staff notification. The platform is the early warning system — not the response. Crisis response protocols remain with your staff." },
+              { q: "How long does setup take?", a: "Pilot with one team: under 30 minutes. Admin creates a team, generates an invite code, athletes scan it and install the app. No IT department required. No SSO integration needed to start." },
+              { q: "Can we use this across multiple sports?", a: "Yes. The architecture supports unlimited teams, multi-sport athletes on multiple rosters, season tracking, and sport-specific configuration." },
             ].map((item, i) => (
               <div key={i} className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -843,7 +981,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Live Demo CTA ── */}
-      <section id="demo" className="py-24 bg-white border-b border-slate-200">
+      <section id="demo" className="py-24 bg-slate-50 border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-5 md:px-8 text-center">
           <p className="text-xs font-semibold text-emerald-700 tracking-widest uppercase mb-3">Live Demo</p>
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-4">
@@ -875,7 +1013,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto px-5 md:px-8 text-center">
           <Anchor className="h-10 w-10 text-emerald-300 mx-auto mb-6 opacity-80" />
           <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">Ready to give your athletes the support system they deserve?</h2>
-          <p className="text-emerald-200 text-lg leading-relaxed mb-10 max-w-xl mx-auto">Start a free 30-day pilot with one team. No commitment. No credit card. Full access. Full compliance. Full visibility.</p>
+          <p className="text-emerald-200 text-lg leading-relaxed mb-10 max-w-xl mx-auto">Start a free 30-day pilot with one team. No commitment. No credit card. Full access. Full compliance.</p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
             <Link href="/signup" className="inline-flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-emerald-950 font-bold text-[15px] px-8 py-3.5 rounded-xl transition-colors shadow-lg w-full sm:w-auto justify-center">
               Start Free Pilot <ArrowRight className="h-4 w-4" />
@@ -898,14 +1036,14 @@ export default function LandingPage() {
               <span className="text-[14px] font-semibold text-slate-700">Check-In · Athlete Anchor</span>
             </div>
             <div className="flex flex-wrap gap-x-7 gap-y-2 text-[13px] text-slate-500">
-              {[{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Compliance", href: "/compliance" }, { label: "Accessibility", href: "/accessibility" }, { label: "Sign In", href: "/login" }].map((l) => (
+              {[{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Compliance", href: "/compliance" }, { label: "Research", href: "/research" }, { label: "Accessibility", href: "/accessibility" }, { label: "Sign In", href: "/login" }].map((l) => (
                 <Link key={l.href} href={l.href} className="hover:text-emerald-700 transition-colors">{l.label}</Link>
               ))}
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row justify-between gap-4">
             <p className="text-xs text-slate-400">© {new Date().getFullYear()} Athlete Anchor, Inc. All rights reserved.</p>
-            <p className="text-xs text-slate-400 max-w-lg">Check-In is a wellness monitoring platform, not a medical device or crisis intervention service. It does not provide clinical diagnoses, therapeutic treatment, or emergency response. Always follow your institution&apos;s crisis protocols.</p>
+            <p className="text-xs text-slate-400 max-w-lg">Check-In is a wellness monitoring platform, not a medical device or crisis intervention service. Statistics cited are from peer-reviewed publications and NCAA institutional surveys. Full citations available at check-in-gilt.vercel.app/research.</p>
           </div>
         </div>
       </footer>
