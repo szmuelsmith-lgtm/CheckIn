@@ -8,70 +8,44 @@ import {
   Building2, Loader2, Shield, Lock, BarChart2, Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { DEMO_PASSWORD, DEMO_ACCOUNTS } from "@/lib/demo-accounts";
 
-const DEMO_PASSWORD = "checkin-dev-2024";
+const DEMO_ROLE_ICONS: Record<string, React.ReactNode> = {
+  athlete:      <User        className="h-6 w-6" />,
+  coach:        <Trophy      className="h-6 w-6" />,
+  psychiatrist: <Stethoscope className="h-6 w-6" />,
+  admin:        <Building2   className="h-6 w-6" />,
+};
 
-const DEMO_ROLES = [
-  {
-    id: "athlete",
-    label: "Student-Athlete",
-    email: "checkin.athlete.test@mailinator.com",
-    icon: <User className="h-6 w-6" />,
-    redirect: "/athlete/dashboard",
-    color: "#059669",
-    bg: "#f0fdf4",
-    border: "#86efac",
+const DEMO_ROLE_DETAILS: Record<string, { headline: string; description: string; highlights: string[] }> = {
+  athlete: {
     headline: "The athlete experience",
     description: "Complete a check-in, view your wellbeing trends over time, manage privacy settings, and request a confidential follow-up.",
     highlights: ["2-minute weekly check-in", "Private journal staff never see", "Your own trend charts", "One-tap follow-up request"],
   },
-  {
-    id: "coach",
-    label: "Head Coach",
-    email: "checkin.coach.test@mailinator.com",
-    icon: <Trophy className="h-6 w-6" />,
-    redirect: "/coach/dashboard",
-    color: "#2563eb",
-    bg: "#eff6ff",
-    border: "#93c5fd",
+  coach: {
     headline: "The coach experience",
     description: "See team-level completion rates and aggregate risk status. Never see individual athlete names, scores, or responses.",
     highlights: ["Team completion rate live", "Green / yellow / red distribution", "Week-over-week trend", "Zero individual athlete data"],
   },
-  {
-    id: "psychiatrist",
-    label: "Counselor / Sport Psychologist",
-    email: "checkin.psych.test@mailinator.com",
-    icon: <Stethoscope className="h-6 w-6" />,
-    redirect: "/psychiatrist/dashboard",
-    color: "#7c3aed",
-    bg: "#f5f3ff",
-    border: "#c4b5fd",
+  psychiatrist: {
     headline: "The counselor experience",
     description: "Review athlete alerts, manage follow-up workflows, access consented wellness history, and document outcomes.",
     highlights: ["Alert queue by risk level", "Full check-in history (consented)", "Assign & track follow-ups", "Secure — no wellness data in email"],
   },
-  {
-    id: "admin",
-    label: "Athletic Administrator",
-    email: "checkin.admin.test@mailinator.com",
-    icon: <Building2 className="h-6 w-6" />,
-    redirect: "/admin/dashboard",
-    color: "#0369a1",
-    bg: "#f0f9ff",
-    border: "#7dd3fc",
+  admin: {
     headline: "The administrator experience",
     description: "Program-wide dashboards, full audit logs, compliance exports, team management, and follow-up resolution analytics.",
     highlights: ["All-sport program overview", "Immutable audit log", "NCAA compliance export", "Follow-up resolution rates"],
   },
-] as const;
+};
 
 export default function DemoPage() {
   const router = useRouter();
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const [demoError, setDemoError] = useState("");
 
-  const handleDemoLogin = async (role: typeof DEMO_ROLES[number]) => {
+  const handleDemoLogin = async (role: typeof DEMO_ACCOUNTS[number]) => {
     setDemoLoading(role.id);
     setDemoError("");
     const supabase = createClient();
@@ -189,8 +163,9 @@ export default function DemoPage() {
       <section className="py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-5 md:px-8">
           <div className="grid sm:grid-cols-2 gap-5">
-            {DEMO_ROLES.map((role) => {
+            {DEMO_ACCOUNTS.map((role) => {
               const isLoading = demoLoading === role.id;
+              const details = DEMO_ROLE_DETAILS[role.id];
               return (
                 <button
                   key={role.id}
@@ -202,23 +177,23 @@ export default function DemoPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: role.color + "20", color: role.color }}>
-                      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : role.icon}
+                      {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : DEMO_ROLE_ICONS[role.id]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-[16px] leading-snug" style={{ color: role.color }}>
                         {isLoading ? "Signing in…" : role.label}
                       </p>
-                      <p className="text-[12px] text-slate-500 mt-0.5">{role.headline}</p>
+                      <p className="text-[12px] text-slate-500 mt-0.5">{details.headline}</p>
                     </div>
                     <ArrowRight className="h-4 w-4 shrink-0 mt-1 transition-transform group-hover:translate-x-0.5" style={{ color: role.color }} />
                   </div>
 
                   {/* Description */}
-                  <p className="text-[13px] text-slate-600 leading-relaxed">{role.description}</p>
+                  <p className="text-[13px] text-slate-600 leading-relaxed">{details.description}</p>
 
                   {/* Highlights */}
                   <ul className="space-y-1.5 pt-1 border-t" style={{ borderColor: role.color + "25" }}>
-                    {role.highlights.map((h) => (
+                    {details.highlights.map((h) => (
                       <li key={h} className="flex items-center gap-2 text-[12px] text-slate-600">
                         <Check className="h-3.5 w-3.5 shrink-0" style={{ color: role.color }} />{h}
                       </li>
@@ -260,6 +235,35 @@ export default function DemoPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Footer ── */}
+      <footer className="border-t border-slate-200 bg-white py-10">
+        <div className="max-w-6xl mx-auto px-5 md:px-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #065f46, #059669)" }}>
+                <Anchor className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-[14px] font-semibold text-slate-700">Check-In · Athlete Anchor</span>
+            </div>
+            <div className="flex flex-wrap gap-x-7 gap-y-2 text-[13px] text-slate-500">
+              {[
+                { label: "Home", href: "/" },
+                { label: "Research", href: "/research" },
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms of Service", href: "/terms" },
+                { label: "Compliance", href: "/compliance" },
+                { label: "Sign In", href: "/login" },
+              ].map((l) => (
+                <Link key={l.href} href={l.href} className="hover:text-emerald-700 transition-colors">{l.label}</Link>
+              ))}
+            </div>
+          </div>
+          <p className="mt-6 pt-6 border-t border-slate-100 text-xs text-slate-400">
+            Demo accounts contain entirely synthetic data. No real athlete information is ever used. © {new Date().getFullYear()} Athlete Anchor, Inc.
+          </p>
+        </div>
+      </footer>
 
     </div>
   );

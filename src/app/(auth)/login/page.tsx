@@ -4,53 +4,15 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, Building2, Loader2 } from "lucide-react";
+import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, Building2, Loader2, ArrowLeft } from "lucide-react";
+import { DEMO_PASSWORD, DEMO_ACCOUNTS } from "@/lib/demo-accounts";
 
-// ─── Demo accounts ─────────────────────────────────────────────────────────────
-const DEMO_PASSWORD = "checkin-dev-2024";
-
-const DEMO_ROLES = [
-  {
-    id:       "athlete",
-    label:    "Athlete",
-    email:    "checkin.athlete.test@mailinator.com",
-    icon:     <User         className="h-4 w-4" />,
-    redirect: "/athlete/dashboard",
-    color:    "#059669",
-    bg:       "#f0fdf4",
-    border:   "#bbf7d0",
-  },
-  {
-    id:       "coach",
-    label:    "Coach",
-    email:    "checkin.coach.test@mailinator.com",
-    icon:     <Users        className="h-4 w-4" />,
-    redirect: "/coach/dashboard",
-    color:    "#3b82f6",
-    bg:       "#eff6ff",
-    border:   "#bfdbfe",
-  },
-  {
-    id:       "psychiatrist",
-    label:    "Psychiatrist",
-    email:    "checkin.psych.test@mailinator.com",
-    icon:     <Stethoscope  className="h-4 w-4" />,
-    redirect: "/psychiatrist/dashboard",
-    color:    "#8b5cf6",
-    bg:       "#f5f3ff",
-    border:   "#ddd6fe",
-  },
-  {
-    id:       "admin",
-    label:    "Administrator",
-    email:    "checkin.admin.test@mailinator.com",
-    icon:     <Building2    className="h-4 w-4" />,
-    redirect: "/admin/dashboard",
-    color:    "#0369a1",
-    bg:       "#f0f9ff",
-    border:   "#7dd3fc",
-  },
-] as const;
+const DEMO_ROLE_ICONS: Record<string, React.ReactNode> = {
+  athlete:      <User        className="h-4 w-4" />,
+  coach:        <Users       className="h-4 w-4" />,
+  psychiatrist: <Stethoscope className="h-4 w-4" />,
+  admin:        <Building2   className="h-4 w-4" />,
+};
 
 // ─── Main page ──────────────────────────────────────────────────────────────────
 export default function LoginPage() {
@@ -151,7 +113,7 @@ export default function LoginPage() {
   };
 
   // ── Demo login ────────────────────────────────────────────────────────────
-  const handleDemoLogin = async (role: typeof DEMO_ROLES[number]) => {
+  const handleDemoLogin = async (role: typeof DEMO_ACCOUNTS[number]) => {
     setDemoLoading(role.id); setDemoError("");
 
     const supabase = createClient();
@@ -214,6 +176,13 @@ export default function LoginPage() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
       style={{ background: "#f4f7f5" }}
     >
+      {/* Back to website */}
+      <div className="w-full max-w-sm mb-4">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-slate-700 transition-colors">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to website
+        </Link>
+      </div>
+
       {/* Logo */}
       <div className="flex flex-col items-center mb-8">
         <div
@@ -356,7 +325,7 @@ export default function LoginPage() {
                 Demo accounts
               </p>
 
-              {DEMO_ROLES.map((role) => {
+              {DEMO_ACCOUNTS.map((role) => {
                 const isLoading = demoLoading === role.id;
                 return (
                   <button
@@ -372,7 +341,7 @@ export default function LoginPage() {
                     >
                       {isLoading
                         ? <Loader2 className="h-4 w-4 animate-spin" />
-                        : role.icon}
+                        : DEMO_ROLE_ICONS[role.id]}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-semibold" style={{ color: role.color }}>
