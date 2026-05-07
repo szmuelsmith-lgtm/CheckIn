@@ -1,5 +1,5 @@
 -- ============================================================
--- MIGRATION 003: Seed Questions (32 total — 8 per pillar)
+-- MIGRATION 003: Seed Questions (40 total — 10 per pillar)
 -- ============================================================
 
 INSERT INTO questions (pillar, text, sub_text, low_label, high_label, modes) VALUES
@@ -212,7 +212,7 @@ INSERT INTO questions (pillar, text, sub_text, low_label, high_label, modes) VAL
 ),
 
 -- ============================================================
--- SUPPORT PILLAR (8 questions)
+-- SUPPORT PILLAR (10 questions)
 -- ============================================================
 
 (
@@ -277,5 +277,84 @@ INSERT INTO questions (pillar, text, sub_text, low_label, high_label, modes) VAL
   'Not hypothetically — is there an actual person you could call or text today?',
   'No idea who I''d reach out to',
   'I know exactly who to call',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+(
+  'support',
+  'How genuinely seen do you feel — not just acknowledged, but actually understood by someone right now?',
+  'The difference between someone nodding along and someone who truly gets what you''re carrying.',
+  'Completely invisible',
+  'Truly seen and understood',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+(
+  'support',
+  'How easily can you ask for help before things get to a crisis point?',
+  'The ability to reach out early — not just when things have already fallen apart.',
+  'Can only ask when desperate',
+  'Can ask anytime, no shame',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+
+-- ============================================================
+-- EMOTIONAL PILLAR — 2 additional (total 10)
+-- ============================================================
+
+(
+  'emotional',
+  'How much have you been worrying about things outside your control this week?',
+  'The gap between what you can actually influence and where your mental energy is going.',
+  'Consumed by things I can''t control',
+  'Focused only on what I can control',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+(
+  'emotional',
+  'How at peace are you with where you stand in your own life — without comparing to others?',
+  'A sense that you''re on your own path and it''s okay, without measuring against teammates or peers.',
+  'Constantly measuring myself against others',
+  'At peace with my own path',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+
+-- ============================================================
+-- RESILIENCE PILLAR — 2 additional (total 10)
+-- ============================================================
+
+(
+  'resilience',
+  'How clearly can you think when you''re under real pressure?',
+  'Not in calm moments — specifically when the stakes are high and time is short.',
+  'Mind goes completely blank',
+  'Think clearest under pressure',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+(
+  'resilience',
+  'How well have you stayed motivated when results haven''t matched your effort?',
+  'The grind periods when nothing seems to be paying off but you have to keep going anyway.',
+  'Lost all motivation',
+  'Still fully motivated',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+
+-- ============================================================
+-- RECOVERY PILLAR — 2 additional (total 10)
+-- ============================================================
+
+(
+  'recovery',
+  'How well have you been listening to what your body is actually asking for?',
+  'Not just following a plan — genuinely tuning in to signals about rest, movement, food, and care.',
+  'Completely ignoring my body',
+  'Listening closely and responding',
+  ARRAY['weekly','screening']::checkin_mode[]
+),
+(
+  'recovery',
+  'How much has screen time or social media been getting in the way of winding down?',
+  'Scrolling before bed, comparison content, or anything that keeps your mind racing at night.',
+  'Really hurting my recovery',
+  'Not affecting my recovery at all',
   ARRAY['weekly','screening']::checkin_mode[]
 );

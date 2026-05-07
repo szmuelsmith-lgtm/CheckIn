@@ -3,8 +3,8 @@ import type { Question, QuestionUsage, CheckinMode, Pillar } from '@/types/datab
 const COOLDOWN_DAYS = 14;
 const PILLARS: Pillar[] = ['emotional', 'resilience', 'recovery', 'support'];
 
-const WEEKLY_PER_PILLAR = 2;   // 2 questions × 4 pillars = 8 total
-const SCREENING_PER_PILLAR = 4; // 4 questions × 4 pillars = 16 total
+const WEEKLY_PER_PILLAR = 2;    // 2 questions × 4 pillars = 8 total
+const SCREENING_PER_PILLAR = 6; // 6 questions × 4 pillars = 24 total
 
 function seededShuffle<T>(array: T[], seed: number): T[] {
   const arr = [...array];
