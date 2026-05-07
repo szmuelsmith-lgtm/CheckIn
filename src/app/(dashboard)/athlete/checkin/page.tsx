@@ -191,7 +191,6 @@ export default function WeeklyCheckinPage() {
   const [outreachConsent, setOutreachConsent] = useState<boolean | null>(null);
   const [showOutreachStep, setShowOutreachStep] = useState(false);
   const [profileId, setProfileId]       = useState<string | null>(null);
-  const [teamId, setTeamId]             = useState<string | null>(null);
 
   async function loadQuestions() {
     setLoading(true); setLoadError("");
@@ -206,7 +205,6 @@ export default function WeeklyCheckinPage() {
 
       setUserName(prof.full_name);
       setProfileId(prof.id);
-      setTeamId(prof.team_id ?? null);
 
       const { data: allQuestions, error: qErr } = await supabase.from("questions").select("*").eq("active", true);
       if (qErr) { setLoadError(`Failed to load questions: ${qErr.message}`); setLoading(false); return; }

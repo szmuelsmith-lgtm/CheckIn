@@ -203,15 +203,14 @@ export default function ScreeningCheckinPage() {
   const [triggerSupport, setTriggerSupport] = useState(false);
   const [error, setError]             = useState("");
   const [profileId, setProfileId]     = useState<string | null>(null);
-  const [teamId, setTeamId]           = useState<string | null>(null);
 
   useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
-      const { data: prof } = await supabase.from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
-      if (prof) { setUserName(prof.full_name); setProfileId(prof.id); setTeamId(prof.team_id ?? null); }
+      const { data: prof } = await supabase.from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
+      if (prof) { setUserName(prof.full_name); setProfileId(prof.id); }
     }
     loadUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
