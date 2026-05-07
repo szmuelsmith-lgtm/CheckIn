@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
 
   // Auto-create alert for yellow/red risk levels — use service role to bypass RLS
   if (riskLevel === 'yellow' || riskLevel === 'red') {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[checkin] SUPABASE_SERVICE_ROLE_KEY not set — alert not created for checkin', checkin.id);
+    }
     const serviceClient = createServiceSupabaseClient();
     const triggerType   = wantsFollowup ? 'wants_followup' : 'risk_score';
 
