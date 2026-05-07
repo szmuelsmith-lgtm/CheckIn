@@ -81,7 +81,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
             <div className="flex items-center gap-0.5">
               <Link
                 href="/athlete/preferences"
-                className="p-2 rounded-xl transition-colors"
+                className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-colors"
                 style={{ color: "#94a3b8" }}
                 aria-label="Preferences"
               >
@@ -89,7 +89,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
               </Link>
               <button
                 onClick={handleSignOut}
-                className="p-2 rounded-xl transition-colors"
+                className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-colors"
                 style={{ color: "#94a3b8" }}
                 aria-label="Sign out"
               >

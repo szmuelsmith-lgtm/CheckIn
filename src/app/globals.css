@@ -62,7 +62,8 @@
 
   html {
     height: 100%;
-    overflow-y: scroll;
+    scroll-behavior: smooth;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -72,9 +73,23 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100%;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+  }
+
+  /* Prevent iOS Safari from zooming into inputs on focus.
+     iOS zooms when font-size < 16px — this overrides without
+     affecting visual size (the component still sets its own size). */
+  @supports (-webkit-touch-callout: none) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    textarea,
+    select {
+      font-size: max(16px, 1em) !important;
+    }
   }
 }
 

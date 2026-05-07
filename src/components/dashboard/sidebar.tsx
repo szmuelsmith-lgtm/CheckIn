@@ -113,7 +113,7 @@ export function Sidebar({ role, userName }: SidebarProps) {
               href={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[13px] font-medium transition-all duration-150",
+                "flex items-center gap-3 px-3 py-3 rounded-2xl text-[13px] font-medium transition-all duration-150 min-h-[44px]",
               )}
               style={isActive ? {
                 background: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
@@ -152,9 +152,10 @@ export function Sidebar({ role, userName }: SidebarProps) {
           </div>
           <button
             onClick={handleSignOut}
-            className="p-1.5 rounded-xl transition-colors shrink-0"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-colors shrink-0"
             style={{ color: "#94a3b8" }}
             title="Sign out"
+            aria-label="Sign out"
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -170,13 +171,14 @@ export function Sidebar({ role, userName }: SidebarProps) {
       {!isAthlete && (
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="fixed top-4 left-4 z-50 p-2 rounded-xl lg:hidden"
+          className="fixed top-3 left-3 z-50 flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl lg:hidden"
           style={{
             background: "#ffffff",
             border: "1px solid #e8edf2",
             color: "#334155",
             boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
           }}
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
