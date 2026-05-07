@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { PILLAR_LABELS, computePillarScores, evaluateSupportTrigger } from "@/lib/pillar-scoring";
+import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import { CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Heart, Shield, Zap, Users, ClipboardList } from "lucide-react";
@@ -239,24 +239,26 @@ export default function ScreeningCheckinPage() {
     if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true); setError("");
     try {
-      const supabase = createClient();
-      const questionIds = Object.keys(responses);
-      const { data: questionRows } = await supabase.from("questions").select("*").in("id", questionIds);
-      const qs = (questionRows ?? []) as Question[];
-      const scores  = computePillarScores(responses, qs);
-      const trigger = evaluateSupportTrigger(scores);
-      const checkinId = crypto.randomUUID();
-      const { error: checkinErr } = await supabase.from("checkins").insert({
-        id: checkinId, athlete_id: profileId, team_id: teamId,
-        mode: "screening", is_private: true,
-        emotional_score: scores.emotional, resilience_score: scores.resilience,
-        recovery_score: scores.recovery, support_score: scores.support,
-        question_ids: questionIds, responses, notes_private: notes || null,
+      const res = await fetch("/api/checkins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "screening",
+          responses,
+          notes: notes || undefined,
+          wants_followup: false, // screening result page handles explicit reach-out separately
+        }),
       });
-      if (checkinErr) { setError(`Submission failed: ${checkinErr.message}`); setSubmitting(false); return; }
-      await supabase.from("question_usage").insert(questionIds.map(qid => ({ athlete_id: profileId, question_id: qid, checkin_id: checkinId, used_at: new Date().toISOString() })));
-      await supabase.from("audit_logs").insert({ actor_profile_id: profileId, action: "checkin_submitted", target_type: "checkin", target_id: checkinId, metadata: { mode: "screening" } });
-      setPillarScores(scores); setTriggerSupport(trigger); setPhase("result");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(`Submission failed: ${data.error ?? res.statusText}`);
+        setSubmitting(false);
+        return;
+      }
+      const data = await res.json();
+      setPillarScores(data.pillarScores);
+      setTriggerSupport(data.triggerSupport ?? false);
+      setPhase("result");
     } catch (e) { setError(`An error occurred: ${String(e)}`); }
     setSubmitting(false);
   }

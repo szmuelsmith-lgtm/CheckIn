@@ -30,8 +30,34 @@ export function computePillarScores(
 }
 
 export function evaluateSupportTrigger(scores: PillarScores): boolean {
-  // High emotional distress OR very poor recovery
-  return scores.emotional > 8 || scores.recovery < 3;
+  // Low score = distress (scale is 1–10, high = healthy)
+  // Trigger if emotional distress is high, resilience is collapsed,
+  // recovery is very poor, or support is critically low
+  return (
+    scores.emotional  < 3 ||
+    scores.resilience < 3 ||
+    scores.recovery   < 3 ||
+    scores.support    < 3
+  );
+}
+
+export function evaluateRiskLevel(
+  scores: PillarScores,
+  wantsFollowup: boolean
+): 'green' | 'yellow' | 'red' {
+  const min = Math.min(
+    scores.emotional,
+    scores.resilience,
+    scores.recovery,
+    scores.support
+  );
+  const avg = (
+    scores.emotional + scores.resilience + scores.recovery + scores.support
+  ) / 4;
+
+  if (wantsFollowup || min < 3)  return 'red';
+  if (min < 5 || avg < 5)        return 'yellow';
+  return 'green';
 }
 
 export type PillarLevel = 'stable' | 'moderate' | 'elevated' | 'high';

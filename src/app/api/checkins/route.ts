@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { computePillarScores, evaluateSupportTrigger } from '@/lib/pillar-scoring';
+import { computePillarScores, evaluateSupportTrigger, evaluateRiskLevel } from '@/lib/pillar-scoring';
+import { sendRedAlertEmail } from '@/lib/email';
 
 interface CheckinBody {
   mode: 'weekly' | 'screening';
   responses: Record<string, number>;
   notes?: string;
+  wants_followup?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
   // Fetch profile and verify athlete role
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, role, team_id')
+    .select('id, role, team_id, organization_id')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -61,9 +63,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch questions' }, { status: 500 });
   }
 
-  // Compute pillar scores
-  const pillarScores = computePillarScores(body.responses, questions);
+  // Compute pillar scores and risk level
+  const pillarScores   = computePillarScores(body.responses, questions);
+  const wantsFollowup  = body.wants_followup === true;
   const triggerSupport = evaluateSupportTrigger(pillarScores);
+  const riskLevel      = evaluateRiskLevel(pillarScores, wantsFollowup);
 
   // Insert checkin record — use generated_id so we don't need a read-back
   const generatedId = crypto.randomUUID();
@@ -79,6 +83,8 @@ export async function POST(request: NextRequest) {
       resilience_score:  pillarScores.resilience,
       recovery_score:    pillarScores.recovery,
       support_score:     pillarScores.support,
+      wants_followup:    wantsFollowup,
+      risk_level:        riskLevel,
       question_ids:      questionIds,
       responses:         body.responses,
       notes_private:     body.notes ?? null,
@@ -122,8 +128,56 @@ export async function POST(request: NextRequest) {
     console.error('Failed to insert audit_log:', auditError);
   }
 
+  // Auto-create alert for yellow/red risk levels
+  if (riskLevel === 'yellow' || riskLevel === 'red') {
+    const triggerType = wantsFollowup ? 'wants_followup' : 'risk_score';
+    const { error: alertError } = await supabase
+      .from('alerts')
+      .insert({
+        athlete_id:   profile.id,
+        checkin_id:   checkin.id,
+        severity:     riskLevel,
+        trigger_type: triggerType,
+        status:       'open',
+      });
+
+    if (alertError) {
+      console.error('Failed to insert alert:', alertError);
+    }
+
+    // Notify support staff for red-level alerts
+    if (riskLevel === 'red' && profile.organization_id) {
+      try {
+        const { data: teamData } = await supabase
+          .from('teams')
+          .select('name')
+          .eq('id', profile.team_id)
+          .single();
+
+        const { data: staffList } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('organization_id', profile.organization_id)
+          .in('role', ['support', 'admin', 'psychiatrist']);
+
+        const teamName = teamData?.name ?? 'your program';
+        if (staffList && staffList.length > 0) {
+          await Promise.all(
+            staffList.map(staff =>
+              sendRedAlertEmail({ to: staff.email, teamName }).catch(err =>
+                console.error('Alert email failed for', staff.email, err)
+              )
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Failed to send alert notifications:', err);
+      }
+    }
+  }
+
   return NextResponse.json(
-    { checkin_id: checkin.id, triggerSupport, pillarScores },
+    { checkin_id: checkin.id, triggerSupport, riskLevel, pillarScores },
     { status: 201 }
   );
 }

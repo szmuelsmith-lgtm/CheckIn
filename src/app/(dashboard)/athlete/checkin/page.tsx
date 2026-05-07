@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { PILLAR_LABELS, computePillarScores, evaluateSupportTrigger } from "@/lib/pillar-scoring";
+import { PILLAR_LABELS, computePillarScores } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import {
@@ -236,38 +236,35 @@ export default function WeeklyCheckinPage() {
   async function handleSubmit(consentOverride?: boolean) {
     if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true); setError("");
-    const consent = consentOverride ?? outreachConsent;
+    const wantsFollowup = consentOverride ?? outreachConsent ?? false;
     try {
+      const res = await fetch("/api/checkins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "weekly",
+          responses,
+          notes: notes || undefined,
+          wants_followup: wantsFollowup,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(`Submission failed: ${data.error ?? res.statusText}`);
+        setSubmitting(false);
+        return;
+      }
+      const data = await res.json();
+
+      // Compute scores client-side for immediate result display
       const supabase = createClient();
       const questionIds = Object.keys(responses);
       const { data: questionRows } = await supabase.from("questions").select("*").in("id", questionIds);
-      const qs     = (questionRows ?? []) as Question[];
+      const qs = (questionRows ?? []) as Question[];
       const scores = computePillarScores(responses, qs);
-      const trigger = evaluateSupportTrigger(scores);
 
-      const checkinId = crypto.randomUUID();
-      const { error: checkinErr } = await supabase.from("checkins").insert({
-        id: checkinId, athlete_id: profileId, team_id: teamId, mode: "weekly",
-        is_private: true,
-        emotional_score: scores.emotional, resilience_score: scores.resilience,
-        recovery_score: scores.recovery, support_score: scores.support,
-        question_ids: questionIds, responses, notes_private: notes || null,
-      });
-      if (checkinErr) { setError(`Submission failed: ${checkinErr.message}`); setSubmitting(false); return; }
-
-      await supabase.from("question_usage").insert(
-        questionIds.map(qid => ({
-          athlete_id: profileId, question_id: qid, checkin_id: checkinId, used_at: new Date().toISOString(),
-        }))
-      );
-      await supabase.from("audit_logs").insert({
-        actor_profile_id: profileId, action: "checkin_submitted",
-        target_type: "checkin", target_id: checkinId,
-        metadata: { mode: "weekly", outreach_consent: consent ?? false },
-      });
-
-      setPillarScores(scores);
-      setTriggerSupport(trigger);
+      setPillarScores(data.pillarScores ?? scores);
+      setTriggerSupport(data.triggerSupport ?? false);
     } catch (e) { setError(`An error occurred: ${String(e)}`); }
     setSubmitting(false);
   }
