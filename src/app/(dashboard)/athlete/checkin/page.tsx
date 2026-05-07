@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { PILLAR_LABELS, computePillarScores } from "@/lib/pillar-scoring";
+import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import {
@@ -253,15 +253,7 @@ export default function WeeklyCheckinPage() {
         return;
       }
       const data = await res.json();
-
-      // Compute scores client-side for immediate result display
-      const supabase = createClient();
-      const questionIds = Object.keys(responses);
-      const { data: questionRows } = await supabase.from("questions").select("*").in("id", questionIds);
-      const qs = (questionRows ?? []) as Question[];
-      const scores = computePillarScores(responses, qs);
-
-      setPillarScores(data.pillarScores ?? scores);
+      setPillarScores(data.pillarScores);
       setTriggerSupport(data.triggerSupport ?? false);
     } catch (e) { setError(`An error occurred: ${String(e)}`); }
     setSubmitting(false);

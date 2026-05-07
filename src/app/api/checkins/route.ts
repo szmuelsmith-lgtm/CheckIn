@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
 import { computePillarScores, evaluateSupportTrigger, evaluateRiskLevel } from '@/lib/pillar-scoring';
 import { sendRedAlertEmail } from '@/lib/email';
 
@@ -128,10 +128,12 @@ export async function POST(request: NextRequest) {
     console.error('Failed to insert audit_log:', auditError);
   }
 
-  // Auto-create alert for yellow/red risk levels
+  // Auto-create alert for yellow/red risk levels — use service role to bypass RLS
   if (riskLevel === 'yellow' || riskLevel === 'red') {
-    const triggerType = wantsFollowup ? 'wants_followup' : 'risk_score';
-    const { error: alertError } = await supabase
+    const serviceClient = createServiceSupabaseClient();
+    const triggerType   = wantsFollowup ? 'wants_followup' : 'risk_score';
+
+    const { error: alertError } = await serviceClient
       .from('alerts')
       .insert({
         athlete_id:   profile.id,
@@ -148,13 +150,13 @@ export async function POST(request: NextRequest) {
     // Notify support staff for red-level alerts
     if (riskLevel === 'red' && profile.organization_id) {
       try {
-        const { data: teamData } = await supabase
+        const { data: teamData } = await serviceClient
           .from('teams')
           .select('name')
           .eq('id', profile.team_id)
           .single();
 
-        const { data: staffList } = await supabase
+        const { data: staffList } = await serviceClient
           .from('profiles')
           .select('email')
           .eq('organization_id', profile.organization_id)
