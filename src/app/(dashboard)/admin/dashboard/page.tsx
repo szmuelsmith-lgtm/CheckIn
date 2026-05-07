@@ -9,6 +9,7 @@ import {
   PlayCircle, StopCircle, Shield, Activity, ChevronRight,
   TrendingUp,
 } from "lucide-react";
+import { evaluateRiskLevel } from "@/lib/pillar-scoring";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -130,9 +131,10 @@ export default function AdminDashboard() {
 
       let greenCount = 0, yellowCount = 0, redCount = 0;
       byAthlete.forEach(({ e, rec, res, sup }) => {
-        if (e > 8 || rec < 3)                             redCount++;
-        else if (e < 5 || rec < 5 || res < 5 || sup < 5) yellowCount++;
-        else                                               greenCount++;
+        const level = evaluateRiskLevel({ emotional: e, resilience: res, recovery: rec, support: sup }, false);
+        if (level === 'red')    redCount++;
+        else if (level === 'yellow') yellowCount++;
+        else                         greenCount++;
       });
 
       const total       = athleteCount || 0;

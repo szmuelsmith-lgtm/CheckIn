@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { AlertCircle, Users, CalendarCheck, Heart, MessageCircle, X, Check, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { evaluateRiskLevel } from "@/lib/pillar-scoring";
 
 const T = {
   surface:   "#ffffff",
@@ -37,11 +38,6 @@ interface SharedAthlete {
   open_alert_id:     string | null;
 }
 
-function riskFromAvg(avg: number): "green" | "yellow" | "red" {
-  if (avg < 4) return "red";
-  if (avg < 6) return "yellow";
-  return "green";
-}
 
 function timeAgo(iso: string | null) {
   if (!iso) return "No check-ins";
@@ -92,16 +88,23 @@ export default function PsychiatristDashboard() {
               .eq("athlete_id", c.athlete_id).gte("completed_at", cutoff14).order("completed_at", { ascending: false });
             const latest = recent?.[0] ?? null;
             let avg_score: number | null = null;
+            let risk_level: "green" | "yellow" | "red" | null = null;
             if (latest) {
               const vals = [latest.emotional_score, latest.resilience_score, latest.recovery_score, latest.support_score].filter((v): v is number => v != null);
               if (vals.length) avg_score = vals.reduce((a, b) => a + b, 0) / vals.length;
+              risk_level = evaluateRiskLevel({
+                emotional:  latest.emotional_score  ?? 5,
+                resilience: latest.resilience_score ?? 5,
+                recovery:   latest.recovery_score   ?? 5,
+                support:    latest.support_score    ?? 5,
+              }, false);
             }
             const { data: alertData } = await supabase.from("alerts").select("id").eq("athlete_id", c.athlete_id).eq("status", "open").limit(1).maybeSingle();
             return {
               athlete_id: c.athlete_id, athlete_name: athleteObj?.full_name ?? "Unknown",
               scope: c.scope, last_checkin_at: latest?.completed_at ?? null,
               granted_at: c.granted_at, expires_at: c.expires_at, avg_score,
-              risk_level: avg_score != null ? riskFromAvg(avg_score) : null,
+              risk_level,
               checkin_count_14d: recent?.length ?? 0, open_alert_id: alertData?.id ?? null,
             };
           })
