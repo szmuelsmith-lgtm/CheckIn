@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -26,12 +27,8 @@ export default function LoginPage() {
   const [showDemo, setShowDemo]                 = useState(false);
   const [demoLoading, setDemoLoading]           = useState<string | null>(null);
   const [demoError, setDemoError]               = useState("");
-  const [isNative, setIsNative]                 = useState(false);
+  const [isNative]                               = useState(() => Capacitor.isNativePlatform());
   const router = useRouter();
-
-  useEffect(() => {
-    setIsNative(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
-  }, []);
 
   const REDIRECT_MAP: Record<string, string> = {
     athlete:       "/athlete/dashboard",
