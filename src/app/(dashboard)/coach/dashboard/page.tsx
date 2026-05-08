@@ -3,61 +3,66 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import type { Pillar, PillarScores } from "@/types/database";
 import type { PillarLevel } from "@/lib/pillar-scoring";
-import { ClipboardCheck, Users, TrendingUp, TrendingDown, Minus, Heart, Zap, Shield } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, TrendingDown, Minus, Heart, Zap, Shield, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const T = {
-  bg:        "#f8fafc",
-  surface:   "#ffffff",
-  raised:    "#f8fafc",
-  border:    "#e8edf2",
-  borderSub: "#f1f5f9",
-  text:      "#0f172a",
-  textSub:   "#334155",
-  textMuted: "#64748b",
-  green:     "#059669",
-  red:       "#ef4444",
+  bg:         "#f8fafc",
+  surface:    "#ffffff",
+  raised:     "#f8fafc",
+  border:     "#e8edf2",
+  borderSub:  "#f1f5f9",
+  text:       "#0f172a",
+  textSub:    "#334155",
+  textMuted:  "#64748b",
+  green:      "#16a34a",
+  greenLight: "#f0fdf4",
+  greenDeep:  "#065f46",
+  amber:      "#d97706",
+  amberLight: "#fefce8",
+  red:        "#dc2626",
+  redLight:   "#fef2f2",
 };
 
-// Pillar identity colors
 const PILLAR_COLOR: Record<Pillar, string> = {
-  emotional:  "#059669",
+  emotional:  "#16a34a",
   resilience: "#3b82f6",
   recovery:   "#8b5cf6",
   support:    "#06b6d4",
 };
 
-const PILLAR_BG: Record<Pillar, string> = {
-  emotional:  "#f0fdf4",
-  resilience: "#eff6ff",
-  recovery:   "#f5f3ff",
-  support:    "#ecfeff",
+const PILLAR_TRACK: Record<Pillar, string> = {
+  emotional:  "#dcfce7",
+  resilience: "#dbeafe",
+  recovery:   "#ede9fe",
+  support:    "#cffafe",
 };
 
 const PILLAR_ICON: Record<Pillar, React.ReactNode> = {
-  emotional:  <Heart  className="h-4 w-4" />,
-  resilience: <Zap    className="h-4 w-4" />,
-  recovery:   <Shield className="h-4 w-4" />,
-  support:    <Users  className="h-4 w-4" />,
+  emotional:  <Heart  className="h-3.5 w-3.5" />,
+  resilience: <Zap    className="h-3.5 w-3.5" />,
+  recovery:   <Shield className="h-3.5 w-3.5" />,
+  support:    <Users  className="h-3.5 w-3.5" />,
 };
 
-// Risk level colors (semantic)
-const LEVEL_COLOR: Record<PillarLevel, string> = {
-  stable:   "#10b981",
-  moderate: "#f59e0b",
-  elevated: "#8b5cf6",
-  high:     "#ef4444",
+const PILLAR_LABEL: Record<Pillar, string> = {
+  emotional:  "Emotional",
+  resilience: "Resilience",
+  recovery:   "Recovery",
+  support:    "Support",
 };
-const LEVEL_LABEL: Record<PillarLevel, string> = {
-  stable: "Stable", moderate: "Moderate", elevated: "Elevated", high: "High Concern",
+
+const LEVEL_DOT: Record<PillarLevel, string> = {
+  stable:   "#16a34a",
+  moderate: "#d97706",
+  elevated: "#f97316",
+  high:     "#dc2626",
 };
 
 const PILLARS: Pillar[] = ["emotional", "resilience", "recovery", "support"];
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
 type PillarDistribution = Record<PillarLevel, number>;
 
 interface PillarTrend {
@@ -77,7 +82,6 @@ interface AggregateData {
   checkins_this_week: number;
 }
 
-// ─── Demo data ─────────────────────────────────────────────────────────────────
 const DEMO: AggregateData = {
   checkin_rate: 83, athlete_count: 18, checkins_this_week: 15,
   pillar_averages: { emotional: 6.4, resilience: 7.1, recovery: 5.8, support: 6.9 },
@@ -95,55 +99,64 @@ const DEMO: AggregateData = {
   },
 };
 
-// ─── Trend badge ───────────────────────────────────────────────────────────────
+// ─── Traffic light grid ───────────────────────────────────────────────────────
+function TrafficLightGrid({ dist }: { dist: PillarDistribution }) {
+  const dots: PillarLevel[] = [
+    ...Array<PillarLevel>(dist.stable).fill("stable"),
+    ...Array<PillarLevel>(dist.moderate).fill("moderate"),
+    ...Array<PillarLevel>(dist.elevated).fill("elevated"),
+    ...Array<PillarLevel>(dist.high).fill("high"),
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {dots.map((level, i) => (
+        <div key={i} className="h-3 w-3 rounded-full"
+             style={{ background: LEVEL_DOT[level], opacity: 0.85 }} />
+      ))}
+    </div>
+  );
+}
+
+// ─── Trend badge ──────────────────────────────────────────────────────────────
 function TrendBadge({ pct, direction }: { pct: number; direction: "up" | "down" | "flat" }) {
   if (direction === "up") return (
-    <span
-      className="inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-      style={{ color: "#059669", background: "rgba(5,150,105,0.1)" }}
-    >
-      <TrendingUp className="h-3 w-3" />+{Math.abs(pct)}%
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+          style={{ color: T.green, background: "#dcfce7" }}>
+      <TrendingUp className="h-3 w-3" />+{Math.abs(pct).toFixed(1)}%
     </span>
   );
   if (direction === "down") return (
-    <span
-      className="inline-flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full"
-      style={{ color: T.red, background: "rgba(239,68,68,0.1)" }}
-    >
-      <TrendingDown className="h-3 w-3" />−{Math.abs(pct)}%
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+          style={{ color: T.red, background: T.redLight }}>
+      <TrendingDown className="h-3 w-3" />−{Math.abs(pct).toFixed(1)}%
     </span>
   );
   return (
-    <span
-      className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-      style={{ color: T.textMuted, background: T.borderSub }}
-    >
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+          style={{ color: T.textMuted, background: T.borderSub }}>
       <Minus className="h-3 w-3" />Flat
     </span>
   );
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function CoachDashboard() {
-  const [profile, setProfile]   = useState<{ full_name: string } | null>(null);
+  const [profile,  setProfile]  = useState<{ full_name: string } | null>(null);
   const [teamName, setTeamName] = useState("");
-  const [data, setData]         = useState<AggregateData | null>(null);
-  const [noTeam, setNoTeam]     = useState(false);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(false);
-  const [isDemo, setIsDemo]     = useState(false);
+  const [data,     setData]     = useState<AggregateData | null>(null);
+  const [noTeam,   setNoTeam]   = useState(false);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState(false);
+  const [isDemo,   setIsDemo]   = useState(false);
 
   async function load() {
     setLoading(true); setError(false);
     try {
       const supabase = createClient();
-
-      // Fetch display-only profile info (no athlete data)
       const { data: prof } = await supabase
-        .from("profiles")
-        .select("full_name, team_id")
-        .eq("auth_user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
-        .single();
+        .from("profiles").select("full_name, team_id")
+        .eq("auth_user_id", (await supabase.auth.getUser()).data.user?.id ?? "").single();
 
       if (prof) {
         setProfile({ full_name: prof.full_name });
@@ -153,23 +166,12 @@ export default function CoachDashboard() {
         }
       }
 
-      // All aggregate computation happens server-side — no per-athlete data in the response
       const res  = await fetch("/api/coach/aggregate", { method: "POST" });
       const json = await res.json() as AggregateData & { insufficient_data?: boolean; no_team?: boolean };
 
-      if (json.no_team) {
-        setNoTeam(true);
-        return;
-      }
-
-      if (json.insufficient_data) {
-        setData(DEMO);
-        setIsDemo(true);
-        return;
-      }
-
-      setData(json);
-      setIsDemo(false);
+      if (json.no_team) { setNoTeam(true); return; }
+      if (json.insufficient_data) { setData(DEMO); setIsDemo(true); return; }
+      setData(json); setIsDemo(false);
     } catch { setError(true); }
     finally { setLoading(false); }
   }
@@ -179,19 +181,18 @@ export default function CoachDashboard() {
   if (loading) return (
     <DashboardLayout role="coach" userName="...">
       <div className="flex items-center justify-center h-64">
-        <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
+        <div className="h-5 w-5 rounded-full border-2 animate-spin"
+             style={{ borderColor: T.border, borderTopColor: T.green }} />
       </div>
     </DashboardLayout>
   );
 
   if (error) return (
     <DashboardLayout role="coach" userName={profile?.full_name || "Coach"}>
-      <div className="max-w-4xl mx-auto">
-        <div
-          className="rounded-3xl p-10 text-center"
-          style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        >
-          <p className="mb-3 text-[14px]" style={{ color: T.textMuted }}>Couldn&apos;t load team data.</p>
+      <div className="max-w-2xl mx-auto">
+        <div className="rounded-2xl p-10 text-center"
+             style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          <p className="text-[14px] mb-3" style={{ color: T.textMuted }}>Couldn&apos;t load team data.</p>
           <button onClick={load} className="text-[13px] font-semibold" style={{ color: T.green }}>Retry</button>
         </div>
       </div>
@@ -200,18 +201,14 @@ export default function CoachDashboard() {
 
   if (noTeam) return (
     <DashboardLayout role="coach" userName={profile?.full_name || "Coach"}>
-      <div className="max-w-4xl mx-auto">
-        <div
-          className="rounded-3xl p-16 text-center"
-          style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-        >
-          <div
-            className="h-16 w-16 rounded-3xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: T.raised }}
-          >
-            <Users className="h-8 w-8" style={{ color: "#cbd5e1" }} />
+      <div className="max-w-2xl mx-auto">
+        <div className="rounded-2xl p-16 text-center"
+             style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          <div className="h-14 w-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+               style={{ background: T.raised }}>
+            <Users className="h-7 w-7" style={{ color: "#cbd5e1" }} />
           </div>
-          <p className="font-bold mb-1" style={{ color: T.textSub }}>Not assigned to a team yet</p>
+          <p className="font-bold mb-1.5" style={{ color: T.textSub }}>Not assigned to a team yet</p>
           <p className="text-[13px] max-w-sm mx-auto" style={{ color: T.textMuted }}>
             Contact your administrator to be linked to a roster.
           </p>
@@ -220,205 +217,164 @@ export default function CoachDashboard() {
     </DashboardLayout>
   );
 
+  const dist  = data?.distribution.emotional ?? { stable: 0, moderate: 0, elevated: 0, high: 0 };
+  const total = dist.stable + dist.moderate + dist.elevated + dist.high;
+  const stableCount   = dist.stable;
+  const concernCount  = dist.moderate + dist.elevated;
+  const highCount     = dist.high;
+
   return (
     <DashboardLayout role="coach" userName={profile?.full_name || "Coach"}>
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4">
 
-        {/* Header */}
-        <div className="flex items-start justify-between animate-fade-in">
+        {/* ── Header ────────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Team Dashboard</h1>
+            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: T.text }}>Team Dashboard</h1>
             <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>
-              {teamName ? `${teamName} · ` : ""}Aggregate wellness · anonymized
+              {teamName ? `${teamName} · ` : ""}Aggregate · anonymized
             </p>
           </div>
           {isDemo && (
-            <span
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold shrink-0"
-              style={{ background: "#dbeafe", color: "#1d4ed8", border: "1px solid #bfdbfe" }}
-            >
-              DEMO DATA
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0"
+                  style={{ background: "#dbeafe", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
+              Demo
             </span>
           )}
         </div>
 
-        {/* Demo notice */}
         {isDemo && (
-          <div
-            className="rounded-2xl px-4 py-3 text-[12px] animate-fade-in"
-            style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}
-          >
-            Sample data shown — at least 5 athletes must check in before real team trends are visible. This protects individual privacy.
+          <div className="rounded-xl px-4 py-3 text-[12px]"
+               style={{ background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}>
+            Sample data shown — at least 5 athletes must check in before real trends appear. This protects individual privacy.
           </div>
         )}
 
         {data && (
           <>
-            {/* Stat cards */}
-            <div className="grid grid-cols-2 gap-3 animate-fade-in-up">
-              {/* Athletes */}
-              <div
-                className="rounded-3xl p-5"
-                style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0"
-                       style={{ background: "#eff6ff" }}>
-                    <Users className="h-5 w-5" style={{ color: "#3b82f6" }} />
+            {/* ── Traffic light grid ──────────────────────────────────────── */}
+            <div className="rounded-2xl p-5"
+                 style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[14px] font-semibold" style={{ color: T.text }}>Team Wellness</p>
+                <span className="text-[11px]" style={{ color: T.textMuted }}>
+                  Based on emotional scores · {total} athletes
+                </span>
+              </div>
+
+              <TrafficLightGrid dist={dist} />
+
+              <div className="flex items-center gap-5 mt-4 flex-wrap">
+                {stableCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: LEVEL_DOT.stable }} />
+                    <span className="text-[12px] font-semibold" style={{ color: T.text }}>{stableCount}</span>
+                    <span className="text-[12px]" style={{ color: T.textMuted }}>stable</span>
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: T.textMuted }}>Athletes</p>
+                )}
+                {concernCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: LEVEL_DOT.moderate }} />
+                    <span className="text-[12px] font-semibold" style={{ color: T.text }}>{concernCount}</span>
+                    <span className="text-[12px]" style={{ color: T.textMuted }}>need attention</span>
+                  </div>
+                )}
+                {highCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: LEVEL_DOT.high }} />
+                    <span className="text-[12px] font-semibold" style={{ color: T.red }}>{highCount}</span>
+                    <span className="text-[12px]" style={{ color: T.textMuted }}>high concern</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Stats row ────────────────────────────────────────────────── */}
+            <div className="grid grid-cols-3 gap-3">
+
+              {/* Athletes */}
+              <div className="rounded-2xl p-4"
+                   style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center mb-3"
+                     style={{ background: "#eff6ff" }}>
+                  <Users className="h-4 w-4" style={{ color: "#3b82f6" }} />
                 </div>
-                <p className="text-[38px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
+                <p className="text-[28px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
                   {data.athlete_count}
                 </p>
+                <p className="text-[11px] mt-1 font-medium" style={{ color: T.textMuted }}>Athletes</p>
               </div>
 
-              {/* Check-In Rate */}
-              <div
-                className="rounded-3xl p-5"
-                style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0"
-                       style={{ background: "#d1fae5" }}>
-                    <ClipboardCheck className="h-5 w-5" style={{ color: T.green }} />
-                  </div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: T.textMuted }}>Check-In Rate</p>
+              {/* Check-in rate */}
+              <div className="rounded-2xl p-4"
+                   style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center mb-3"
+                     style={{ background: T.greenLight }}>
+                  <ClipboardCheck className="h-4 w-4" style={{ color: T.green }} />
                 </div>
-                <p className="text-[38px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
+                <p className="text-[28px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
                   {data.checkin_rate}%
                 </p>
-                <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${data.checkin_rate}%`,
-                      background: "linear-gradient(to right, #065f46, #10b981)",
-                      transition: "width 1s ease",
-                    }}
-                  />
-                </div>
-                <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>
-                  {data.checkins_this_week} of {data.athlete_count} this week
+                <p className="text-[11px] mt-1 font-medium" style={{ color: T.textMuted }}>
+                  {data.checkins_this_week}/{data.athlete_count} this week
                 </p>
+                <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
+                  <div className="h-full rounded-full" style={{ width: `${data.checkin_rate}%`, background: T.green, transition: "width 0.8s ease" }} />
+                </div>
               </div>
+
+              {/* Follow-up queue */}
+              <Link href="/coach/followups"
+                    className="rounded-2xl p-4 flex flex-col group hover:shadow-md transition-shadow"
+                    style={{ background: `linear-gradient(135deg, #065f46, #059669)`, border: "1px solid #059669" }}>
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center mb-3"
+                     style={{ background: "rgba(255,255,255,0.15)" }}>
+                  <ArrowRight className="h-4 w-4 text-white group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <p className="text-[15px] font-bold text-white leading-none">Follow-ups</p>
+                <p className="text-[11px] mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>Review queue</p>
+              </Link>
             </div>
 
-            {/* Pillar cards */}
-            <div className="grid grid-cols-2 gap-3">
-              {PILLARS.map((pillar, i) => {
-                const avg   = data.pillar_averages[pillar];
-                const trnd  = data.pillar_trends[pillar];
-                const pct   = Math.round((avg / 10) * 100);
-                const col   = PILLAR_COLOR[pillar];
-                return (
-                  <div
-                    key={pillar}
-                    className="rounded-3xl p-4 animate-fade-in-up"
-                    style={{
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
-                      borderTop: `3px solid ${col}`,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                      animationDelay: `${i * 60}ms`,
-                    }}
-                  >
-                    {/* Pillar header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-1.5" style={{ color: col }}>
-                        {PILLAR_ICON[pillar]}
-                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: T.textMuted }}>
-                          {PILLAR_LABELS[pillar]}
+            {/* ── Pillar rows ──────────────────────────────────────────────── */}
+            <div className="rounded-2xl overflow-hidden"
+                 style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+              <div className="px-5 py-3.5 flex items-center justify-between"
+                   style={{ borderBottom: `1px solid ${T.border}` }}>
+                <p className="text-[14px] font-semibold" style={{ color: T.text }}>Pillar Averages</p>
+                <span className="text-[11px]" style={{ color: T.textMuted }}>This week vs last week</span>
+              </div>
+              <div className="divide-y" style={{ borderColor: T.borderSub }}>
+                {PILLARS.map(pillar => {
+                  const avg  = data.pillar_averages[pillar];
+                  const trnd = data.pillar_trends[pillar];
+                  const col  = PILLAR_COLOR[pillar];
+                  const pct  = Math.round((avg / 10) * 100);
+                  return (
+                    <div key={pillar} className="px-5 py-3.5 flex items-center gap-4">
+
+                      {/* Icon + label */}
+                      <div className="flex items-center gap-2 w-28 shrink-0">
+                        <span style={{ color: col }}>{PILLAR_ICON[pillar]}</span>
+                        <span className="text-[12px] font-semibold" style={{ color: T.textSub }}>
+                          {PILLAR_LABEL[pillar]}
                         </span>
                       </div>
-                      <TrendBadge pct={Math.abs(trnd.weekly_change_pct)} direction={trnd.direction} />
-                    </div>
 
-                    {/* Score */}
-                    <p className="text-[36px] font-bold leading-none mb-2 tabular-nums" style={{ color: T.text }}>
-                      {avg.toFixed(1)}
-                    </p>
+                      {/* Score */}
+                      <span className="text-[16px] font-bold tabular-nums w-10 shrink-0" style={{ color: T.text }}>
+                        {avg.toFixed(1)}
+                      </span>
 
-                    {/* Progress bar */}
-                    <div className="h-2 rounded-full overflow-hidden mb-3" style={{ background: T.borderSub }}>
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${pct}%`, background: col, transition: "width 1s ease" }}
-                      />
-                    </div>
-
-                    {/* This wk / Last wk / 30d */}
-                    <div className="grid grid-cols-3 gap-1.5 text-center">
-                      {[
-                        { label: "This wk", val: trnd.this_week_avg },
-                        { label: "Last wk", val: trnd.last_week_avg },
-                        { label: "30d avg", val: trnd.month_avg },
-                      ].map(({ label, val }) => (
-                        <div
-                          key={label}
-                          className="rounded-xl py-1.5 px-1"
-                          style={{ background: PILLAR_BG[pillar] }}
-                        >
-                          <p className="text-[9px] uppercase tracking-wide leading-tight" style={{ color: T.textMuted }}>{label}</p>
-                          <p className="text-[12px] font-bold tabular-nums" style={{ color: col }}>
-                            {val > 0 ? val.toFixed(1) : "–"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Distribution */}
-            <div
-              className="rounded-3xl p-5 animate-fade-in"
-              style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-            >
-              <p className="text-[14px] font-bold mb-0.5" style={{ color: T.textSub }}>Pillar Distribution</p>
-              <p className="text-[12px] mb-5" style={{ color: T.textMuted }}>
-                Current status per athlete · most recent check-in
-              </p>
-              <div className="space-y-5">
-                {PILLARS.map(pillar => {
-                  const dist  = data.distribution[pillar];
-                  const total = Object.values(dist).reduce((a, b) => a + b, 0);
-                  if (total === 0) return null;
-                  const levels: PillarLevel[] = ["stable", "moderate", "elevated", "high"];
-                  return (
-                    <div key={pillar}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5" style={{ color: PILLAR_COLOR[pillar] }}>
-                          {PILLAR_ICON[pillar]}
-                          <span className="text-[12px] font-semibold">{PILLAR_LABELS[pillar]}</span>
-                        </div>
-                        <span className="text-[11px]" style={{ color: T.textMuted }}>{total} athletes</span>
+                      {/* Bar */}
+                      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: PILLAR_TRACK[pillar] }}>
+                        <div className="h-full rounded-full transition-all duration-700"
+                             style={{ width: `${pct}%`, background: col }} />
                       </div>
-                      {/* Stacked bar */}
-                      <div className="flex h-3 rounded-xl overflow-hidden gap-[2px] mb-2">
-                        {levels.filter(l => dist[l] > 0).map(l => (
-                          <div
-                            key={l}
-                            title={`${LEVEL_LABEL[l]}: ${dist[l]}`}
-                            style={{
-                              width: `${(dist[l] / total) * 100}%`,
-                              background: LEVEL_COLOR[l],
-                              transition: "width 0.8s ease",
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {/* Legend */}
-                      <div className="flex gap-3 flex-wrap">
-                        {levels.filter(l => dist[l] > 0).map(l => (
-                          <div key={l} className="flex items-center gap-1">
-                            <div className="h-2 w-2 rounded-full" style={{ background: LEVEL_COLOR[l] }} />
-                            <span className="text-[10px]" style={{ color: T.textMuted }}>
-                              {LEVEL_LABEL[l]} {dist[l]} ({Math.round((dist[l] / total) * 100)}%)
-                            </span>
-                          </div>
-                        ))}
+
+                      {/* Trend badge */}
+                      <div className="w-20 shrink-0 flex justify-end">
+                        <TrendBadge pct={Math.abs(trnd.weekly_change_pct)} direction={trnd.direction} />
                       </div>
                     </div>
                   );
@@ -426,12 +382,10 @@ export default function CoachDashboard() {
               </div>
             </div>
 
-            {/* Privacy footer */}
-            <div
-              className="rounded-2xl px-5 py-4"
-              style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}
-            >
-              <p className="text-[12px] text-center leading-relaxed" style={{ color: "#065f46" }}>
+            {/* ── Privacy footer ────────────────────────────────────────────── */}
+            <div className="rounded-xl px-4 py-3.5"
+                 style={{ background: T.greenLight, border: "1px solid #bbf7d0" }}>
+              <p className="text-[11px] text-center leading-relaxed" style={{ color: T.greenDeep }}>
                 All data is aggregated and anonymized. Individual responses are never visible to coaches.
               </p>
             </div>
