@@ -26,7 +26,12 @@ export default function LoginPage() {
   const [showDemo, setShowDemo]                 = useState(false);
   const [demoLoading, setDemoLoading]           = useState<string | null>(null);
   const [demoError, setDemoError]               = useState("");
+  const [isNative, setIsNative]                 = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsNative(!!(window as unknown as { Capacitor?: unknown }).Capacitor);
+  }, []);
 
   const REDIRECT_MAP: Record<string, string> = {
     athlete:       "/athlete/dashboard",
@@ -176,12 +181,14 @@ export default function LoginPage() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
       style={{ background: "#f4f7f5" }}
     >
-      {/* Back to website */}
-      <div className="w-full max-w-sm mb-4">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-slate-700 transition-colors">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to website
-        </Link>
-      </div>
+      {/* Back to website — hidden inside the native app */}
+      {!isNative && (
+        <div className="w-full max-w-sm mb-4">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-slate-700 transition-colors">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to website
+          </Link>
+        </div>
+      )}
 
       {/* Logo */}
       <div className="flex flex-col items-center mb-8">
