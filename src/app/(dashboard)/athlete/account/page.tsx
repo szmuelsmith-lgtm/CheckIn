@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
@@ -25,14 +25,13 @@ export default function AccountPage() {
   const [error, setError]         = useState("");
   const [userName, setUserName]   = useState("Athlete");
 
-  // Fetch name on mount
-  useState(() => {
-    createClient().from("profiles")
-      .select("full_name")
-      .eq("auth_user_id", (async () => (await createClient().auth.getUser()).data.user?.id ?? "")())
-      .single()
-      .then(({ data }) => { if (data?.full_name) setUserName(data.full_name.split(" ")[0]); });
-  });
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      createClient().from("profiles").select("full_name").eq("auth_user_id", user.id).single()
+        .then(({ data }) => { if (data?.full_name) setUserName(data.full_name.split(" ")[0]); });
+    });
+  }, []);
 
   const handleSignOut = async () => {
     await createClient().auth.signOut();
