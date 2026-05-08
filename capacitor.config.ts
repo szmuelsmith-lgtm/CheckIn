@@ -7,14 +7,14 @@ const config: CapacitorConfig = {
   appName: 'Check-In',
   webDir: 'out',
   server: {
-    // In development, point to your local Next.js server for live reload
-    // Comment this out for production builds
-    // url: 'http://localhost:3000',
-    // cleartext: true,
+    // Production: load the live Vercel deployment so server-side API routes work.
+    // For local dev, swap this for url: 'http://localhost:3000' + cleartext: true.
+    url: 'https://check-in-gilt.vercel.app',
+    allowNavigation: ['check-in-gilt.vercel.app', 'doeycpheigjihvfvupid.supabase.co'],
   },
   ios: {
     contentInset: 'automatic',
-    scrollEnabled: false,
+    scrollEnabled: true,
   },
   android: {
     allowMixedContent: false,
