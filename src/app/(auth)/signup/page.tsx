@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -31,7 +31,9 @@ export default function SignupPage() {
   const [loading, setLoading]           = useState(false);
   const [success, setSuccess]           = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
-  const [isNative]             = useState(() => Capacitor.isNativePlatform());
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => { setIsNative(Capacitor.isNativePlatform()); }, []);
   const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {

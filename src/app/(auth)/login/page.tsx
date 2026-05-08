@@ -27,7 +27,9 @@ export default function LoginPage() {
   const [showDemo, setShowDemo]                 = useState(false);
   const [demoLoading, setDemoLoading]           = useState<string | null>(null);
   const [demoError, setDemoError]               = useState("");
-  const [isNative]                               = useState(() => Capacitor.isNativePlatform());
+  const [isNative, setIsNative]                  = useState(false);
+
+  useEffect(() => { setIsNative(Capacitor.isNativePlatform()); }, []);
   const router = useRouter();
 
   const REDIRECT_MAP: Record<string, string> = {
