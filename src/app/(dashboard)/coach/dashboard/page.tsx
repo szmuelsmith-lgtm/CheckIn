@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { PILLAR_LABELS, scoreToPillarLevel } from "@/lib/pillar-scoring";
+import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import type { Pillar, PillarScores } from "@/types/database";
 import type { PillarLevel } from "@/lib/pillar-scoring";
 import { ClipboardCheck, Users, TrendingUp, TrendingDown, Minus, Heart, Zap, Shield } from "lucide-react";
@@ -56,10 +56,6 @@ const LEVEL_LABEL: Record<PillarLevel, string> = {
 };
 
 const PILLARS: Pillar[] = ["emotional", "resilience", "recovery", "support"];
-const PILLAR_COL: Record<Pillar, string> = {
-  emotional: "emotional_score", resilience: "resilience_score",
-  recovery:  "recovery_score",  support:    "support_score",
-};
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type PillarDistribution = Record<PillarLevel, number>;
@@ -98,19 +94,6 @@ const DEMO: AggregateData = {
     support:    { stable:12, moderate:4, elevated:2, high:0 },
   },
 };
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-function pillarAvg(rows: Record<string, number>[], p: Pillar) {
-  const vals = rows.map(c => c[PILLAR_COL[p]]).filter(v => v != null);
-  return vals.length ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : 0;
-}
-function changePct(cur: number, prev: number) {
-  if (!prev) return 0;
-  return parseFloat((((cur - prev) / prev) * 100).toFixed(1));
-}
-function trendDir(pct: number): "up" | "down" | "flat" {
-  return pct > 3 ? "up" : pct < -3 ? "down" : "flat";
-}
 
 // ─── Trend badge ───────────────────────────────────────────────────────────────
 function TrendBadge({ pct, direction }: { pct: number; direction: "up" | "down" | "flat" }) {
@@ -154,10 +137,14 @@ export default function CoachDashboard() {
     setLoading(true); setError(false);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
-      const { data: prof } = await supabase.from("profiles").select("full_name, team_id").eq("auth_user_id", user.id).single();
+      // Fetch display-only profile info (no athlete data)
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name, team_id")
+        .eq("auth_user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+        .single();
+
       if (prof) {
         setProfile({ full_name: prof.full_name });
         if (prof.team_id) {
@@ -165,59 +152,23 @@ export default function CoachDashboard() {
           if (team) setTeamName(team.name);
         }
       }
-      const { data: prof2 } = await supabase.from("profiles").select("id, team_id").eq("auth_user_id", user.id).single();
-      if (!prof2?.team_id) { setNoTeam(true); setLoading(false); return; }
 
-      const { data: athletes } = await supabase.from("profiles").select("id").eq("team_id", prof2.team_id).eq("role", "athlete");
-      const athleteCount = (athletes ?? []).length;
+      // All aggregate computation happens server-side — no per-athlete data in the response
+      const res  = await fetch("/api/coach/aggregate", { method: "POST" });
+      const json = await res.json() as AggregateData & { insufficient_data?: boolean; no_team?: boolean };
 
-      if (athleteCount < 5) { setData(DEMO); setIsDemo(true); setLoading(false); return; }
-
-      const athleteIds = (athletes ?? []).map((a: { id: string }) => a.id);
-      const cutoff = new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: allCheckins } = await supabase
-        .from("checkins")
-        .select("id, athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at")
-        .in("athlete_id", athleteIds).eq("mode", "weekly").gte("completed_at", cutoff)
-        .order("completed_at", { ascending: false });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rows = (allCheckins ?? []) as any[];
-      const now  = Date.now();
-      const inW  = (iso: string, from: number, to: number) => { const t = new Date(iso).getTime(); return t >= from && t < to; };
-
-      const thisWeek  = rows.filter(c => inW(c.completed_at, now - 7*86400000, now));
-      const lastWeek  = rows.filter(c => inW(c.completed_at, now - 14*86400000, now - 7*86400000));
-      const thisMonth = rows.filter(c => inW(c.completed_at, now - 28*86400000, now));
-
-      const seen = new Set<string>();
-      const recent: typeof rows = [];
-      for (const c of rows) { if (!seen.has(c.athlete_id)) { seen.add(c.athlete_id); recent.push(c); } }
-
-      const pillar_averages: PillarScores = { emotional:5, resilience:5, recovery:5, support:5 };
-      const pillar_trends = {} as Record<Pillar, PillarTrend>;
-      const dist: Record<Pillar, Record<PillarLevel, number>> = {
-        emotional:{stable:0,moderate:0,elevated:0,high:0}, resilience:{stable:0,moderate:0,elevated:0,high:0},
-        recovery:{stable:0,moderate:0,elevated:0,high:0},  support:{stable:0,moderate:0,elevated:0,high:0},
-      };
-
-      for (const p of PILLARS) {
-        const cur = pillarAvg(recent as Record<string, number>[], p);
-        const tw  = pillarAvg(thisWeek  as Record<string, number>[], p);
-        const lw  = pillarAvg(lastWeek  as Record<string, number>[], p);
-        const tm  = pillarAvg(thisMonth as Record<string, number>[], p);
-        const wkP = changePct(tw, lw);
-        pillar_averages[p] = cur || tw || tm || 5;
-        pillar_trends[p]   = { this_week_avg:tw, last_week_avg:lw, month_avg:tm, weekly_change_pct:wkP, direction:trendDir(wkP) };
-        const col = PILLAR_COL[p];
-        for (const c of recent) dist[p][scoreToPillarLevel(c[col] ?? 5)]++;
+      if (json.no_team) {
+        setNoTeam(true);
+        return;
       }
 
-      setData({
-        checkin_rate: Math.round((recent.length / athleteCount) * 100),
-        pillar_averages, pillar_trends, distribution: dist,
-        athlete_count: athleteCount, checkins_this_week: thisWeek.length,
-      });
+      if (json.insufficient_data) {
+        setData(DEMO);
+        setIsDemo(true);
+        return;
+      }
+
+      setData(json);
       setIsDemo(false);
     } catch { setError(true); }
     finally { setLoading(false); }

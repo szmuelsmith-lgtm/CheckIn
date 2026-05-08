@@ -7,6 +7,14 @@ import type { Pillar } from '@/types/database';
 type PillarDistribution = Record<PillarLevel, number>;
 type DistributionResult = Record<Pillar, PillarDistribution>;
 
+interface PillarTrend {
+  this_week_avg:     number;
+  last_week_avg:     number;
+  month_avg:         number;
+  weekly_change_pct: number;
+  direction:         'up' | 'down' | 'flat';
+}
+
 const PILLARS: Pillar[] = ['emotional', 'resilience', 'recovery', 'support'];
 const PILLAR_SCORE_COLUMNS: Record<Pillar, string> = {
   emotional:  'emotional_score',
@@ -17,6 +25,18 @@ const PILLAR_SCORE_COLUMNS: Record<Pillar, string> = {
 
 function emptyDistribution(): PillarDistribution {
   return { stable: 0, moderate: 0, elevated: 0, high: 0 };
+}
+
+function colAvg(rows: Record<string, unknown>[], col: string): number {
+  const vals = rows
+    .map(c => c[col] as number)
+    .filter(s => typeof s === 'number' && !isNaN(s));
+  return vals.length ? parseFloat((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2)) : 0;
+}
+
+function changePct(cur: number, prev: number): number {
+  if (!prev) return 0;
+  return parseFloat((((cur - prev) / prev) * 100).toFixed(1));
 }
 
 // POST /api/coach/aggregate  (no body needed)
@@ -42,13 +62,10 @@ export async function POST() {
     return NextResponse.json({ error: 'Forbidden: coaches only' }, { status: 403 });
   }
 
-  // No team assigned — return insufficient_data so dashboard shows the right state
   if (!profile.team_id) {
     return NextResponse.json({ insufficient_data: true, athlete_count: 0, no_team: true });
   }
 
-  // Fetch all athlete profile IDs on the coach's team
-  // RLS policy "Coaches read team profiles" allows this when coach has matching org
   const { data: athletes, error: athletesError } = await supabase
     .from('profiles')
     .select('id')
@@ -67,45 +84,51 @@ export async function POST() {
   }
 
   const athleteIds = athletes!.map(a => a.id);
-  const cutoffDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const now          = Date.now();
+  const cutoff28     = new Date(now - 28 * 24 * 60 * 60 * 1000).toISOString();
+  const thisWeekFrom = now -  7 * 24 * 60 * 60 * 1000;
+  const lastWeekFrom = now - 14 * 24 * 60 * 60 * 1000;
 
-  // Fetch most recent weekly checkin per athlete in the past 14 days
-  // RLS policy "Coaches read team checkins" allows this
+  // Fetch weekly checkins from the past 28 days for trend comparison
   const { data: allCheckins, error: checkinsError } = await supabase
     .from('checkins')
-    .select('id, athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at')
+    .select('athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at')
     .in('athlete_id', athleteIds)
     .eq('mode', 'weekly')
-    .gte('completed_at', cutoffDate)
+    .gte('completed_at', cutoff28)
     .order('completed_at', { ascending: false });
 
   if (checkinsError) {
     return NextResponse.json({ error: 'Failed to fetch checkins' }, { status: 500 });
   }
 
-  // Deduplicate to one checkin per athlete (the most recent, already sorted desc)
+  const rows = (allCheckins ?? []) as Record<string, unknown>[];
+
+  // Split into time windows
+  const thisWeekRows = rows.filter(c => new Date(c.completed_at as string).getTime() >= thisWeekFrom);
+  const lastWeekRows = rows.filter(c => {
+    const t = new Date(c.completed_at as string).getTime();
+    return t >= lastWeekFrom && t < thisWeekFrom;
+  });
+
+  // One row per athlete (most recent) for current snapshot — within last 14 days
   const seenAthletes = new Set<string>();
-  const latestCheckins: typeof allCheckins = [];
-  for (const c of (allCheckins ?? [])) {
-    if (!seenAthletes.has(c.athlete_id)) {
-      seenAthletes.add(c.athlete_id);
+  const latestCheckins: typeof rows = [];
+  for (const c of rows) {
+    const t = new Date(c.completed_at as string).getTime();
+    if (t >= lastWeekFrom && !seenAthletes.has(c.athlete_id as string)) {
+      seenAthletes.add(c.athlete_id as string);
       latestCheckins.push(c);
     }
   }
 
-  const checkinsThisWeek = latestCheckins.length;
+  const checkinsThisWeek = new Set(thisWeekRows.map(c => c.athlete_id)).size;
   const checkinRate = athleteCount > 0
     ? parseFloat(((checkinsThisWeek / athleteCount) * 100).toFixed(1))
     : 0;
 
-  // Calculate pillar averages
-  const pillarAverages: Record<Pillar, number> = {
-    emotional:  0,
-    resilience: 0,
-    recovery:   0,
-    support:    0,
-  };
-
+  const pillarAverages: Record<Pillar, number> = { emotional: 0, resilience: 0, recovery: 0, support: 0 };
+  const pillarTrends: Record<Pillar, PillarTrend> = {} as Record<Pillar, PillarTrend>;
   const distribution: DistributionResult = {
     emotional:  emptyDistribution(),
     resilience: emptyDistribution(),
@@ -113,22 +136,28 @@ export async function POST() {
     support:    emptyDistribution(),
   };
 
-  if (latestCheckins.length > 0) {
-    for (const pillar of PILLARS) {
-      const col = PILLAR_SCORE_COLUMNS[pillar];
-      const scores = latestCheckins
-        .map(c => (c as Record<string, unknown>)[col] as number)
-        .filter(s => typeof s === 'number' && !isNaN(s));
+  for (const pillar of PILLARS) {
+    const col    = PILLAR_SCORE_COLUMNS[pillar];
+    const twAvg  = colAvg(thisWeekRows,  col);
+    const lwAvg  = colAvg(lastWeekRows,  col);
+    const moAvg  = colAvg(rows,          col);
+    const curAvg = colAvg(latestCheckins, col);
+    const wkPct  = changePct(twAvg, lwAvg);
 
-      if (scores.length > 0) {
-        pillarAverages[pillar] = parseFloat(
-          (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)
-        );
-        for (const score of scores) {
-          const level = scoreToPillarLevel(score);
-          distribution[pillar][level]++;
-        }
-      }
+    pillarAverages[pillar] = curAvg || twAvg || moAvg || 0;
+    pillarTrends[pillar]   = {
+      this_week_avg:     twAvg,
+      last_week_avg:     lwAvg,
+      month_avg:         moAvg,
+      weekly_change_pct: wkPct,
+      direction:         wkPct > 3 ? 'up' : wkPct < -3 ? 'down' : 'flat',
+    };
+
+    const scores = latestCheckins
+      .map(c => c[col] as number)
+      .filter(s => typeof s === 'number' && !isNaN(s));
+    for (const score of scores) {
+      distribution[pillar][scoreToPillarLevel(score)]++;
     }
   }
 
@@ -143,10 +172,11 @@ export async function POST() {
   ).catch(() => {});
 
   return NextResponse.json({
-    checkin_rate:     checkinRate,
-    pillar_averages:  pillarAverages,
+    checkin_rate:       checkinRate,
+    pillar_averages:    pillarAverages,
+    pillar_trends:      pillarTrends,
     distribution,
-    athlete_count:    athleteCount,
+    athlete_count:      athleteCount,
     checkins_this_week: checkinsThisWeek,
   });
 }

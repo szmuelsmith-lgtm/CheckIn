@@ -265,7 +265,7 @@ export default function CompliancePage() {
               },
               {
                 title: "End-to-End Encryption",
-                description: "All data encrypted in transit via TLS 1.2+ and at rest within our database infrastructure. Journal entries receive additional encryption protections.",
+                description: "All data encrypted in transit via TLS 1.2+ and at rest via AES-256 within our database infrastructure.",
               },
               {
                 title: "Comprehensive Audit Logging",
