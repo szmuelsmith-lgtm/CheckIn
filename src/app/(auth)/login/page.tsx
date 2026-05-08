@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Capacitor } from "@capacitor/core";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, Building2, Loader2, ArrowLeft } from "lucide-react";
+import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, Building2, Loader2 } from "lucide-react";
 import { DEMO_PASSWORD, DEMO_ACCOUNTS } from "@/lib/demo-accounts";
 
 const DEMO_ROLE_ICONS: Record<string, React.ReactNode> = {
@@ -27,9 +26,6 @@ export default function LoginPage() {
   const [showDemo, setShowDemo]                 = useState(false);
   const [demoLoading, setDemoLoading]           = useState<string | null>(null);
   const [demoError, setDemoError]               = useState("");
-  const [isNative, setIsNative]                  = useState(false);
-
-  useEffect(() => { setIsNative(Capacitor.isNativePlatform()); }, []);
   const router = useRouter();
 
   const REDIRECT_MAP: Record<string, string> = {
@@ -180,14 +176,6 @@ export default function LoginPage() {
       className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
       style={{ background: "#f4f7f5" }}
     >
-      {/* Back to website — hidden inside the native app */}
-      {!isNative && (
-        <div className="w-full max-w-sm mb-4">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-slate-700 transition-colors">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to website
-          </Link>
-        </div>
-      )}
 
       {/* Logo */}
       <div className="flex flex-col items-center mb-8">

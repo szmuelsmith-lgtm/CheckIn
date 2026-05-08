@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Capacitor } from "@capacitor/core";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Anchor, Check, ArrowLeft } from "lucide-react";
+import { Anchor, Check } from "lucide-react";
 import { UserRole } from "@/types/database";
 
 const T = {
@@ -31,9 +30,6 @@ export default function SignupPage() {
   const [loading, setLoading]           = useState(false);
   const [success, setSuccess]           = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
-  const [isNative, setIsNative] = useState(false);
-
-  useEffect(() => { setIsNative(Capacitor.isNativePlatform()); }, []);
   const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -173,15 +169,6 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ background: T.raised }}>
-      {/* Back to website — hidden inside the native app */}
-      {!isNative && (
-        <div className="w-full max-w-sm mb-4">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] text-slate-400 hover:text-slate-700 transition-colors">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to website
-          </Link>
-        </div>
-      )}
-
       {/* Logo — matches login page */}
       <div className="flex flex-col items-center mb-8">
         <div className="h-12 w-12 rounded-2xl flex items-center justify-center mb-3"
