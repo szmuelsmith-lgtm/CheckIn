@@ -6,31 +6,38 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
   AlertTriangle, CalendarCheck,
-  PlayCircle, StopCircle, Shield, TrendingUp, TrendingDown,
-  Minus, ChevronRight, Activity,
+  PlayCircle, StopCircle, Shield,
+  TrendingUp, TrendingDown, Minus,
+  ChevronRight, Activity, Users2, Zap,
 } from "lucide-react";
 import { evaluateRiskLevel } from "@/lib/pillar-scoring";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg:        "#f8fafc",
-  surface:   "#ffffff",
-  raised:    "#f8fafc",
-  border:    "#e2e8f0",
-  borderSub: "#f1f5f9",
-  text:      "#0f172a",
-  textSub:   "#334155",
-  textMuted: "#64748b",
-  green:     "#059669",
-  greenDeep: "#065f46",
-  greenLight:"#d1fae5",
-  red:       "#dc2626",
-  redLight:  "#fee2e2",
-  amber:     "#d97706",
-  amberLight:"#fef3c7",
+  bg:           "#f9fafb",
+  surface:      "#ffffff",
+  border:       "#e5e7eb",
+  borderSub:    "#f3f4f6",
+  text:         "#111827",
+  textSub:      "#374151",
+  textMuted:    "#6b7280",
+  indigo:       "#4f46e5",
+  indigoDark:   "#3730a3",
+  indigoLight:  "#eef2ff",
+  indigoBorder: "#c7d2fe",
+  violet:       "#7c3aed",
+  red:          "#dc2626",
+  redLight:     "#fef2f2",
+  redBorder:    "#fecaca",
+  amber:        "#d97706",
+  amberLight:   "#fefce8",
+  amberBorder:  "#fde68a",
+  green:        "#16a34a",
+  greenLight:   "#f0fdf4",
 };
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+const shadow = "0 1px 3px 0 rgba(0,0,0,0.07),0 1px 2px 0 rgba(0,0,0,0.04)";
+const shadowMd = "0 4px 6px -1px rgba(0,0,0,0.07),0 2px 4px -2px rgba(0,0,0,0.04)";
+
 interface OrgStats {
   totalAthletes:   number;
   checkinRate7d:   number;
@@ -62,19 +69,11 @@ interface OrgData {
   screening_active: boolean;
 }
 
-// ─── Demo data ─────────────────────────────────────────────────────────────────
 const DEMO_STATS: OrgStats = {
-  totalAthletes:  24,
-  checkinRate7d:  78,
-  checkinRateMoM: 12,
-  activeThis30d:  21,
-  activeLast30d:  19,
-  openAlerts:     3,
-  redAlerts:      1,
-  yellowAlerts:   2,
-  greenCount:     14,
-  yellowCount:    7,
-  redCount:       3,
+  totalAthletes:  24,  checkinRate7d:  78, checkinRateMoM: 12,
+  activeThis30d:  21,  activeLast30d:  19, openAlerts:     3,
+  redAlerts:      1,   yellowAlerts:   2,  greenCount:     14,
+  yellowCount:    7,   redCount:       3,
 };
 
 const DEMO_TEAMS: TeamStat[] = [
@@ -84,10 +83,9 @@ const DEMO_TEAMS: TeamStat[] = [
   { id:"t4", name:"Track & Field",     athleteCount:22, checkinRate7d:64, greenCount:13, yellowCount:7, redCount:2, alertCount:1 },
 ];
 
-// ─── Helper components ─────────────────────────────────────────────────────────
 function Delta({ pct }: { pct: number }) {
   if (pct === 0) return (
-    <span className="inline-flex items-center gap-0.5 text-[11px]" style={{ color: T.textMuted }}>
+    <span className="inline-flex items-center gap-0.5 text-[11px] font-medium" style={{ color: T.textMuted }}>
       <Minus className="h-3 w-3" />0%
     </span>
   );
@@ -101,28 +99,27 @@ function Delta({ pct }: { pct: number }) {
   );
 }
 
-function WellnessBar({ green, yellow, red }: { green: number; yellow: number; red: number }) {
+function WellnessSegments({ green, yellow, red }: { green: number; yellow: number; red: number }) {
   const total = green + yellow + red;
   if (total === 0) return <div className="h-1.5 rounded-full w-full" style={{ background: T.borderSub }} />;
   return (
-    <div className="flex h-1.5 rounded-full overflow-hidden gap-px w-full" style={{ background: T.borderSub }}>
-      {green  > 0 && <div style={{ width:`${(green/total)*100}%`,  background: T.green }} />}
+    <div className="flex h-1.5 rounded-full overflow-hidden w-full gap-px">
+      {green  > 0 && <div className="rounded-l-full" style={{ width:`${(green/total)*100}%`,  background: T.green }} />}
       {yellow > 0 && <div style={{ width:`${(yellow/total)*100}%`, background: T.amber }} />}
-      {red    > 0 && <div style={{ width:`${(red/total)*100}%`,    background: T.red   }} />}
+      {red    > 0 && <div className="rounded-r-full" style={{ width:`${(red/total)*100}%`,    background: T.red   }} />}
     </div>
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [stats,           setStats]           = useState<OrgStats | null>(null);
-  const [teams,           setTeams]           = useState<TeamStat[]>([]);
-  const [profile,         setProfile]         = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
-  const [orgData,         setOrgData]         = useState<OrgData | null>(null);
-  const [screeningLoading,setScreeningLoading]= useState(false);
-  const [loading,         setLoading]         = useState(true);
-  const [error,           setError]           = useState(false);
-  const [isDemo,          setIsDemo]          = useState(false);
+  const [stats,            setStats]            = useState<OrgStats | null>(null);
+  const [teams,            setTeams]            = useState<TeamStat[]>([]);
+  const [profile,          setProfile]          = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
+  const [orgData,          setOrgData]          = useState<OrgData | null>(null);
+  const [screeningLoading, setScreeningLoading] = useState(false);
+  const [loading,          setLoading]          = useState(true);
+  const [error,            setError]            = useState(false);
+  const [isDemo,           setIsDemo]           = useState(false);
 
   async function load() {
     setLoading(true); setError(false);
@@ -162,16 +159,15 @@ export default function AdminDashboard() {
         supabase.from("checkins")
           .select("athlete_id, completed_at, emotional_score, resilience_score, recovery_score, support_score")
           .in("athlete_id", athleteIds).gte("completed_at", d30).order("completed_at", { ascending: false }),
-        supabase.from("checkins")
-          .select("athlete_id")
+        supabase.from("checkins").select("athlete_id")
           .in("athlete_id", athleteIds).gte("completed_at", d60).lt("completed_at", d30),
         supabase.from("alerts").select("athlete_id, severity").eq("status", "open"),
       ]);
 
-      const checked7d     = new Set((checkins30 ?? []).filter(c => c.completed_at >= d7).map(c => c.athlete_id)).size;
-      const checkinRate7d = totalAthletes > 0 ? Math.round((checked7d / totalAthletes) * 100) : 0;
-      const activeThis30d = new Set((checkins30 ?? []).map(c => c.athlete_id)).size;
-      const activeLast30d = new Set((checkinsPrev ?? []).map(c => c.athlete_id)).size;
+      const checked7d      = new Set((checkins30 ?? []).filter(c => c.completed_at >= d7).map(c => c.athlete_id)).size;
+      const checkinRate7d  = totalAthletes > 0 ? Math.round((checked7d / totalAthletes) * 100) : 0;
+      const activeThis30d  = new Set((checkins30 ?? []).map(c => c.athlete_id)).size;
+      const activeLast30d  = new Set((checkinsPrev ?? []).map(c => c.athlete_id)).size;
       const checkinRateMoM = activeLast30d > 0
         ? Math.round(((activeThis30d - activeLast30d) / activeLast30d) * 100) : 0;
 
@@ -197,15 +193,15 @@ export default function AdminDashboard() {
         const teamIds = (athleteProfiles ?? []).filter(p => p.team_id === team.id).map(p => p.id);
         if (teamIds.length === 0) return null;
         const teamCheckins7d = (checkins30 ?? []).filter(c => teamIds.includes(c.athlete_id) && c.completed_at >= d7);
-        const latestByTeamAthlete = new Map<string, CheckinRow>();
-        teamCheckins7d.forEach(c => { if (!latestByTeamAthlete.has(c.athlete_id)) latestByTeamAthlete.set(c.athlete_id, c); });
+        const latestByTeam   = new Map<string, CheckinRow>();
+        teamCheckins7d.forEach(c => { if (!latestByTeam.has(c.athlete_id)) latestByTeam.set(c.athlete_id, c); });
         let tGreen = 0, tYellow = 0, tRed = 0;
-        latestByTeamAthlete.forEach(c => {
+        latestByTeam.forEach(c => {
           const lvl = evaluateRiskLevel({ emotional: c.emotional_score ?? 5, resilience: c.resilience_score ?? 5, recovery: c.recovery_score ?? 5, support: c.support_score ?? 5 }, false);
           if (lvl === "red") tRed++; else if (lvl === "yellow") tYellow++; else tGreen++;
         });
         const checked7dTeam = new Set(teamCheckins7d.map(c => c.athlete_id)).size;
-        const alertCount = teamIds.reduce((sum, id) => sum + (alertsByAthlete.get(id) ?? 0), 0);
+        const alertCount    = teamIds.reduce((sum, id) => sum + (alertsByAthlete.get(id) ?? 0), 0);
         return { id: team.id, name: team.name, athleteCount: teamIds.length, checkinRate7d: Math.round((checked7dTeam / teamIds.length) * 100), greenCount: tGreen, yellowCount: tYellow, redCount: tRed, alertCount };
       }).filter((t): t is TeamStat => t !== null);
 
@@ -223,7 +219,7 @@ export default function AdminDashboard() {
     <DashboardLayout role="admin" userName="...">
       <div className="flex items-center justify-center h-64">
         <div className="h-5 w-5 rounded-full border-2 animate-spin"
-             style={{ borderColor: T.border, borderTopColor: T.greenDeep }} />
+             style={{ borderColor: T.indigoBorder, borderTopColor: T.indigo }} />
       </div>
     </DashboardLayout>
   );
@@ -231,9 +227,9 @@ export default function AdminDashboard() {
   if (error) return (
     <DashboardLayout role="admin" userName="...">
       <div className="max-w-5xl mx-auto">
-        <div className="rounded-xl p-10 text-center" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+        <div className="rounded-xl p-10 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
           <p className="text-[14px] mb-3" style={{ color: T.textMuted }}>Couldn&apos;t load dashboard data.</p>
-          <button onClick={load} className="text-[13px] font-semibold" style={{ color: T.greenDeep }}>Retry</button>
+          <button onClick={load} className="text-[13px] font-semibold" style={{ color: T.indigo }}>Try again</button>
         </div>
       </div>
     </DashboardLayout>
@@ -241,129 +237,144 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
-      <div className="max-w-5xl mx-auto space-y-5">
+      <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ── Page header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
+        {/* ── Header ──────────────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: T.text }}>
-              {orgData?.name ?? "Program Overview"}
-            </h1>
-            <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>
-              {roleName} · {new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" })}
+            <div className="flex items-center gap-2.5 mb-1">
+              <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>
+                {orgData?.name ?? "Program Overview"}
+              </h1>
+              {isDemo && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      style={{ background: T.indigoLight, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>
+                  Demo
+                </span>
+              )}
+            </div>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>
+              {roleName} · {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {isDemo && (
-              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md"
-                    style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
-                Demo data
-              </span>
-            )}
-            <div className="flex items-center gap-1.5 text-[12px]" style={{ color: T.textMuted }}>
-              <div className="h-2 w-2 rounded-full"
-                   style={{ background: orgData?.screening_active ? T.green : T.border }} />
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full"
+                 style={{ background: orgData?.screening_active ? T.greenLight : T.borderSub, color: orgData?.screening_active ? T.green : T.textMuted, border: `1px solid ${orgData?.screening_active ? "#bbf7d0" : T.border}` }}>
+              <div className="h-1.5 w-1.5 rounded-full" style={{ background: orgData?.screening_active ? T.green : T.textMuted }} />
               {orgData?.screening_active ? "Screening active" : "Weekly check-ins"}
             </div>
           </div>
         </div>
 
-        {/* ── KPI strip ───────────────────────────────────────────────────────── */}
-        <div className="rounded-xl overflow-hidden"
-             style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-          <div className="grid grid-cols-4 divide-x" style={{ borderColor: T.border }}>
+        {/* ── KPI cards ───────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-4 gap-4">
 
-            {/* Athletes */}
-            <div className="px-5 py-5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-3"
-                 style={{ color: T.textMuted }}>Athletes</p>
-              <p className="text-[32px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
-                {stats?.totalAthletes ?? "—"}
-              </p>
-            </div>
-
-            {/* 7-day check-in rate */}
-            <div className="px-5 py-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider"
-                   style={{ color: T.textMuted }}>7-Day Check-In</p>
-                <Delta pct={stats?.checkinRateMoM ?? 0} />
-              </div>
-              <p className="text-[32px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
-                {stats?.checkinRate7d ?? "—"}<span className="text-[18px] font-medium ml-0.5" style={{ color: T.textMuted }}>%</span>
-              </p>
-              <div className="mt-3 h-1 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
-                <div className="h-full rounded-full"
-                     style={{ width:`${stats?.checkinRate7d ?? 0}%`, background: T.green }} />
+          {/* Athletes */}
+          <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+                   style={{ background: T.indigoLight }}>
+                <Users2 className="h-4 w-4" style={{ color: T.indigo }} />
               </div>
             </div>
+            <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: T.text }}>
+              {stats?.totalAthletes ?? "—"}
+            </p>
+            <p className="text-[12px] font-medium" style={{ color: T.textMuted }}>Total athletes</p>
+          </div>
 
-            {/* Open alerts */}
-            <Link href="/admin/alerts" className="block">
-              <div className="px-5 py-5 h-full hover:bg-slate-50 transition-colors cursor-pointer">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider"
-                     style={{ color: T.textMuted }}>Open Alerts</p>
-                  <ChevronRight className="h-3.5 w-3.5" style={{ color: T.textMuted }} />
-                </div>
-                <p className="text-[32px] font-bold tabular-nums leading-none"
-                   style={{ color: (stats?.openAlerts ?? 0) > 0 ? T.red : T.text }}>
-                  {stats?.openAlerts ?? "—"}
-                </p>
-                {(stats?.openAlerts ?? 0) > 0 && (
-                  <div className="flex items-center gap-2 mt-2">
-                    {(stats?.redAlerts ?? 0) > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                            style={{ background: T.redLight, color: T.red }}>
-                        {stats?.redAlerts} high
-                      </span>
-                    )}
-                    {(stats?.yellowAlerts ?? 0) > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                            style={{ background: T.amberLight, color: T.amber }}>
-                        {stats?.yellowAlerts} moderate
-                      </span>
-                    )}
-                  </div>
+          {/* Check-in rate */}
+          <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+                   style={{ background: T.indigoLight }}>
+                <Zap className="h-4 w-4" style={{ color: T.indigo }} />
+              </div>
+              <Delta pct={stats?.checkinRateMoM ?? 0} />
+            </div>
+            <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: T.text }}>
+              {stats?.checkinRate7d ?? "—"}<span className="text-[16px] font-medium ml-0.5" style={{ color: T.textMuted }}>%</span>
+            </p>
+            <p className="text-[12px] font-medium mb-3" style={{ color: T.textMuted }}>7-day check-in rate</p>
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
+              <div className="h-full rounded-full transition-all"
+                   style={{ width: `${stats?.checkinRate7d ?? 0}%`, background: `linear-gradient(90deg, ${T.indigo}, ${T.violet})` }} />
+            </div>
+          </div>
+
+          {/* Open alerts */}
+          <Link href="/admin/alerts" className="block rounded-xl p-5 group transition-shadow hover:shadow-md"
+                style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+                   style={{ background: (stats?.openAlerts ?? 0) > 0 ? T.redLight : T.borderSub }}>
+                <AlertTriangle className="h-4 w-4" style={{ color: (stats?.openAlerts ?? 0) > 0 ? T.red : T.textMuted }} />
+              </div>
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" style={{ color: T.textMuted }} />
+            </div>
+            <p className="text-[30px] font-bold tabular-nums leading-none mb-1"
+               style={{ color: (stats?.openAlerts ?? 0) > 0 ? T.red : T.text }}>
+              {stats?.openAlerts ?? "—"}
+            </p>
+            <p className="text-[12px] font-medium mb-2" style={{ color: T.textMuted }}>Open alerts</p>
+            {(stats?.openAlerts ?? 0) > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(stats?.redAlerts ?? 0) > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                        style={{ background: T.redLight, color: T.red }}>
+                    {stats?.redAlerts} high
+                  </span>
+                )}
+                {(stats?.yellowAlerts ?? 0) > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                        style={{ background: T.amberLight, color: T.amber }}>
+                    {stats?.yellowAlerts} moderate
+                  </span>
                 )}
               </div>
-            </Link>
+            )}
+          </Link>
 
-            {/* Active this month */}
-            <div className="px-5 py-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider"
-                   style={{ color: T.textMuted }}>Active / 30d</p>
-                <Delta pct={stats?.checkinRateMoM ?? 0} />
+          {/* Active 30d */}
+          <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+                   style={{ background: T.greenLight }}>
+                <Activity className="h-4 w-4" style={{ color: T.green }} />
               </div>
-              <p className="text-[32px] font-bold tabular-nums leading-none" style={{ color: T.text }}>
-                {stats?.activeThis30d ?? "—"}
-              </p>
-              {(stats?.activeLast30d ?? 0) > 0 && (
-                <p className="text-[11px] mt-2" style={{ color: T.textMuted }}>
-                  vs {stats?.activeLast30d} last month
-                </p>
-              )}
+              <Delta pct={stats?.checkinRateMoM ?? 0} />
             </div>
+            <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: T.text }}>
+              {stats?.activeThis30d ?? "—"}
+            </p>
+            <p className="text-[12px] font-medium" style={{ color: T.textMuted }}>
+              Active this month
+              {(stats?.activeLast30d ?? 0) > 0 && (
+                <span className="ml-1.5" style={{ color: T.textMuted }}>vs {stats?.activeLast30d} last</span>
+              )}
+            </p>
           </div>
         </div>
 
-        {/* ── Main content grid ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-5">
+        {/* ── Main content ─────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-3 gap-4">
 
-          {/* Team breakdown — spans 2 cols */}
+          {/* Team table — 2 cols */}
           {teams.length > 0 && (
             <div className="col-span-2 rounded-xl overflow-hidden"
-                 style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-              <div className="px-5 py-3.5 flex items-center justify-between"
+                 style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+              <div className="px-5 py-4 flex items-center justify-between"
                    style={{ borderBottom: `1px solid ${T.border}` }}>
-                <p className="text-[13px] font-semibold" style={{ color: T.text }}>Team Breakdown</p>
-                <p className="text-[11px]" style={{ color: T.textMuted }}>7-day window</p>
+                <p className="text-[14px] font-semibold" style={{ color: T.text }}>Team Breakdown</p>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: T.borderSub, color: T.textMuted }}>
+                  7-day window
+                </span>
               </div>
-              <table className="w-full text-[13px]">
+              <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${T.borderSub}` }}>
-                    {["Team", "Athletes", "Check-In %", "Wellness", "Alerts"].map(h => (
+                  <tr style={{ background: T.bg, borderBottom: `1px solid ${T.border}` }}>
+                    {["Team", "Athletes", "Check-In", "Wellness", "Alerts"].map(h => (
                       <th key={h} className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider"
                           style={{ color: T.textMuted }}>{h}</th>
                     ))}
@@ -371,44 +382,45 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {teams.map((team, i) => (
-                    <tr key={team.id}
+                    <tr key={team.id} className="group transition-colors hover:bg-gray-50/70"
                         style={{ borderTop: i > 0 ? `1px solid ${T.borderSub}` : undefined }}>
                       <td className="px-5 py-3.5">
-                        <p className="font-medium" style={{ color: T.text }}>{team.name}</p>
-                      </td>
-                      <td className="px-5 py-3.5 tabular-nums font-medium" style={{ color: T.textSub }}>
-                        {team.athleteCount}
+                        <p className="font-semibold text-[13px]" style={{ color: T.text }}>{team.name}</p>
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
+                        <span className="text-[13px] font-medium tabular-nums" style={{ color: T.textSub }}>{team.athleteCount}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-14 h-1.5 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
                             <div className="h-full rounded-full"
-                                 style={{ width:`${team.checkinRate7d}%`, background: team.checkinRate7d >= 70 ? T.green : team.checkinRate7d >= 50 ? T.amber : T.red }} />
+                                 style={{ width: `${team.checkinRate7d}%`, background: team.checkinRate7d >= 70 ? T.green : team.checkinRate7d >= 50 ? T.amber : T.red }} />
                           </div>
-                          <span className="tabular-nums font-semibold text-[12px]"
+                          <span className="text-[12px] font-bold tabular-nums"
                                 style={{ color: team.checkinRate7d >= 70 ? T.green : team.checkinRate7d >= 50 ? T.amber : T.red }}>
                             {team.checkinRate7d}%
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <WellnessBar green={team.greenCount} yellow={team.yellowCount} red={team.redCount} />
-                          <div className="flex items-center gap-1 shrink-0">
-                            {team.greenCount  > 0 && <span className="text-[10px] font-bold" style={{ color: T.green  }}>{team.greenCount}</span>}
-                            {team.yellowCount > 0 && <><span className="text-[10px]" style={{ color: T.border }}>·</span><span className="text-[10px] font-bold" style={{ color: T.amber  }}>{team.yellowCount}</span></>}
-                            {team.redCount    > 0 && <><span className="text-[10px]" style={{ color: T.border }}>·</span><span className="text-[10px] font-bold" style={{ color: T.red    }}>{team.redCount}</span></>}
-                          </div>
+                      <td className="px-5 py-3.5 w-40">
+                        <div className="flex items-center gap-2">
+                          <WellnessSegments green={team.greenCount} yellow={team.yellowCount} red={team.redCount} />
+                          <span className="text-[10px] font-medium shrink-0" style={{ color: T.textMuted }}>
+                            {team.greenCount}/{team.athleteCount}
+                          </span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
                         {team.alertCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded"
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg"
                                 style={{ background: T.redLight, color: T.red }}>
                             <AlertTriangle className="h-3 w-3" />{team.alertCount}
                           </span>
                         ) : (
-                          <span className="text-[11px]" style={{ color: T.textMuted }}>—</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg"
+                                style={{ background: T.greenLight, color: T.green }}>
+                            Clear
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -419,35 +431,36 @@ export default function AdminDashboard() {
           )}
 
           {/* Right column */}
-          <div className="space-y-5">
+          <div className="space-y-4">
 
             {/* Wellness distribution */}
-            <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-              <p className="text-[13px] font-semibold mb-4" style={{ color: T.text }}>Wellness Distribution</p>
+            <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+              <p className="text-[14px] font-semibold mb-4" style={{ color: T.text }}>Wellness Distribution</p>
               {totalRisk === 0 ? (
                 <p className="text-[12px] text-center py-4" style={{ color: T.textMuted }}>No recent data</p>
               ) : (
                 <>
-                  <div className="flex h-3 rounded-lg overflow-hidden mb-4">
-                    {(stats?.greenCount  ?? 0) > 0 && <div style={{ width:`${((stats?.greenCount  ?? 0)/totalRisk)*100}%`, background: T.green  }} />}
-                    {(stats?.yellowCount ?? 0) > 0 && <div style={{ width:`${((stats?.yellowCount ?? 0)/totalRisk)*100}%`, background: T.amber  }} />}
-                    {(stats?.redCount    ?? 0) > 0 && <div style={{ width:`${((stats?.redCount    ?? 0)/totalRisk)*100}%`, background: T.red    }} />}
+                  <div className="flex h-2.5 rounded-full overflow-hidden mb-4 gap-px">
+                    {(stats?.greenCount  ?? 0) > 0 && <div className="rounded-l-full" style={{ width: `${((stats?.greenCount  ?? 0)/totalRisk)*100}%`, background: T.green  }} />}
+                    {(stats?.yellowCount ?? 0) > 0 && <div style={{ width: `${((stats?.yellowCount ?? 0)/totalRisk)*100}%`, background: T.amber  }} />}
+                    {(stats?.redCount    ?? 0) > 0 && <div className="rounded-r-full" style={{ width: `${((stats?.redCount    ?? 0)/totalRisk)*100}%`, background: T.red    }} />}
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {[
-                      { label:"Stable",           count: stats?.greenCount  ?? 0, color: T.green },
-                      { label:"Needs Attention",  count: stats?.yellowCount ?? 0, color: T.amber },
-                      { label:"High Concern",     count: stats?.redCount    ?? 0, color: T.red   },
+                      { label: "Stable",          count: stats?.greenCount  ?? 0, color: T.green, bg: T.greenLight },
+                      { label: "Needs Attention",  count: stats?.yellowCount ?? 0, color: T.amber, bg: T.amberLight },
+                      { label: "High Concern",     count: stats?.redCount    ?? 0, color: T.red,   bg: T.redLight   },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-full" style={{ background: row.color }} />
-                          <span className="text-[12px]" style={{ color: T.textSub }}>{row.label}</span>
+                          <span className="text-[12px] font-medium" style={{ color: T.textSub }}>{row.label}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-semibold tabular-nums" style={{ color: T.text }}>{row.count}</span>
-                          <span className="text-[11px]" style={{ color: T.textMuted }}>
-                            ({totalRisk > 0 ? Math.round((row.count / totalRisk) * 100) : 0}%)
+                          <span className="text-[12px] font-bold tabular-nums" style={{ color: T.text }}>{row.count}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                                style={{ background: row.bg, color: row.color }}>
+                            {totalRisk > 0 ? Math.round((row.count / totalRisk) * 100) : 0}%
                           </span>
                         </div>
                       </div>
@@ -458,19 +471,19 @@ export default function AdminDashboard() {
             </div>
 
             {/* Semester screening */}
-            <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-              <div className="flex items-center gap-2 mb-4">
-                <CalendarCheck className="h-4 w-4" style={{ color: T.textMuted }} />
-                <p className="text-[13px] font-semibold" style={{ color: T.text }}>Semester Screening</p>
+            <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarCheck className="h-4 w-4" style={{ color: T.indigo }} />
+                <p className="text-[14px] font-semibold" style={{ color: T.text }}>Semester Screening</p>
               </div>
               {orgData?.screening_active ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: T.green }} />
-                    <p className="text-[12px] font-medium" style={{ color: T.greenDeep }}>Screening active</p>
+                    <p className="text-[12px] font-semibold" style={{ color: T.green }}>Screening is live</p>
                   </div>
-                  <p className="text-[11px]" style={{ color: T.textMuted }}>
-                    Athletes see the full semester screening form.
+                  <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
+                    Athletes are seeing the full semester screening form.
                   </p>
                   <button
                     disabled={screeningLoading}
@@ -478,60 +491,58 @@ export default function AdminDashboard() {
                       if (!orgData?.id) return;
                       setScreeningLoading(true);
                       try {
-                        const supabase = createClient();
-                        await supabase.from("organizations").update({ screening_active: false }).eq("id", orgData.id);
+                        await createClient().from("organizations").update({ screening_active: false }).eq("id", orgData.id);
                         setOrgData(prev => prev ? { ...prev, screening_active: false } : prev);
                       } finally { setScreeningLoading(false); }
                     }}
                     className="w-full flex items-center justify-center gap-2 h-9 text-[12px] font-semibold rounded-lg border transition-colors disabled:opacity-50"
-                    style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
-                  >
+                    style={{ borderColor: T.border, color: T.textSub, background: T.bg }}>
                     <StopCircle className="h-3.5 w-3.5" />
                     {screeningLoading ? "Deactivating…" : "Deactivate"}
                   </button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-[11px]" style={{ color: T.textMuted }}>
-                    Send a full wellness screening to all athletes this semester.
+                  <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
+                    Push a full wellness screening to all athletes this semester.
                   </p>
                   <button
                     disabled={screeningLoading}
                     onClick={async () => {
                       setScreeningLoading(true);
                       try {
-                        const supabase = createClient();
                         if (orgData?.id) {
-                          await supabase.from("organizations").update({ screening_active: true }).eq("id", orgData.id);
+                          await createClient().from("organizations").update({ screening_active: true }).eq("id", orgData.id);
                           setOrgData(prev => prev ? { ...prev, screening_active: true } : prev);
                         }
                       } finally { setScreeningLoading(false); }
                     }}
                     className="w-full flex items-center justify-center gap-2 h-9 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                    style={{ background: `linear-gradient(135deg, ${T.greenDeep}, ${T.green})` }}
-                  >
+                    style={{ background: `linear-gradient(135deg, ${T.indigoDark}, ${T.indigo})`, boxShadow: shadowMd }}>
                     <PlayCircle className="h-3.5 w-3.5" />
-                    {screeningLoading ? "Activating…" : "Activate Semester Check-In"}
+                    {screeningLoading ? "Activating…" : "Activate Screening"}
                   </button>
                 </div>
               )}
             </div>
 
             {/* Quick links */}
-            <div className="rounded-xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="rounded-xl overflow-hidden"
+                 style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
               {[
-                { href:"/admin/alerts",    icon:<AlertTriangle className="h-4 w-4" />, label:"Alerts",    color:T.red   },
-                { href:"/admin/followups", icon:<Activity      className="h-4 w-4" />, label:"Follow-ups", color:T.amber },
-                { href:"/admin/audit-logs",icon:<Shield        className="h-4 w-4" />, label:"Audit Logs", color:T.textMuted },
-              ].map(({ href, icon, label, color }, i) => (
+                { href: "/admin/alerts",     icon: <AlertTriangle className="h-3.5 w-3.5" />, label: "Alerts",     accent: T.red   },
+                { href: "/admin/followups",  icon: <Activity      className="h-3.5 w-3.5" />, label: "Follow-ups", accent: T.amber },
+                { href: "/admin/audit-logs", icon: <Shield        className="h-3.5 w-3.5" />, label: "Audit Logs", accent: T.indigo },
+              ].map(({ href, icon, label, accent }, i) => (
                 <Link key={href} href={href}>
-                  <div className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+                  <div className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-gray-50/80 group"
                        style={{ borderTop: i > 0 ? `1px solid ${T.borderSub}` : undefined }}>
-                    <div className="flex items-center gap-3" style={{ color }}>
-                      {icon}
+                    <div className="flex items-center gap-3">
+                      <span style={{ color: accent }}>{icon}</span>
                       <span className="text-[13px] font-medium" style={{ color: T.textSub }}>{label}</span>
                     </div>
-                    <ChevronRight className="h-4 w-4" style={{ color: T.textMuted }} />
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                                  style={{ color: T.textMuted }} />
                   </div>
                 </Link>
               ))}
@@ -539,11 +550,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* ── Compliance footer ───────────────────────────────────────────────── */}
-        <div className="flex items-start gap-2.5 px-1">
+        {/* ── Compliance footer ─────────────────────────────────────────────────── */}
+        <div className="flex items-start gap-2 px-1">
           <Shield className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: T.textMuted }} />
           <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
-            Coaches see only anonymized team aggregates (FERPA § 99.31). Individual athlete data is protected. Crisis disclosures are covered under FERPA § 99.36 health/safety exception and NCAA 2023 Mental Health Best Practices.
+            Coaches see only anonymized team aggregates (FERPA § 99.31). Individual athlete data is protected.
+            Crisis disclosures are covered under FERPA § 99.36 health/safety exception and NCAA 2023 Mental Health Best Practices.
           </p>
         </div>
 

@@ -3,39 +3,46 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import {
-  AlertCircle, Users, CalendarCheck, Heart, MessageCircle,
+  AlertCircle, Users2, CalendarCheck, Heart, MessageCircle,
   X, Check, Phone, Calendar, Clock,
-  ShieldCheck, ArrowUpRight,
+  ShieldCheck, ArrowUpRight, Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { evaluateRiskLevel } from "@/lib/pillar-scoring";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bg:          "#f8fafc",
-  surface:     "#ffffff",
-  raised:      "#f8fafc",
-  border:      "#e2e8f0",
-  borderSub:   "#f1f5f9",
-  text:        "#0f172a",
-  textSub:     "#334155",
-  textMuted:   "#64748b",
-  teal:        "#0d9488",
-  tealDeep:    "#134e4a",
-  red:         "#dc2626",
-  redLight:    "#fee2e2",
-  amber:       "#d97706",
-  amberLight:  "#fef3c7",
-  green:       "#16a34a",
-  greenLight:  "#dcfce7",
+  bg:           "#f9fafb",
+  surface:      "#ffffff",
+  border:       "#e5e7eb",
+  borderSub:    "#f3f4f6",
+  text:         "#111827",
+  textSub:      "#374151",
+  textMuted:    "#6b7280",
+  indigo:       "#4f46e5",
+  indigoDark:   "#3730a3",
+  indigoLight:  "#eef2ff",
+  indigoBorder: "#c7d2fe",
+  violet:       "#7c3aed",
+  teal:         "#0d9488",
+  tealLight:    "#f0fdfa",
+  tealBorder:   "#99f6e4",
+  red:          "#dc2626",
+  redLight:     "#fef2f2",
+  redBorder:    "#fecaca",
+  amber:        "#d97706",
+  amberLight:   "#fefce8",
+  green:        "#16a34a",
+  greenLight:   "#f0fdf4",
 };
+
+const shadow   = "0 1px 3px 0 rgba(0,0,0,0.07),0 1px 2px 0 rgba(0,0,0,0.04)";
+const shadowMd = "0 4px 6px -1px rgba(0,0,0,0.07),0 2px 4px -2px rgba(0,0,0,0.04)";
 
 const RISK_COLOR = { green: T.green,  yellow: T.amber,  red: T.red   };
 const RISK_BG    = { green: T.greenLight, yellow: T.amberLight, red: T.redLight };
 const RISK_LABEL = { green: "Stable", yellow: "Moderate", red: "High Risk" };
 const RISK_ORDER = { red: 0, yellow: 1, green: 2 };
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
 interface SharedAthlete {
   athlete_id:        string;
   athlete_name:      string;
@@ -50,7 +57,6 @@ interface SharedAthlete {
   has_followup:      boolean;
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(iso: string | null) {
   if (!iso) return "No check-ins";
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -67,7 +73,6 @@ function formatExpiry(iso: string | null) {
   return `Expires ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
 export default function PsychiatristDashboard() {
   const [athletes,   setAthletes]   = useState<SharedAthlete[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -191,8 +196,7 @@ export default function PsychiatristDashboard() {
   async function handleContact(athlete: SharedAthlete) {
     if (responding === athlete.athlete_id) return;
     if (athlete.open_alert_id && !responded[athlete.athlete_id]) {
-      await handleOutreach(athlete, "accepted");
-      return;
+      await handleOutreach(athlete, "accepted"); return;
     }
     if (!athlete.athlete_id.startsWith("demo-")) {
       try {
@@ -215,10 +219,8 @@ export default function PsychiatristDashboard() {
         const supabase = createClient();
         const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
         await supabase.from("followups").insert({
-          athlete_id: athlete.athlete_id,
-          assigned_to_profile_id: profId,
-          status: "open",
-          due_date: tomorrow,
+          athlete_id: athlete.athlete_id, assigned_to_profile_id: profId,
+          status: "open", due_date: tomorrow,
         });
         await supabase.from("audit_logs").insert({
           actor_profile_id: profId, action: "followup_scheduled",
@@ -231,7 +233,6 @@ export default function PsychiatristDashboard() {
     setScheduling(null);
   }
 
-  // ── Derived ───────────────────────────────────────────────────────────────────
   const sorted      = [...athletes].sort((a, b) =>
     (RISK_ORDER[a.risk_level ?? "green"] ?? 3) - (RISK_ORDER[b.risk_level ?? "green"] ?? 3)
   );
@@ -248,7 +249,7 @@ export default function PsychiatristDashboard() {
     <DashboardLayout role="psychiatrist" userName="...">
       <div className="flex items-center justify-center h-64">
         <div className="h-5 w-5 rounded-full border-2 animate-spin"
-             style={{ borderColor: T.border, borderTopColor: T.teal }} />
+             style={{ borderColor: T.indigoBorder, borderTopColor: T.indigo }} />
       </div>
     </DashboardLayout>
   );
@@ -256,7 +257,8 @@ export default function PsychiatristDashboard() {
   if (error) return (
     <DashboardLayout role="psychiatrist" userName={userName}>
       <div className="max-w-4xl mx-auto">
-        <div className="rounded-xl p-10 text-center" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+        <div className="rounded-xl p-10 text-center"
+             style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
           <AlertCircle className="h-8 w-8 mx-auto mb-3" style={{ color: T.textMuted }} />
           <p style={{ color: T.textMuted }}>{error}</p>
         </div>
@@ -266,74 +268,87 @@ export default function PsychiatristDashboard() {
 
   return (
     <DashboardLayout role="psychiatrist" userName={userName}>
-      <div className="max-w-5xl mx-auto space-y-5">
+      <div className="max-w-5xl mx-auto space-y-6">
 
-        {/* ── Page header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
+        {/* ── Header ──────────────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[22px] font-bold tracking-tight" style={{ color: T.text }}>
-              Counselor Dashboard
-            </h1>
-            <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>
-              {isDemo ? "Demo data · " : ""}{athletes.length} patient{athletes.length !== 1 ? "s" : ""} sharing access
+            <div className="flex items-center gap-2.5 mb-1">
+              <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>
+                Counselor Dashboard
+              </h1>
+              {isDemo && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      style={{ background: T.indigoLight, color: T.indigo, border: `1px solid ${T.indigoBorder}` }}>
+                  Demo
+                </span>
+              )}
+            </div>
+            <p className="text-[13px]" style={{ color: T.textMuted }}>
+              {athletes.length} patient{athletes.length !== 1 ? "s" : ""} sharing access ·{" "}
+              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </p>
           </div>
-          {isDemo && (
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md"
-                  style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
-              Demo data
-            </span>
-          )}
         </div>
 
-        {/* ── KPI strip ───────────────────────────────────────────────────────── */}
-        <div className="rounded-xl overflow-hidden"
-             style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-          <div className="grid grid-cols-4 divide-x" style={{ borderColor: T.border }}>
-            {[
-              { icon: <Users        className="h-4 w-4" style={{ color: T.teal    }} />, label: "Patients",       value: String(athletes.length), color: T.text    },
-              { icon: <CalendarCheck className="h-4 w-4" style={{ color: T.teal   }} />, label: "14-Day Active",  value: `${checkinRate}%`,        color: T.text    },
-              { icon: <AlertCircle  className="h-4 w-4" style={{ color: T.red     }} />, label: "Need Attention", value: String(yellowCount + redCount), color: (yellowCount + redCount) > 0 ? T.red : T.text },
-              { icon: <Heart        className="h-4 w-4" style={{ color: T.green   }} />, label: "Stable",         value: String(greenCount),       color: T.text    },
-            ].map((stat, i) => (
-              <div key={i} className="px-5 py-4">
-                <div className="flex items-center gap-2 mb-2">
-                  {stat.icon}
-                  <p className="text-[11px] font-semibold uppercase tracking-wider"
-                     style={{ color: T.textMuted }}>{stat.label}</p>
+        {/* ── KPI cards ───────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { icon: <Users2       className="h-4 w-4" />, iconBg: T.indigoLight,  iconColor: T.indigo, label: "Patients",        value: String(athletes.length),           valueColor: T.text,  sub: "active permissions" },
+            { icon: <Zap          className="h-4 w-4" />, iconBg: T.indigoLight,  iconColor: T.indigo, label: "14-Day Active",    value: `${checkinRate}%`,                 valueColor: T.text,  sub: "checked in recently" },
+            { icon: <AlertCircle  className="h-4 w-4" />, iconBg: (yellowCount + redCount) > 0 ? T.redLight : T.borderSub, iconColor: (yellowCount + redCount) > 0 ? T.red : T.textMuted, label: "Need Attention", value: String(yellowCount + redCount), valueColor: (yellowCount + redCount) > 0 ? T.red : T.text, sub: "moderate or high risk" },
+            { icon: <Heart        className="h-4 w-4" />, iconBg: T.greenLight,   iconColor: T.green,  label: "Stable",          value: String(greenCount),                valueColor: T.text,  sub: "low concern" },
+          ].map((stat, i) => (
+            <div key={i} className="rounded-xl p-5"
+                 style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center"
+                     style={{ background: stat.iconBg }}>
+                  <span style={{ color: stat.iconColor }}>{stat.icon}</span>
                 </div>
-                <p className="text-[28px] font-bold tabular-nums leading-none"
-                   style={{ color: stat.color }}>{stat.value}</p>
               </div>
-            ))}
-          </div>
+              <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: stat.valueColor }}>
+                {stat.value}
+              </p>
+              <p className="text-[12px] font-medium" style={{ color: T.textMuted }}>{stat.label}</p>
+            </div>
+          ))}
         </div>
 
-        {/* ── Urgent outreach queue ────────────────────────────────────────────── */}
+        {/* ── Urgent outreach queue ─────────────────────────────────────────────── */}
         {urgentQueue.length > 0 && (
           <div className="rounded-xl overflow-hidden"
-               style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-            <div className="px-5 py-3 flex items-center gap-2.5"
-                 style={{ background: T.redLight, borderBottom: `1px solid #fecaca` }}>
+               style={{ background: T.surface, border: `1px solid ${T.redBorder}`, boxShadow: shadow }}>
+
+            {/* Banner */}
+            <div className="px-5 py-3.5 flex items-center gap-3"
+                 style={{ background: T.redLight, borderBottom: `1px solid ${T.redBorder}` }}>
               <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: T.red }} />
               <AlertCircle className="h-4 w-4" style={{ color: T.red }} />
-              <p className="text-[13px] font-semibold" style={{ color: "#991b1b" }}>
-                Outreach Needed — {urgentQueue.length} patient{urgentQueue.length !== 1 ? "s" : ""} flagged
-              </p>
+              <div className="flex-1">
+                <p className="text-[13px] font-bold" style={{ color: "#991b1b" }}>
+                  Outreach Needed
+                </p>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: T.red, color: "#fff" }}>
+                {urgentQueue.length} flagged
+              </span>
             </div>
+
             {urgentQueue.map((athlete, idx) => (
               <div key={athlete.athlete_id}
-                   className="px-5 py-3.5 flex items-center justify-between gap-4"
-                   style={{ borderTop: idx > 0 ? `1px solid #fee2e2` : undefined }}>
+                   className="px-5 py-4 flex items-center justify-between gap-4"
+                   style={{ borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined }}>
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold"
-                       style={{ background: T.redLight, color: T.red }}>
+                  <div className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center text-[13px] font-bold"
+                       style={{ background: `linear-gradient(135deg, ${T.red}22, ${T.red}44)`, color: T.red }}>
                     {athlete.athlete_name.charAt(0)}
                   </div>
                   <div>
                     <p className="font-semibold text-[14px]" style={{ color: T.text }}>{athlete.athlete_name}</p>
                     <p className="text-[11px]" style={{ color: T.textMuted }}>
-                      Score: {athlete.avg_score ?? "—"}/10 · Last check-in: {timeAgo(athlete.last_checkin_at)}
+                      Score {athlete.avg_score ?? "—"}/10 · {timeAgo(athlete.last_checkin_at)}
                     </p>
                   </div>
                 </div>
@@ -341,15 +356,15 @@ export default function PsychiatristDashboard() {
                   <button
                     onClick={() => handleOutreach(athlete, "dismissed")}
                     disabled={responding === athlete.athlete_id}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-medium disabled:opacity-50"
-                    style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.textMuted }}>
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-medium border transition-colors disabled:opacity-50"
+                    style={{ background: T.surface, borderColor: T.border, color: T.textMuted }}>
                     <X className="h-3.5 w-3.5" /> Defer
                   </button>
                   <button
                     onClick={() => handleOutreach(athlete, "accepted")}
                     disabled={responding === athlete.athlete_id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold disabled:opacity-50"
-                    style={{ background: T.teal, color: "#fff" }}>
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                    style={{ background: `linear-gradient(135deg, #991b1b, ${T.red})`, boxShadow: shadowMd }}>
                     {responding === athlete.athlete_id
                       ? <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
                       : <><Check className="h-3.5 w-3.5" /> I&apos;ll reach out</>}
@@ -362,21 +377,21 @@ export default function PsychiatristDashboard() {
 
         {/* ── Patient list ─────────────────────────────────────────────────────── */}
         <div className="rounded-xl overflow-hidden"
-             style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+             style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
 
-          {/* Table header */}
-          <div className="px-5 py-3.5 flex items-center justify-between"
+          {/* Header */}
+          <div className="px-5 py-4 flex items-center justify-between"
                style={{ borderBottom: `1px solid ${T.border}` }}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <ShieldCheck className="h-4 w-4" style={{ color: T.teal }} />
-              <p className="text-[13px] font-semibold" style={{ color: T.text }}>Active Permissions</p>
-              <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
-                    style={{ background: "#f0fdfa", color: T.teal }}>
+              <p className="text-[14px] font-semibold" style={{ color: T.text }}>Active Permissions</p>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: T.tealLight, color: T.teal, border: `1px solid ${T.tealBorder}` }}>
                 {athletes.length}
               </span>
             </div>
             {totalRisk > 0 && (
-              <div className="flex items-center gap-3 text-[11px]">
+              <div className="flex items-center gap-3 text-[11px] font-medium">
                 {greenCount  > 0 && <span style={{ color: T.green  }}>{greenCount} stable</span>}
                 {yellowCount > 0 && <span style={{ color: T.amber  }}>{yellowCount} moderate</span>}
                 {redCount    > 0 && <span style={{ color: T.red    }}>{redCount} high risk</span>}
@@ -387,9 +402,9 @@ export default function PsychiatristDashboard() {
           {/* Column headers */}
           {athletes.length > 0 && (
             <div className="px-5 py-2.5 grid gap-4"
-                 style={{ gridTemplateColumns: "1fr 80px 100px 80px 180px", borderBottom: `1px solid ${T.borderSub}`, background: T.raised }}>
+                 style={{ gridTemplateColumns: "1fr 90px 110px 80px 190px", background: T.bg, borderBottom: `1px solid ${T.border}` }}>
               {["Patient", "Status", "Last Check-In", "Score", "Actions"].map(h => (
-                <p key={h} className="text-[10px] font-semibold uppercase tracking-wider"
+                <p key={h} className="text-[10px] font-bold uppercase tracking-wider"
                    style={{ color: T.textMuted }}>{h}</p>
               ))}
             </div>
@@ -399,8 +414,8 @@ export default function PsychiatristDashboard() {
           {sorted.length === 0 ? (
             <div className="px-5 py-14 text-center">
               <MessageCircle className="h-8 w-8 mx-auto mb-3" style={{ color: "#cbd5e1" }} />
-              <p className="text-[13px] font-medium" style={{ color: T.textMuted }}>No active permissions yet</p>
-              <p className="text-[12px] mt-1" style={{ color: T.textMuted }}>
+              <p className="text-[13px] font-medium mb-1" style={{ color: T.textMuted }}>No active permissions yet</p>
+              <p className="text-[12px]" style={{ color: T.textMuted }}>
                 Athletes appear here once they grant you access through the app.
               </p>
             </div>
@@ -415,35 +430,40 @@ export default function PsychiatristDashboard() {
 
               return (
                 <div key={athlete.athlete_id}
-                     className="px-5 py-3.5 grid gap-4 items-center"
+                     className="px-5 py-3.5 grid gap-4 items-center transition-colors hover:bg-gray-50/60"
                      style={{
-                       gridTemplateColumns: "1fr 80px 100px 80px 180px",
+                       gridTemplateColumns: "1fr 90px 110px 80px 190px",
                        borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined,
                        opacity: isExpired ? 0.5 : 1,
                      }}>
 
-                  {/* Name + scope */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="h-7 w-7 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold"
-                         style={{ background: risk && !isExpired ? RISK_BG[risk] : T.raised, color: risk && !isExpired ? RISK_COLOR[risk] : T.textMuted }}>
+                  {/* Name */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-[12px] font-bold"
+                         style={{
+                           background: risk && !isExpired
+                             ? `linear-gradient(135deg, ${RISK_BG[risk]}, ${RISK_COLOR[risk]}22)`
+                             : T.borderSub,
+                           color: risk && !isExpired ? RISK_COLOR[risk] : T.textMuted,
+                         }}>
                       {athlete.athlete_name.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-[13px] truncate" style={{ color: T.text }}>{athlete.athlete_name}</p>
-                      <span className="text-[9px] font-semibold uppercase tracking-wider"
+                      <p className="font-semibold text-[13px] truncate" style={{ color: T.text }}>{athlete.athlete_name}</p>
+                      <span className="text-[9px] font-bold uppercase tracking-wider"
                             style={{ color: athlete.scope === "full" ? T.teal : T.textMuted }}>
                         {athlete.scope === "full" ? "Full access" : "Summary"}
                       </span>
                     </div>
                   </div>
 
-                  {/* Risk status */}
+                  {/* Status badge */}
                   <div>
                     {isExpired ? (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded"
-                            style={{ background: T.raised, color: T.textMuted }}>Expired</span>
+                      <span className="text-[10px] font-semibold px-2 py-1 rounded-full"
+                            style={{ background: T.borderSub, color: T.textMuted }}>Expired</span>
                     ) : risk ? (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded"
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full"
                             style={{ background: RISK_BG[risk], color: RISK_COLOR[risk] }}>
                         {RISK_LABEL[risk]}
                       </span>
@@ -454,7 +474,7 @@ export default function PsychiatristDashboard() {
 
                   {/* Last check-in */}
                   <div>
-                    <p className="text-[12px]" style={{ color: T.textSub }}>{timeAgo(athlete.last_checkin_at)}</p>
+                    <p className="text-[12px] font-medium" style={{ color: T.textSub }}>{timeAgo(athlete.last_checkin_at)}</p>
                     {expiryText && expiryText !== "Expired" && (
                       <p className="text-[10px]" style={{ color: T.textMuted }}>{expiryText}</p>
                     )}
@@ -463,9 +483,10 @@ export default function PsychiatristDashboard() {
                   {/* Score */}
                   <div>
                     {athlete.avg_score != null ? (
-                      <p className="text-[14px] font-bold tabular-nums"
+                      <p className="text-[16px] font-bold tabular-nums"
                          style={{ color: risk ? RISK_COLOR[risk] : T.textSub }}>
-                        {athlete.avg_score}<span className="text-[10px] font-normal ml-0.5" style={{ color: T.textMuted }}>/10</span>
+                        {athlete.avg_score}
+                        <span className="text-[10px] font-normal ml-0.5" style={{ color: T.textMuted }}>/10</span>
                       </p>
                     ) : (
                       <span className="text-[12px]" style={{ color: T.textMuted }}>—</span>
@@ -475,43 +496,40 @@ export default function PsychiatristDashboard() {
                   {/* Actions */}
                   {!isExpired ? (
                     <div className="flex items-center gap-1.5">
-                      {/* Contact */}
                       {isContacted ? (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded"
-                              style={{ background: "#f0fdfa", color: T.teal }}>
+                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+                              style={{ background: T.tealLight, color: T.teal }}>
                           <Check className="h-3 w-3" /> Contacted
                         </span>
                       ) : (
                         <button onClick={() => handleContact(athlete)}
                                 disabled={responding === athlete.athlete_id}
-                                className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                                style={{ background: T.teal, color: "#fff" }}>
+                                className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                                style={{ background: `linear-gradient(135deg, ${T.teal}, #0f766e)`, boxShadow: "0 1px 3px rgba(13,148,136,0.3)" }}>
                           {responding === athlete.athlete_id
                             ? <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
                             : <><Phone className="h-3 w-3" /> Contact</>}
                         </button>
                       )}
 
-                      {/* Schedule */}
                       {isScheduled ? (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded"
-                              style={{ background: "#eff6ff", color: "#2563eb" }}>
+                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+                              style={{ background: T.indigoLight, color: T.indigo }}>
                           <Check className="h-3 w-3" /> Scheduled
                         </span>
                       ) : (
                         <button onClick={() => handleSchedule(athlete)}
                                 disabled={isSchedulingNow}
                                 className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-50"
-                                style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.textSub }}>
+                                style={{ background: T.surface, borderColor: T.border, color: T.textSub }}>
                           {isSchedulingNow
                             ? <span className="h-3 w-3 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.textSub }} />
                             : <><Calendar className="h-3 w-3" /> Schedule</>}
                         </button>
                       )}
 
-                      {/* View */}
                       <Link href={`/psychiatrist/athlete?id=${athlete.athlete_id}`}>
-                        <button className="flex items-center gap-0.5 text-[11px] font-medium px-2 py-1.5 rounded-lg transition-colors"
+                        <button className="flex items-center p-1.5 rounded-lg transition-colors hover:bg-gray-100"
                                 style={{ color: T.textMuted }}>
                           <ArrowUpRight className="h-3.5 w-3.5" />
                         </button>
@@ -527,12 +545,12 @@ export default function PsychiatristDashboard() {
         </div>
 
         {/* ── Footer ──────────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-2.5 px-1">
+        <div className="flex items-center gap-2 px-1">
           <ShieldCheck className="h-3.5 w-3.5 shrink-0" style={{ color: T.textMuted }} />
           <p className="text-[11px]" style={{ color: T.textMuted }}>
-            Access is logged for FERPA compliance. Patients can revoke consent at any time through the app.
-            <span className="ml-1">
-              <Clock className="h-3 w-3 inline mr-0.5" style={{ color: T.textMuted }} />
+            Access is logged for FERPA compliance. Patients can revoke consent at any time.
+            <span className="inline-flex items-center gap-1 ml-2">
+              <Clock className="h-3 w-3" style={{ color: T.textMuted }} />
               14-day activity window
             </span>
           </p>
