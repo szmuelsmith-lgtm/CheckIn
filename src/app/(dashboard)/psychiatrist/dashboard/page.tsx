@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import {
   AlertCircle, Users, CalendarCheck, Heart, MessageCircle,
-  X, Check, ChevronRight, Phone, Calendar, Clock,
+  X, Check, Phone, Calendar, Clock,
   ShieldCheck, ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
