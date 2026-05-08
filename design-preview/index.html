@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Design Options</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f0f;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      color: #fff;
+      padding: 40px 32px 80px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 56px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 20px;
+      padding-left: 2px;
+    }
+
+    .option-wrap {
+      margin-bottom: 72px;
+    }
+
+    .option-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .option-sub {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 28px;
+    }
+
+    /* ────────────────────────────────────────
+       GRID LAYOUTS
+    ──────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .col { display: flex; flex-direction: column; gap: 12px; }
+
+    .row { display: flex; gap: 12px; }
+
+    /* ────────────────────────────────────────
+       OPTION A — "Dark Anchor"
+    ──────────────────────────────────────── */
+
+    .a-hero {
+      background: linear-gradient(135deg, #052e16 0%, #14532d 55%, #166534 100%);
+      border-radius: 18px;
+      padding: 24px 24px 20px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .a-hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+    }
+    .a-hero-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 4px;
+    }
+    .a-hero-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 16px;
+    }
+    .a-hero-num {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      color: #fff;
+      line-height: 1;
+    }
+    .a-hero-num span { font-size: 28px; color: rgba(255,255,255,0.5); font-weight: 600; }
+    .a-hero-bar-track {
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      margin-top: 18px;
+      overflow: hidden;
+    }
+    .a-hero-bar-fill {
+      height: 100%;
+      width: 78%;
+      background: rgba(255,255,255,0.4);
+      border-radius: 99px;
+    }
+
+    .a-pillar {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      border-left: 3px solid #166534;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .a-pillar.navy  { border-left-color: #1e40af; }
+    .a-pillar.indigo { border-left-color: #5b21b6; }
+    .a-pillar.bronze { border-left-color: #92400e; }
+
+    .a-pillar-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .a-pillar-num {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .a-bar-track {
+      height: 3px;
+      background: #f1f5f9;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .a-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+    .a-bar-fill.green  { background: linear-gradient(to right, #052e16, #22c55e); width: 72%; }
+    .a-bar-fill.blue   { background: linear-gradient(to right, #1e3a8a, #60a5fa); width: 65%; }
+    .a-bar-fill.violet { background: linear-gradient(to right, #4c1d95, #a78bfa); width: 58%; }
+    .a-bar-fill.amber  { background: linear-gradient(to right, #92400e, #fbbf24); width: 81%; }
+
+    .a-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+    }
+    .a-compare-cell {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    .a-compare-cell p:first-child { font-size: 8px; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase; }
+    .a-compare-cell p:last-child  { font-size: 12px; font-weight: 700; color: #334155; letter-spacing: -0.02em; }
+
+    .a-trend-up   { font-size: 10px; font-weight: 700; color: #166534; display:flex; align-items:center; gap:2px; }
+    .a-trend-down { font-size: 10px; font-weight: 700; color: #b91c1c; display:flex; align-items:center; gap:2px; }
+
+    /* chart placeholder */
+    .chart-wrap {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.05);
+    }
+    .chart-title { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 12px; }
+    .chart-svg { width: 100%; }
+
+    /* ────────────────────────────────────────
+       OPTION B — "Editorial"
+    ──────────────────────────────────────── */
+
+    .b-page { background: #faf9f7; border-radius: 18px; padding: 24px; }
+
+    .b-stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+
+    .b-stat {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid #ebe9e4;
+    }
+    .b-stat.hero {
+      background: #0f1f14;
+      border-color: #0f1f14;
+    }
+    .b-stat-label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #a0998e; margin-bottom: 6px; }
+    .b-stat.hero .b-stat-label { color: rgba(255,255,255,0.35); }
+    .b-stat-num { font-size: 30px; font-weight: 800; letter-spacing: -0.05em; color: #1a1611; line-height: 1; }
+    .b-stat.hero .b-stat-num { color: #fff; }
+
+    .b-pillar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #ebe9e4;
+    }
+    .b-pillar-label {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #a0998e; margin-bottom: 8px;
+    }
+    .b-num-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+    .b-big { font-size: 42px; font-weight: 800; letter-spacing: -0.05em; color: #1a1611; line-height: 1; }
+    .b-suffix { font-size: 14px; color: #a0998e; font-weight: 500; }
+    .b-badge-up { font-size: 10px; font-weight: 600; color: #166534; background: #dcfce7; padding: 2px 7px; border-radius: 99px; }
+    .b-badge-down { font-size: 10px; font-weight: 600; color: #991b1b; background: #fee2e2; padding: 2px 7px; border-radius: 99px; }
+
+    .b-bar-track { height: 2px; background: #ebe9e4; border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+    .b-bar-fill { height: 100%; border-radius: 99px; background: #1a1611; }
+
+    .b-divider { height: 1px; background: #ebe9e4; margin: 10px 0; }
+    .b-sub { font-size: 11px; color: #a0998e; }
+
+    .b-cta {
+      background: #0f1f14;
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .b-cta-left {}
+    .b-cta-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
+    .b-cta-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+    .b-cta-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .b-cta-arrow { font-size: 22px; color: rgba(255,255,255,0.25); }
+
+    /* ────────────────────────────────────────
+       OPTION C — "Athletic Premium"
+    ──────────────────────────────────────── */
+
+    .c-page { background: #f6f7f9; border-radius: 18px; padding: 24px; }
+
+    .c-hero {
+      border-radius: 18px;
+      padding: 22px 22px 18px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .c-hero.g { background: linear-gradient(135deg, #052e16 0%, #15803d 100%); }
+    .c-hero-label { font-size: 9px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+    .c-hero-num { font-size: 60px; font-weight: 900; letter-spacing: -0.06em; color: #fff; line-height: 0.9; }
+    .c-hero-num span { font-size: 30px; color: rgba(255,255,255,0.4); }
+    .c-hero-sub { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 8px; }
+
+    .c-pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .c-pillar {
+      border-radius: 16px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .c-pillar.c-g  { background: linear-gradient(145deg, #052e16 0%, #16a34a 100%); }
+    .c-pillar.c-n  { background: linear-gradient(145deg, #0c1a3a 0%, #2563eb 100%); }
+    .c-pillar.c-i  { background: linear-gradient(145deg, #1a0a2e 0%, #7c3aed 100%); }
+    .c-pillar.c-b  { background: linear-gradient(145deg, #1c0800 0%, #b45309 100%); }
+
+    .c-pillar::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, rgba(255,255,255,0.25), transparent);
+    }
+
+    .c-pillar-label { font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+    .c-pillar-num { font-size: 38px; font-weight: 900; letter-spacing: -0.05em; color: #fff; line-height: 1; margin-bottom: 8px; }
+    .c-pillar-bar-track { height: 3px; background: rgba(255,255,255,0.12); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+    .c-pillar-bar-fill { height: 100%; border-radius: 99px; background: rgba(255,255,255,0.55); }
+
+    .c-compare { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+    .c-compare-cell { background: rgba(0,0,0,0.15); border-radius: 8px; padding: 5px 3px; text-align: center; }
+    .c-compare-cell p:first-child { font-size: 8px; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; text-transform: uppercase; }
+    .c-compare-cell p:last-child  { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); letter-spacing: -0.02em; }
+
+    .c-chart-wrap { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .c-chart-title { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px; }
+    .c-chart-sub { font-size: 10px; color: #94a3b8; margin-bottom: 12px; }
+
+    .badge-up   { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:700; color:#166534; }
+    .badge-down { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:700; color:#b91c1c; }
+    .badge-flat { display:inline-flex; align-items:center; gap:2px; font-size:10px; font-weight:600; color:#94a3b8; }
+
+    /* Shared chart SVG styles */
+    .chart-container { position: relative; height: 120px; }
+    svg { position: absolute; inset: 0; }
+
+    .opt-divider {
+      border: none;
+      border-top: 1px solid #1e1e1e;
+      margin: 48px 0;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+    .pill-green-dark { background: rgba(22,101,52,0.15); color: #22c55e; }
+    .pill-slate  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+  </style>
+</head>
+<body>
+
+<h1>Design Options — Check-In App</h1>
+
+
+<!-- ═══════════════════════════════════════════
+     OPTION A — "Dark Anchor"
+════════════════════════════════════════════ -->
+<div class="option-wrap">
+  <div class="option-title">Option A &nbsp;—&nbsp; "Dark Anchor"</div>
+  <div class="option-sub">Deep green hero card · white pillar cards with gradient bars · area chart with fills</div>
+
+  <!-- Hero check-in rate card -->
+  <div class="a-hero">
+    <div class="a-hero-label">Weekly Check-In Rate</div>
+    <div class="a-hero-sub">10 of 13 athletes · this week</div>
+    <div class="a-hero-num">78<span>%</span></div>
+    <div class="a-hero-bar-track"><div class="a-hero-bar-fill"></div></div>
+  </div>
+
+  <!-- Pillar cards -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="a-pillar">
+      <div class="a-pillar-label" style="display:flex;justify-content:space-between;align-items:center;">
+        Emotional Wellness
+        <span class="badge-up">↑ +4.2%</span>
+      </div>
+      <div class="a-pillar-num">7.4</div>
+      <div class="a-bar-track"><div class="a-bar-fill green"></div></div>
+      <div class="a-compare">
+        <div class="a-compare-cell"><p>This Wk</p><p>7.4</p></div>
+        <div class="a-compare-cell"><p>Last Wk</p><p>7.1</p></div>
+        <div class="a-compare-cell"><p>30d Avg</p><p>6.9</p></div>
+      </div>
+    </div>
+    <div class="a-pillar navy">
+      <div class="a-pillar-label" style="display:flex;justify-content:space-between;align-items:center;">
+        Resilience
+        <span class="badge-down">↓ −1.8%</span>
+      </div>
+      <div class="a-pillar-num">6.5</div>
+      <div class="a-bar-track"><div class="a-bar-fill blue"></div></div>
+      <div class="a-compare">
+        <div class="a-compare-cell"><p>This Wk</p><p>6.5</p></div>
+        <div class="a-compare-cell"><p>Last Wk</p><p>6.6</p></div>
+        <div class="a-compare-cell"><p>30d Avg</p><p>6.8</p></div>
+      </div>
+    </div>
+    <div class="a-pillar indigo">
+      <div class="a-pillar-label" style="display:flex;justify-content:space-between;align-items:center;">
+        Recovery
+        <span class="badge-up">↑ +2.1%</span>
+      </div>
+      <div class="a-pillar-num">5.8</div>
+      <div class="a-bar-track"><div class="a-bar-fill violet"></div></div>
+      <div class="a-compare">
+        <div class="a-compare-cell"><p>This Wk</p><p>5.8</p></div>
+        <div class="a-compare-cell"><p>Last Wk</p><p>5.7</p></div>
+        <div class="a-compare-cell"><p>30d Avg</p><p>5.5</p></div>
+      </div>
+    </div>
+    <div class="a-pillar bronze">
+      <div class="a-pillar-label" style="display:flex;justify-content:space-between;align-items:center;">
+        Social Support
+        <span class="badge-up">↑ +8.1%</span>
+      </div>
+      <div class="a-pillar-num">8.1</div>
+      <div class="a-bar-track"><div class="a-bar-fill amber"></div></div>
+      <div class="a-compare">
+        <div class="a-compare-cell"><p>This Wk</p><p>8.1</p></div>
+        <div class="a-compare-cell"><p>Last Wk</p><p>7.5</p></div>
+        <div class="a-compare-cell"><p>30d Avg</p><p>7.2</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8-Week Chart (area with gradient fills) -->
+  <div class="chart-wrap">
+    <div class="chart-title">8-Week Pillar Trends</div>
+    <div class="chart-container">
+      <svg viewBox="0 0 500 110" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="gA1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#16a34a" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#16a34a" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gA2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gA3" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gA4" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid lines -->
+        <line x1="0" y1="22" x2="500" y2="22" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="0" y1="44" x2="500" y2="44" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="0" y1="66" x2="500" y2="66" stroke="#f1f5f9" stroke-width="1"/>
+        <line x1="0" y1="88" x2="500" y2="88" stroke="#f1f5f9" stroke-width="1"/>
+
+        <!-- Emotional area + line -->
+        <path d="M0,55 C60,50 120,40 180,38 C240,36 300,42 360,35 C420,28 480,30 500,28 L500,110 L0,110 Z" fill="url(#gA1)"/>
+        <path d="M0,55 C60,50 120,40 180,38 C240,36 300,42 360,35 C420,28 480,30 500,28" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Resilience area + line -->
+        <path d="M0,62 C60,60 120,58 180,55 C240,52 300,56 360,54 C420,52 480,50 500,52 L500,110 L0,110 Z" fill="url(#gA2)"/>
+        <path d="M0,62 C60,60 120,58 180,55 C240,52 300,56 360,54 C420,52 480,50 500,52" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Recovery area + line -->
+        <path d="M0,70 C60,72 120,68 180,65 C240,62 300,66 360,63 C420,60 480,64 500,62 L500,110 L0,110 Z" fill="url(#gA3)"/>
+        <path d="M0,70 C60,72 120,68 180,65 C240,62 300,66 360,63 C420,60 480,64 500,62" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Support area + line -->
+        <path d="M0,42 C60,44 120,40 180,36 C240,32 300,28 360,24 C420,20 480,22 500,20 L500,110 L0,110 Z" fill="url(#gA4)"/>
+        <path d="M0,42 C60,44 120,40 180,36 C240,32 300,28 360,24 C420,20 480,22 500,20" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- X-axis labels -->
+        <text x="0"   y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Feb 24</text>
+        <text x="62"  y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Mar 3</text>
+        <text x="124" y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Mar 10</text>
+        <text x="186" y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Mar 17</text>
+        <text x="248" y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Mar 24</text>
+        <text x="310" y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Mar 31</text>
+        <text x="374" y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Apr 7</text>
+        <text x="444" y="108" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Apr 14</text>
+      </svg>
+    </div>
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;margin-top:8px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#16a34a;border-radius:2px;"></div>Emotional</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#3b82f6;border-radius:2px;"></div>Resilience</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#8b5cf6;border-radius:2px;"></div>Recovery</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#f59e0b;border-radius:2px;"></div>Support</div>
+    </div>
+  </div>
+
+</div>
+<hr class="opt-divider"/>
+
+
+<!-- ═══════════════════════════════════════════
+     OPTION B — "Editorial"
+════════════════════════════════════════════ -->
+<div class="option-wrap">
+  <div class="option-title">Option B &nbsp;—&nbsp; "Editorial"</div>
+  <div class="option-sub">Warm off-white canvas · single dark hero stat · typography-led · restrained color</div>
+
+  <div class="b-page">
+
+    <!-- Stat row -->
+    <div class="b-stat-row">
+      <div class="b-stat hero">
+        <div class="b-stat-label">Check-In Rate</div>
+        <div class="b-stat-num">78%</div>
+      </div>
+      <div class="b-stat">
+        <div class="b-stat-label">Athletes</div>
+        <div class="b-stat-num" style="color:#1a1611;">13</div>
+      </div>
+      <div class="b-stat">
+        <div class="b-stat-label">Open Alerts</div>
+        <div class="b-stat-num" style="color:#1a1611;">2</div>
+      </div>
+      <div class="b-stat">
+        <div class="b-stat-label">Needs Attn</div>
+        <div class="b-stat-num" style="color:#1a1611;">3</div>
+      </div>
+    </div>
+
+    <!-- Pillar cards -->
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="b-pillar">
+        <div class="b-pillar-label">Emotional Wellness</div>
+        <div class="b-num-row">
+          <div class="b-big">7.4</div>
+          <div class="b-suffix">/ 10</div>
+          <div style="margin-left:auto;"><span class="b-badge-up">↑ +4.2%</span></div>
+        </div>
+        <div class="b-bar-track"><div class="b-bar-fill" style="width:74%;"></div></div>
+        <div style="display:flex;justify-content:space-between;">
+          <span class="b-sub">This week: 7.4</span>
+          <span class="b-sub">Last week: 7.1</span>
+          <span class="b-sub">30d: 6.9</span>
+        </div>
+      </div>
+      <div class="b-pillar">
+        <div class="b-pillar-label">Resilience</div>
+        <div class="b-num-row">
+          <div class="b-big">6.5</div>
+          <div class="b-suffix">/ 10</div>
+          <div style="margin-left:auto;"><span class="b-badge-down">↓ −1.8%</span></div>
+        </div>
+        <div class="b-bar-track"><div class="b-bar-fill" style="width:65%;"></div></div>
+        <div style="display:flex;justify-content:space-between;">
+          <span class="b-sub">This week: 6.5</span>
+          <span class="b-sub">Last week: 6.6</span>
+          <span class="b-sub">30d: 6.8</span>
+        </div>
+      </div>
+      <div class="b-pillar">
+        <div class="b-pillar-label">Recovery</div>
+        <div class="b-num-row">
+          <div class="b-big">5.8</div>
+          <div class="b-suffix">/ 10</div>
+          <div style="margin-left:auto;"><span class="b-badge-up">↑ +2.1%</span></div>
+        </div>
+        <div class="b-bar-track"><div class="b-bar-fill" style="width:58%;"></div></div>
+        <div style="display:flex;justify-content:space-between;">
+          <span class="b-sub">This week: 5.8</span>
+          <span class="b-sub">Last week: 5.7</span>
+          <span class="b-sub">30d: 5.5</span>
+        </div>
+      </div>
+      <div class="b-pillar">
+        <div class="b-pillar-label">Social Support</div>
+        <div class="b-num-row">
+          <div class="b-big">8.1</div>
+          <div class="b-suffix">/ 10</div>
+          <div style="margin-left:auto;"><span class="b-badge-up">↑ +8.1%</span></div>
+        </div>
+        <div class="b-bar-track"><div class="b-bar-fill" style="width:81%;"></div></div>
+        <div style="display:flex;justify-content:space-between;">
+          <span class="b-sub">This week: 8.1</span>
+          <span class="b-sub">Last week: 7.5</span>
+          <span class="b-sub">30d: 7.2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="b-pillar" style="margin-bottom:12px;">
+      <div class="chart-title" style="color:#1a1611;">8-Week Trend</div>
+      <div class="chart-container">
+        <svg viewBox="0 0 500 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="0" y1="20" x2="500" y2="20" stroke="#ebe9e4" stroke-width="1"/>
+          <line x1="0" y1="50" x2="500" y2="50" stroke="#ebe9e4" stroke-width="1"/>
+          <line x1="0" y1="80" x2="500" y2="80" stroke="#ebe9e4" stroke-width="1"/>
+          <path d="M0,55 C60,50 120,40 180,38 C240,36 300,42 360,35 C420,28 480,30 500,28" fill="none" stroke="#1a1611" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M0,62 C60,60 120,58 180,55 C240,52 300,56 360,54 C420,52 480,50 500,52" fill="none" stroke="#a0998e" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+          <path d="M0,70 C60,72 120,68 180,65 C240,62 300,66 360,63 C420,60 480,64 500,62" fill="none" stroke="#c8c4bc" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+          <path d="M0,42 C60,44 120,40 180,36 C240,32 300,28 360,24 C420,20 480,22 500,20" fill="none" stroke="#5a5248" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 3"/>
+          <text x="0"   y="98" font-size="8" fill="#a0998e" font-family="-apple-system,sans-serif">Feb 24</text>
+          <text x="440" y="98" font-size="8" fill="#a0998e" font-family="-apple-system,sans-serif">Apr 14</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Athlete CTA (how it looks in athlete view) -->
+    <div class="b-cta">
+      <div class="b-cta-left">
+        <div class="b-cta-eyebrow">Weekly Check-In</div>
+        <div class="b-cta-title">How are you doing?</div>
+        <div class="b-cta-sub">2 min · Confidential</div>
+      </div>
+      <div class="b-cta-arrow">→</div>
+    </div>
+  </div>
+</div>
+<hr class="opt-divider"/>
+
+
+<!-- ═══════════════════════════════════════════
+     OPTION C — "Athletic Premium"
+════════════════════════════════════════════ -->
+<div class="option-wrap">
+  <div class="option-title">Option C &nbsp;—&nbsp; "Athletic Premium"</div>
+  <div class="option-sub">Dark gradient cards for every pillar · bold white numbers · rich color with purpose · high energy</div>
+
+  <div class="c-page">
+
+    <!-- Hero check-in rate -->
+    <div class="c-hero g">
+      <div class="c-hero-label">Weekly Check-In Rate &nbsp;·&nbsp; 10 of 13 athletes</div>
+      <div class="c-hero-num">78<span>%</span></div>
+      <div style="height:3px;background:rgba(255,255,255,0.12);border-radius:99px;margin-top:14px;overflow:hidden;">
+        <div style="width:78%;height:100%;background:rgba(255,255,255,0.45);border-radius:99px;"></div>
+      </div>
+    </div>
+
+    <!-- Dark gradient pillar cards -->
+    <div class="c-pillars">
+      <div class="c-pillar c-g">
+        <div class="c-pillar-label">Emotional <span style="float:right;color:rgba(255,255,255,0.6);">↑ +4.2%</span></div>
+        <div class="c-pillar-num">7.4</div>
+        <div class="c-pillar-bar-track"><div class="c-pillar-bar-fill" style="width:74%;"></div></div>
+        <div class="c-compare">
+          <div class="c-compare-cell"><p>This Wk</p><p>7.4</p></div>
+          <div class="c-compare-cell"><p>Last Wk</p><p>7.1</p></div>
+          <div class="c-compare-cell"><p>30d</p><p>6.9</p></div>
+        </div>
+      </div>
+      <div class="c-pillar c-n">
+        <div class="c-pillar-label">Resilience <span style="float:right;color:rgba(255,255,255,0.5);">↓ −1.8%</span></div>
+        <div class="c-pillar-num">6.5</div>
+        <div class="c-pillar-bar-track"><div class="c-pillar-bar-fill" style="width:65%;"></div></div>
+        <div class="c-compare">
+          <div class="c-compare-cell"><p>This Wk</p><p>6.5</p></div>
+          <div class="c-compare-cell"><p>Last Wk</p><p>6.6</p></div>
+          <div class="c-compare-cell"><p>30d</p><p>6.8</p></div>
+        </div>
+      </div>
+      <div class="c-pillar c-i">
+        <div class="c-pillar-label">Recovery <span style="float:right;color:rgba(255,255,255,0.6);">↑ +2.1%</span></div>
+        <div class="c-pillar-num">5.8</div>
+        <div class="c-pillar-bar-track"><div class="c-pillar-bar-fill" style="width:58%;"></div></div>
+        <div class="c-compare">
+          <div class="c-compare-cell"><p>This Wk</p><p>5.8</p></div>
+          <div class="c-compare-cell"><p>Last Wk</p><p>5.7</p></div>
+          <div class="c-compare-cell"><p>30d</p><p>5.5</p></div>
+        </div>
+      </div>
+      <div class="c-pillar c-b">
+        <div class="c-pillar-label">Support <span style="float:right;color:rgba(255,255,255,0.6);">↑ +8.1%</span></div>
+        <div class="c-pillar-num">8.1</div>
+        <div class="c-pillar-bar-track"><div class="c-pillar-bar-fill" style="width:81%;"></div></div>
+        <div class="c-compare">
+          <div class="c-compare-cell"><p>This Wk</p><p>8.1</p></div>
+          <div class="c-compare-cell"><p>Last Wk</p><p>7.5</p></div>
+          <div class="c-compare-cell"><p>30d</p><p>7.2</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="c-chart-wrap">
+      <div class="c-chart-title">8-Week Pillar Trends</div>
+      <div class="c-chart-sub">Team average scores across all pillars</div>
+      <div class="chart-container">
+        <svg viewBox="0 0 500 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gC1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#16a34a" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#16a34a" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="gC2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="gC3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="gC4" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <line x1="0" y1="20" x2="500" y2="20" stroke="#f1f5f9" stroke-width="1"/>
+          <line x1="0" y1="50" x2="500" y2="50" stroke="#f1f5f9" stroke-width="1"/>
+          <line x1="0" y1="80" x2="500" y2="80" stroke="#f1f5f9" stroke-width="1"/>
+
+          <path d="M0,55 C60,50 120,40 180,38 C240,36 300,42 360,35 C420,28 480,30 500,28 L500,100 L0,100 Z" fill="url(#gC1)"/>
+          <path d="M0,55 C60,50 120,40 180,38 C240,36 300,42 360,35 C420,28 480,30 500,28" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"/>
+
+          <path d="M0,62 C60,60 120,58 180,55 C240,52 300,56 360,54 C420,52 480,50 500,52 L500,100 L0,100 Z" fill="url(#gC2)"/>
+          <path d="M0,62 C60,60 120,58 180,55 C240,52 300,56 360,54 C420,52 480,50 500,52" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"/>
+
+          <path d="M0,70 C60,72 120,68 180,65 C240,62 300,66 360,63 C420,60 480,64 500,62 L500,100 L0,100 Z" fill="url(#gC3)"/>
+          <path d="M0,70 C60,72 120,68 180,65 C240,62 300,66 360,63 C420,60 480,64 500,62" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round"/>
+
+          <path d="M0,42 C60,44 120,40 180,36 C240,32 300,28 360,24 C420,20 480,22 500,20 L500,100 L0,100 Z" fill="url(#gC4)"/>
+          <path d="M0,42 C60,44 120,40 180,36 C240,32 300,28 360,24 C420,20 480,22 500,20" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+
+          <text x="0"   y="98" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Feb 24</text>
+          <text x="440" y="98" font-size="8" fill="#94a3b8" font-family="-apple-system,sans-serif">Apr 14</text>
+        </svg>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#16a34a;border-radius:2px;"></div>Emotional</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#3b82f6;border-radius:2px;"></div>Resilience</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#8b5cf6;border-radius:2px;"></div>Recovery</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;"><div style="width:10px;height:2px;background:#f59e0b;border-radius:2px;"></div>Support</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

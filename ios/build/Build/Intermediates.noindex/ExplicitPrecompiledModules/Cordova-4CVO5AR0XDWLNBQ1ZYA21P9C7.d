@@ -1,0 +1,23 @@
+moduledependenciestarget: \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Modules/module.modulemap \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CapacitorCordova.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk/System/Library/Frameworks/UIKit.framework/Modules/module.modulemap \
+  /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk/System/Library/Frameworks/Foundation.framework/Modules/module.modulemap \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/AppDelegate.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVViewController.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDV.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVAvailability.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVPlugin.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVPluginResult.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVCommandDelegate.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVInvokedUrlCommand.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk/System/Library/Frameworks/WebKit.framework/Modules/module.modulemap \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVURLProtocol.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVScreenOrientationDelegate.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVWebViewProcessPoolFactory.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVAvailabilityDeprecated.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVCommandDelegateImpl.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVPluginManager.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVConfigParser.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/CDVPlugin+Resources.h \
+  /Users/samuelsmith/Desktop/check-in/ios/build/Build/Products/Debug-iphonesimulator/Cordova.framework/Headers/NSDictionary+CordovaPreferences.h
