@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
-  AlertTriangle, Users, ClipboardCheck, CalendarCheck,
+  AlertTriangle, CalendarCheck,
   PlayCircle, StopCircle, Shield, TrendingUp, TrendingDown,
   Minus, ChevronRight, Activity,
 } from "lucide-react";
