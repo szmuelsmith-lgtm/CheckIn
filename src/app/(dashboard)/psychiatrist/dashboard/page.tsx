@@ -137,6 +137,7 @@ export default function PsychiatristDashboard() {
   const [responding,  setResponding]  = useState<string | null>(null);
   const [scheduling,  setScheduling]  = useState<string | null>(null);
   const [responded,   setResponded]   = useState<Record<string, "accepted"|"dismissed">>({});
+  const [mobilePanel, setMobilePanel] = useState<"list"|"workspace">("list");
 
   useEffect(() => {
     async function load() {
@@ -255,30 +256,30 @@ export default function PsychiatristDashboard() {
       <div className="space-y-4" style={{ maxWidth: "100%" }}>
 
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[22px] font-bold tracking-tight" style={{ color:T.text }}>Counselor Dashboard</h1>
+              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color:T.text }}>Counselor Dashboard</h1>
               {isDemo && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background:T.blueLight, color:T.blue, border:`1px solid ${T.blueBorder}` }}>Demo</span>}
             </div>
             <p className="text-[13px]" style={{ color:T.textMuted }}>
               {athletes.length} patient{athletes.length!==1?"s":""} with active consent ·{" "}
-              {new Date().toLocaleDateString("en-US",{ weekday:"long", month:"long", day:"numeric" })}
+              {new Date().toLocaleDateString("en-US",{ weekday:"short", month:"short", day:"numeric" })}
             </p>
           </div>
           {/* Summary pills */}
-          <div className="flex items-center gap-2 mt-1">
-            {redCount>0    && <span className="text-[12px] font-semibold px-3 py-1 rounded-full" style={{ background:T.redLight,   color:T.red   }}>{redCount} high risk</span>}
-            {yellowCount>0 && <span className="text-[12px] font-semibold px-3 py-1 rounded-full" style={{ background:T.amberLight, color:T.amber }}>{yellowCount} moderate</span>}
-            {greenCount>0  && <span className="text-[12px] font-semibold px-3 py-1 rounded-full" style={{ background:T.greenLight, color:T.green }}>{greenCount} stable</span>}
+          <div className="flex flex-wrap items-center gap-2">
+            {redCount>0    && <span className="text-[11px] sm:text-[12px] font-semibold px-2.5 py-1 rounded-full" style={{ background:T.redLight,   color:T.red   }}>{redCount} high risk</span>}
+            {yellowCount>0 && <span className="text-[11px] sm:text-[12px] font-semibold px-2.5 py-1 rounded-full" style={{ background:T.amberLight, color:T.amber }}>{yellowCount} moderate</span>}
+            {greenCount>0  && <span className="text-[11px] sm:text-[12px] font-semibold px-2.5 py-1 rounded-full" style={{ background:T.greenLight, color:T.green }}>{greenCount} stable</span>}
           </div>
         </div>
 
         {/* ── Two-panel layout ─────────────────────────────────────────── */}
-        <div className="flex gap-5" style={{ minHeight: 600 }}>
+        <div className="flex flex-col lg:flex-row gap-5" style={{ minHeight: 600 }}>
 
           {/* ── LEFT: Patient Queue ──────────────────────────────────── */}
-          <div className="w-72 shrink-0 flex flex-col gap-3">
+          <div className={`${mobilePanel==="workspace" ? "hidden lg:flex" : "flex"} flex-col gap-3 w-full lg:w-72 lg:shrink-0`}>
 
             {/* Urgent outreach banner */}
             {urgentQueue.length > 0 && (
@@ -334,7 +335,7 @@ export default function PsychiatristDashboard() {
                     const isActive  = selectedId === athlete.athlete_id;
                     const sc        = athlete.session_status ? STATUS_CONFIG[athlete.session_status] : null;
                     return (
-                      <button key={athlete.athlete_id} onClick={()=>{ setSelectedId(athlete.athlete_id); setActiveTab("overview"); }}
+                      <button key={athlete.athlete_id} onClick={()=>{ setSelectedId(athlete.athlete_id); setActiveTab("overview"); setMobilePanel("workspace"); }}
                               className="w-full text-left transition-colors"
                               style={{ borderTop:idx>0?`1px solid ${T.borderSub}`:undefined, background:isActive?T.blueLight:undefined }}>
                         {/* Risk accent strip */}
@@ -369,7 +370,7 @@ export default function PsychiatristDashboard() {
           </div>
 
           {/* ── RIGHT: Patient Workspace ─────────────────────────────── */}
-          <div className="flex-1 min-w-0">
+          <div className={`${mobilePanel==="list" && !selected ? "hidden lg:block" : "block"} flex-1 min-w-0`}>
             {!selected ? (
               /* Empty state */
               <div className="h-full rounded-xl flex flex-col items-center justify-center"
@@ -388,9 +389,15 @@ export default function PsychiatristDashboard() {
                    style={{ background:T.surface, border:`1px solid ${T.border}`, boxShadow:shadow }}>
 
                 {/* Patient header */}
-                <div className="px-6 py-4 flex items-center gap-4"
+                <div className="px-4 sm:px-6 py-4 flex items-center gap-3 sm:gap-4"
                      style={{ borderBottom:`1px solid ${T.border}`, background:T.raised }}>
-                  <div className="h-11 w-11 rounded-full shrink-0 flex items-center justify-center text-[15px] font-bold"
+                  {/* Back button — mobile only */}
+                  <button onClick={()=>setMobilePanel("list")}
+                          className="lg:hidden flex items-center justify-center h-8 w-8 rounded-lg shrink-0 border"
+                          style={{ background:T.surface, borderColor:T.border, color:T.textMuted }}>
+                    <ChevronRight className="h-4 w-4 rotate-180"/>
+                  </button>
+                  <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-full shrink-0 flex items-center justify-center text-[14px] sm:text-[15px] font-bold"
                        style={{ background:selected.risk_level?RISK_BG[selected.risk_level]:T.raised, color:selected.risk_level?RISK_COLOR[selected.risk_level]:T.textMuted }}>
                     {selected.athlete_name.charAt(0)}
                   </div>

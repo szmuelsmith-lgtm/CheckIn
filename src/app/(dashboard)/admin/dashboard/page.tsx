@@ -447,10 +447,10 @@ export default function AdminDashboard() {
       <div className="max-w-5xl mx-auto space-y-5">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[22px] font-bold tracking-tight" style={{ color: T.text }}>
+              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color: T.text }}>
                 {orgData?.name ?? "Program Overview"}
               </h1>
               {isDemo && (
@@ -461,12 +461,12 @@ export default function AdminDashboard() {
               )}
             </div>
             <p className="text-[13px]" style={{ color: T.textMuted }}>
-              {roleName} · {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+              {roleName} · {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
             </p>
           </div>
-          <div className="flex items-center gap-2.5 mt-1">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Screening status pill */}
-            <div className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-full"
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium px-2.5 sm:px-3 py-1.5 rounded-full"
                  style={{ background: orgData?.screening_active ? T.greenLight : T.borderSub, color: orgData?.screening_active ? T.green : T.textMuted, border: `1px solid ${orgData?.screening_active ? T.greenBorder : T.border}` }}>
               <div className="h-1.5 w-1.5 rounded-full" style={{ background: orgData?.screening_active ? T.green : T.textMuted }} />
               {orgData?.screening_active ? "Screening active" : "Weekly check-ins"}
@@ -475,7 +475,7 @@ export default function AdminDashboard() {
             <button
               onClick={handleGenerateReport}
               disabled={reportState === "loading"}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ background: reportState === "done" ? T.green : `linear-gradient(135deg, ${T.indigoDark}, ${T.indigo})`, boxShadow: "0 1px 4px rgba(79,70,229,0.3)" }}>
               {reportState === "loading" ? (
                 <><span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block"/>Generating…</>
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── KPI strip ───────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
           <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
             <div className="h-8 w-8 rounded-lg flex items-center justify-center mb-4" style={{ background: T.indigoLight }}>
@@ -563,10 +563,10 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── Body: left content + right sidebar ──────────────────────────── */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           {/* ── Left 2/3 ─────────────────────────────────────────────────── */}
-          <div className="col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4">
 
             {/* Pillar trend chart */}
             <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
@@ -614,7 +614,8 @@ export default function AdminDashboard() {
                     7-day window
                   </span>
                 </div>
-                <table className="w-full">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px]">
                   <thead>
                     <tr style={{ background: T.raised, borderBottom: `1px solid ${T.border}` }}>
                       {["Team","Athletes","Check-In","Wellness","Alerts"].map(h => (
@@ -674,6 +675,7 @@ export default function AdminDashboard() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>

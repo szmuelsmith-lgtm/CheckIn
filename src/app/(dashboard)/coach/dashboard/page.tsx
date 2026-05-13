@@ -188,7 +188,7 @@ export default function CoachDashboard() {
         {data && (
           <>
             {/* KPI strip */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="rounded-xl p-5" style={{ background:T.surface, border:`1px solid ${T.border}`, boxShadow:shadow }}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background:"#eff6ff" }}>
@@ -218,7 +218,7 @@ export default function CoachDashboard() {
               </div>
 
               <Link href="/coach/followups"
-                    className="rounded-xl p-5 flex flex-col group transition-shadow hover:shadow-md"
+                    className="rounded-xl p-5 flex flex-col group transition-shadow hover:shadow-md col-span-2 sm:col-span-1"
                     style={{ background:atRisk>0?T.redLight:T.surface, border:`1px solid ${atRisk>0?"#fecaca":T.border}`, boxShadow:shadow }}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background:atRisk>0?"#fecaca":T.raised }}>
@@ -232,10 +232,10 @@ export default function CoachDashboard() {
             </div>
 
             {/* Donut + Pillar averages */}
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
 
               {/* Donut — 2 cols */}
-              <div className="col-span-2 rounded-xl p-5" style={{ background:T.surface, border:`1px solid ${T.border}`, boxShadow:shadow }}>
+              <div className="sm:col-span-2 rounded-xl p-5" style={{ background:T.surface, border:`1px solid ${T.border}`, boxShadow:shadow }}>
                 <p className="text-[14px] font-semibold mb-1" style={{ color:T.text }}>Wellness Distribution</p>
                 <p className="text-[11px] mb-4" style={{ color:T.textMuted }}>{total} athletes · emotional score</p>
                 <div className="flex items-center gap-4">
@@ -270,7 +270,7 @@ export default function CoachDashboard() {
               </div>
 
               {/* Pillar averages — 3 cols */}
-              <div className="col-span-3 rounded-xl overflow-hidden" style={{ background:T.surface, border:`1px solid ${T.border}`, boxShadow:shadow }}>
+              <div className="sm:col-span-3 rounded-xl overflow-hidden" style={{ background:T.surface, border:`1px solid ${T.border}`, boxShadow:shadow }}>
                 <div className="px-5 py-3.5 flex items-center justify-between" style={{ borderBottom:`1px solid ${T.border}` }}>
                   <p className="text-[14px] font-semibold" style={{ color:T.text }}>Pillar Averages</p>
                   <span className="text-[11px]" style={{ color:T.textMuted }}>This week vs last</span>
