@@ -66,9 +66,9 @@ const ROLE_LABELS: Record<UserRole, string> = {
   support:       "Support",
 };
 
-interface SidebarProps { role: UserRole; userName: string; }
+interface SidebarProps { role: UserRole; userName: string; dark?: boolean; }
 
-export function Sidebar({ role, userName }: SidebarProps) {
+export function Sidebar({ role, userName, dark }: SidebarProps) {
   const pathname     = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const router       = useRouter();
@@ -84,7 +84,10 @@ export function Sidebar({ role, userName }: SidebarProps) {
   const nav = (
     <nav className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-5 py-5" style={{ borderBottom: "1px solid #f1f5f9" }}>
+      <div
+        className="px-5 py-5"
+        style={{ borderBottom: `1px solid ${dark ? "#21262d" : "#f1f5f9"}` }}
+      >
         <div className="flex items-center gap-2.5">
           <div
             className="h-9 w-9 rounded-[12px] flex items-center justify-center shrink-0"
@@ -96,8 +99,16 @@ export function Sidebar({ role, userName }: SidebarProps) {
             <Anchor className="h-4 w-4 text-white" strokeWidth={2.5} />
           </div>
           <div className="leading-none">
-            <p className="font-bold text-[15px] tracking-tight" style={{ color: "#0f172a" }}>Check-In</p>
-            <p className="text-[10px] tracking-widest uppercase mt-0.5" style={{ color: "#94a3b8" }}>
+            <p
+              className="font-bold text-[15px] tracking-tight"
+              style={{ color: dark ? "#e6edf3" : "#0f172a" }}
+            >
+              Check-In
+            </p>
+            <p
+              className="text-[10px] tracking-widest uppercase mt-0.5"
+              style={{ color: dark ? "#6e7681" : "#94a3b8" }}
+            >
               {roleLabel} Portal
             </p>
           </div>
@@ -121,7 +132,7 @@ export function Sidebar({ role, userName }: SidebarProps) {
                 color: "#047857",
                 boxShadow: "0 1px 4px rgba(5,150,105,0.12), inset 0 0 0 1px rgba(5,150,105,0.15)",
               } : {
-                color: "#64748b",
+                color: dark ? "#8b949e" : "#64748b",
               }}
             >
               <span className="shrink-0" style={{ opacity: isActive ? 1 : 0.55 }}>
@@ -134,7 +145,10 @@ export function Sidebar({ role, userName }: SidebarProps) {
       </div>
 
       {/* User section */}
-      <div className="p-4" style={{ borderTop: "1px solid #f1f5f9" }}>
+      <div
+        className="p-4"
+        style={{ borderTop: `1px solid ${dark ? "#21262d" : "#f1f5f9"}` }}
+      >
         <div className="flex items-center gap-3">
           <div
             className="h-9 w-9 rounded-full flex items-center justify-center shrink-0"
@@ -148,13 +162,23 @@ export function Sidebar({ role, userName }: SidebarProps) {
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold truncate" style={{ color: "#334155" }}>{userName}</p>
-            <p className="text-[11px]" style={{ color: "#94a3b8" }}>{roleLabel}</p>
+            <p
+              className="text-[13px] font-semibold truncate"
+              style={{ color: dark ? "#e6edf3" : "#334155" }}
+            >
+              {userName}
+            </p>
+            <p
+              className="text-[11px]"
+              style={{ color: dark ? "#6e7681" : "#94a3b8" }}
+            >
+              {roleLabel}
+            </p>
           </div>
           <button
             onClick={handleSignOut}
             className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-colors shrink-0"
-            style={{ color: "#94a3b8" }}
+            style={{ color: dark ? "#6e7681" : "#94a3b8" }}
             title="Sign out"
             aria-label="Sign out"
           >
@@ -173,7 +197,12 @@ export function Sidebar({ role, userName }: SidebarProps) {
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="fixed top-3 left-3 z-50 flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl lg:hidden"
-          style={{
+          style={dark ? {
+            background: "#161b22",
+            border: "1px solid #30363d",
+            color: "#e6edf3",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          } : {
             background: "#ffffff",
             border: "1px solid #e8edf2",
             color: "#334155",
@@ -199,8 +228,8 @@ export function Sidebar({ role, userName }: SidebarProps) {
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         style={{
-          background: "#ffffff",
-          borderRight: "1px solid #f1f5f9",
+          background: dark ? "#0d1117" : "#ffffff",
+          borderRight: `1px solid ${dark ? "#21262d" : "#f1f5f9"}`,
           boxShadow: "2px 0 16px rgba(0,0,0,0.04)",
         }}
       >

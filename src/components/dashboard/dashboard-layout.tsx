@@ -14,9 +14,10 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   role: UserRole;
   userName: string;
+  dark?: boolean;
 }
 
-export function DashboardLayout({ children, role: hintRole, userName }: DashboardLayoutProps) {
+export function DashboardLayout({ children, role: hintRole, userName, dark }: DashboardLayoutProps) {
   const router = useRouter();
   const [verifiedRole, setVerifiedRole] = useState<UserRole>(hintRole);
   const [verifiedName, setVerifiedName] = useState<string>(userName);
@@ -45,15 +46,15 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
   const isAthlete = verifiedRole === "athlete";
 
   return (
-    <div style={{ background: "#f4f7f5", minHeight: "100%" }}>
-      <Sidebar role={verifiedRole} userName={verifiedName} />
+    <div style={{ background: dark ? "#0d1117" : "#f4f7f5", minHeight: "100%" }}>
+      <Sidebar role={verifiedRole} userName={verifiedName} dark={dark} />
 
       {/* Mobile header — athletes only */}
       {isAthlete && (
         <header
           className="fixed top-0 left-0 right-0 z-40 lg:hidden"
           style={{
-            background: "rgba(244,247,245,0.92)",
+            background: dark ? "rgba(13,17,23,0.92)" : "rgba(244,247,245,0.92)",
             backdropFilter: "blur(24px)",
             WebkitBackdropFilter: "blur(24px)",
             boxShadow: "0 1px 0 rgba(0,0,0,0.05), 0 2px 12px rgba(0,0,0,0.03)",
@@ -73,7 +74,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
               >
                 <Anchor className="h-4 w-4 text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-bold text-[16px] tracking-tight" style={{ color: "#0f172a" }}>
+              <span className="font-bold text-[16px] tracking-tight" style={{ color: dark ? "#e6edf3" : "#0f172a" }}>
                 Check-In
               </span>
             </div>
@@ -82,7 +83,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
               <Link
                 href="/athlete/preferences"
                 className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-colors"
-                style={{ color: "#94a3b8" }}
+                style={{ color: dark ? "#6e7681" : "#94a3b8" }}
                 aria-label="Preferences"
               >
                 <Settings className="h-[18px] w-[18px]" />
@@ -90,7 +91,7 @@ export function DashboardLayout({ children, role: hintRole, userName }: Dashboar
               <button
                 onClick={handleSignOut}
                 className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-colors"
-                style={{ color: "#94a3b8" }}
+                style={{ color: dark ? "#6e7681" : "#94a3b8" }}
                 aria-label="Sign out"
               >
                 <LogOut className="h-[18px] w-[18px]" />
