@@ -45,11 +45,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "This invite code has been fully used." }, { status: 400 });
   }
 
-  // 2. Check if the email is already registered
-  const { data: { users: existingUsers } } = await service.auth.admin.listUsers();
-  const existing = existingUsers.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+  // 2. Check if the email is already registered (query profiles — avoids listUsers pagination cap)
+  const { data: existingProfile } = await service
+    .from("profiles")
+    .select("auth_user_id")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
 
-  if (existing) {
+  if (existingProfile) {
     return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
   }
 

@@ -2,11 +2,20 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { UserRole } from "@/types/database";
 
-// Which roles are allowed on which path prefixes
+// Which roles are allowed on which path prefixes.
+// Rules are checked in order — first match wins.
+// More specific paths must come before their parent prefix.
 const ROLE_ROUTES: { prefix: string; roles: UserRole[] }[] = [
+  // Psychiatrists / trusted adults can view operational pages under /admin
+  // (alerts, follow-ups, resources, audit-logs) but not team management or the org dashboard.
+  { prefix: "/admin/alerts",     roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
+  { prefix: "/admin/followups",  roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
+  { prefix: "/admin/resources",  roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
+  { prefix: "/admin/audit-logs", roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
+  // Everything else under /admin: admins and support only
+  { prefix: "/admin",        roles: ["admin", "support"] },
   { prefix: "/athlete",      roles: ["athlete"] },
   { prefix: "/coach",        roles: ["coach"] },
-  { prefix: "/admin",        roles: ["admin", "support"] },
   { prefix: "/psychiatrist", roles: ["psychiatrist", "trusted_adult"] },
 ];
 

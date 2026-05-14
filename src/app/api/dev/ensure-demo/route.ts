@@ -31,17 +31,16 @@ export async function POST(request: NextRequest) {
 
   const service = createServiceSupabaseClient();
 
-  // Look up existing user
-  const { data: { users }, error: listError } = await service.auth.admin.listUsers();
-  if (listError) {
-    return NextResponse.json({ error: "Failed to list users" }, { status: 500 });
-  }
+  // Look up existing user via profiles table (no pagination issues unlike listUsers)
+  const { data: existingProfile } = await service
+    .from("profiles")
+    .select("auth_user_id, role")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
 
-  const existing = users.find((u) => u.email === email);
-
-  if (existing) {
-    // Update password + confirm email in case it wasn't confirmed
-    const { error: updateError } = await service.auth.admin.updateUserById(existing.id, {
+  if (existingProfile) {
+    // Update password + confirm email so signInWithPassword always works
+    const { error: updateError } = await service.auth.admin.updateUserById(existingProfile.auth_user_id, {
       password,
       email_confirm: true,
     });
@@ -49,22 +48,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Update failed: ${updateError.message}` }, { status: 500 });
     }
 
-    // Ensure profile exists with correct role
-    const { data: profile } = await service
-      .from("profiles")
-      .select("id, role")
-      .eq("auth_user_id", existing.id)
-      .single();
-
-    if (!profile) {
-      await service.from("profiles").insert({
-        auth_user_id: existing.id,
-        full_name,
-        email,
-        role,
-      });
-    } else if (profile.role !== role) {
-      await service.from("profiles").update({ role }).eq("auth_user_id", existing.id);
+    // Sync role if it changed
+    if (existingProfile.role !== role) {
+      await service.from("profiles").update({ role }).eq("auth_user_id", existingProfile.auth_user_id);
     }
 
     return NextResponse.json({ ok: true, action: "updated" });

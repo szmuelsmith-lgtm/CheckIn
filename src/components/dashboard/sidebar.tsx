@@ -46,14 +46,15 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
   ],
   psychiatrist: [
     { label: "Dashboard",  href: "/psychiatrist/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { label: "Teams",      href: "/admin/teams",            icon: <Users           className="h-4 w-4" /> },
     { label: "Alerts",     href: "/admin/alerts",           icon: <AlertTriangle   className="h-4 w-4" /> },
     { label: "Follow-ups", href: "/admin/followups",        icon: <ListChecks      className="h-4 w-4" /> },
     { label: "Resources",  href: "/admin/resources",        icon: <FolderOpen      className="h-4 w-4" /> },
     { label: "Audit Logs", href: "/admin/audit-logs",       icon: <ScrollText      className="h-4 w-4" /> },
   ],
   trusted_adult: [
-    { label: "Dashboard", href: "/psychiatrist/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { label: "Dashboard",  href: "/psychiatrist/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { label: "Alerts",     href: "/admin/alerts",           icon: <AlertTriangle   className="h-4 w-4" /> },
+    { label: "Follow-ups", href: "/admin/followups",        icon: <ListChecks      className="h-4 w-4" /> },
   ],
 };
 
