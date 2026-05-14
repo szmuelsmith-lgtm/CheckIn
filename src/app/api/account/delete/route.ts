@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRequestSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
 
 // DELETE /api/account/delete
 // Permanently deletes the authenticated user's account and all associated data.
 // Required for Apple App Store compliance (guideline 5.1.1).
-export async function DELETE() {
-  const supabase = createServerSupabaseClient();
+export async function DELETE(request: NextRequest) {
+  const supabase = createRequestSupabaseClient(request);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {

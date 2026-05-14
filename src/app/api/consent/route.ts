@@ -4,12 +4,12 @@
 // Body: { action: 'revoke', id, revoke_reason? } → revokes a consent
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createRequestSupabaseClient } from '@/lib/supabase/server';
 import { getActiveConsents, createConsent, revokeConsent } from '@/lib/consent';
 import type { ConsentScope, ConsentTargetRole } from '@/types/database';
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createRequestSupabaseClient(request);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

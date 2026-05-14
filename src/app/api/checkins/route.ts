@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
+import { createRequestSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
 import { computePillarScores, evaluateSupportTrigger, evaluateRiskLevel } from '@/lib/pillar-scoring';
 import { sendRedAlertEmail } from '@/lib/email';
 
@@ -11,7 +11,7 @@ interface CheckinBody {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createRequestSupabaseClient(request);
 
   // Verify authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();

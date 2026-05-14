@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRequestSupabaseClient } from '@/lib/supabase/server';
 
 // POST /api/psychiatrist/athletes  (no body needed)
-export async function POST() {
-  const supabase = createServerSupabaseClient();
+export async function POST(request: NextRequest) {
+  const supabase = createRequestSupabaseClient(request);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {

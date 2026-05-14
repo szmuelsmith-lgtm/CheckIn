@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { apiFetch } from "@/lib/api-url";
 import { createClient } from "@/lib/supabase/client";
 import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
@@ -236,9 +237,8 @@ export default function WeeklyCheckinPage() {
     setSubmitting(true); setError("");
     const wantsFollowup = consentOverride ?? outreachConsent ?? false;
     try {
-      const res = await fetch("/api/checkins", {
+      const res = await apiFetch("/api/checkins", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "weekly",
           responses,

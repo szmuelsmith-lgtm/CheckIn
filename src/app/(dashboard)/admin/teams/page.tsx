@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, X, Users, ChevronDown, ChevronUp, Copy, Check, ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
+import { Plus, X, Users, ChevronDown, ChevronUp, Copy, Check, ToggleLeft, ToggleRight, RefreshCw, Link2 } from "lucide-react";
 
 const T = {
   surface:   "#ffffff",
@@ -224,6 +224,13 @@ export default function AdminTeamsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const copyInviteLink = (id: string, code: string) => {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://check-in-gilt.vercel.app";
+    navigator.clipboard.writeText(`${base}/signup?invite=${code}`);
+    setCopiedId(`link-${id}`);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const activeTeams   = teams.filter((t) => t.active);
   const inactiveTeams = teams.filter((t) => !t.active);
   const visibleTeams  = showInactiveTeams ? teams : activeTeams;
@@ -243,7 +250,7 @@ export default function AdminTeamsPage() {
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Teams</h1>
             <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>
@@ -253,7 +260,7 @@ export default function AdminTeamsPage() {
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all"
+            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all self-start"
             style={showForm
               ? { border: `1px solid ${T.border}`, color: T.textSub, background: T.raised }
               : { background: `linear-gradient(135deg, ${T.greenDeep}, ${T.green})`, color: "#fff" }}
@@ -277,7 +284,7 @@ export default function AdminTeamsPage() {
               </button>
             </div>
             {editingOrg ? (
-              <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: T.textMuted }}>Division</label>
                   <select
@@ -337,7 +344,7 @@ export default function AdminTeamsPage() {
         {showForm && (
           <div className="rounded-3xl p-5 space-y-4" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
             <p className="text-[14px] font-semibold" style={{ color: T.greenDeep }}>New Team</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: T.textMuted }}>Team Name</label>
                 <input
@@ -489,9 +496,17 @@ export default function AdminTeamsPage() {
                                       onClick={(e) => { e.stopPropagation(); copyCode(copyKey, ic.code); }}
                                       className="p-1.5 rounded-lg"
                                       style={{ color: copiedId === copyKey ? T.green : T.textMuted }}
-                                      title="Copy"
+                                      title="Copy code"
                                     >
                                       {copiedId === copyKey ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); copyInviteLink(copyKey, ic.code); }}
+                                      className="p-1.5 rounded-lg"
+                                      style={{ color: copiedId === `link-${copyKey}` ? T.green : T.textMuted }}
+                                      title="Copy invite link"
+                                    >
+                                      {copiedId === `link-${copyKey}` ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                                     </button>
                                     <button
                                       onClick={(e) => { e.stopPropagation(); handleRegenerateCode(team.id, ic.role); }}

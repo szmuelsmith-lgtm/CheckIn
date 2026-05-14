@@ -165,14 +165,14 @@ export default function AdminFollowupsPage() {
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Follow-ups</h1>
             <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>{activeCount} active follow-up{activeCount !== 1 ? "s" : ""}</p>
           </div>
           <button
             onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all"
+            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all self-start"
             style={showCreate ? { border: `1px solid ${T.border}`, color: T.textSub, background: T.raised } : { background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
           >
             {showCreate ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}

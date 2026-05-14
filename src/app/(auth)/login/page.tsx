@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Anchor, Mail, ChevronDown, User, Users, Stethoscope, Building2, Loader2 } from "lucide-react";
 import { DEMO_PASSWORD, DEMO_ACCOUNTS } from "@/lib/demo-accounts";
+import { apiFetch } from "@/lib/api-url";
 
 const DEMO_ROLE_ICONS: Record<string, React.ReactNode> = {
   athlete:      <User        className="h-4 w-4" />,
@@ -116,57 +117,43 @@ export default function LoginPage() {
   const handleDemoLogin = async (role: typeof DEMO_ACCOUNTS[number]) => {
     setDemoLoading(role.id); setDemoError("");
 
-    const supabase = createClient();
+    // Step 1: ensure the account exists and is email-confirmed (server-side, service role)
+    try {
+      const res = await apiFetch("/api/dev/ensure-demo", {
+        method: "POST",
+        body: JSON.stringify({
+          email:     role.email,
+          password:  DEMO_PASSWORD,
+          role:      role.id,
+          full_name: role.label + " Demo",
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setDemoError(json.error ?? "Could not set up demo account. Check server logs.");
+        setDemoLoading(null);
+        return;
+      }
+    } catch {
+      setDemoError("Network error setting up demo account. Check your connection.");
+      setDemoLoading(null);
+      return;
+    }
 
-    // Try sign-in first; fall back to sign-up if account doesn't exist yet
-    let userId: string | null = null;
+    // Step 2: sign in — account is now guaranteed to be confirmed
+    const supabase = createClient();
     const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
       email: role.email, password: DEMO_PASSWORD,
     });
 
-    if (!signInErr && signInData.session) {
-      userId = signInData.session.user.id;
-    } else {
-      const msg = signInErr?.message?.toLowerCase() ?? "";
-      if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
-        setDemoError(`Demo account not confirmed. In Supabase Dashboard → Authentication → Users, find ${role.email} and click "Confirm email".`);
-        setDemoLoading(null);
-        return;
-      }
-
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: role.email, password: DEMO_PASSWORD,
-        options: { data: { full_name: role.label + " Demo", role: role.id } },
-      });
-
-      if (signUpErr || !signUpData.session) {
-        setDemoError(`Could not create demo account for ${role.email}. Check Supabase → Authentication → Users.`);
-        setDemoLoading(null);
-        return;
-      }
-      userId = signUpData.session.user.id;
+    if (signInErr || !signInData.session) {
+      setDemoError(signInErr?.message ?? "Sign-in failed after account setup. Try again.");
+      setDemoLoading(null);
+      return;
     }
 
-    // Ensure the profile exists with the correct role — upsert so it's self-healing
-    if (userId) {
-      const dbRole = role.id; // matches user_role enum: athlete | coach | psychiatrist | trusted_adult
-      const { data: existing } = await supabase
-        .from("profiles").select("id, role").eq("auth_user_id", userId).single();
-
-      if (!existing) {
-        await supabase.from("profiles").insert({
-          auth_user_id: userId,
-          full_name: role.label + " Demo",
-          email: role.email,
-          role: dbRole,
-        });
-      } else if (existing.role !== dbRole) {
-        await supabase.from("profiles").update({ role: dbRole }).eq("auth_user_id", userId);
-      }
-
-      // Cache role in user metadata for fast path on next login
-      supabase.auth.updateUser({ data: { role: dbRole } }).catch(() => {});
-    }
+    // Cache role in user metadata for fast path on next login
+    supabase.auth.updateUser({ data: { role: role.id } }).catch(() => {});
 
     router.push(role.redirect);
   };

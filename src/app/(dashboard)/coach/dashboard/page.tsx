@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Pillar, PillarScores } from "@/types/database";
 import type { PillarLevel } from "@/lib/pillar-scoring";
 import { ClipboardCheck, Users, TrendingUp, TrendingDown, Minus, Heart, Zap, Shield, ArrowRight, AlertTriangle } from "lucide-react";
+import { apiFetch } from "@/lib/api-url";
 import Link from "next/link";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -125,7 +126,7 @@ export default function CoachDashboard() {
           if (team) setTeamName(team.name);
         }
       }
-      const res  = await fetch("/api/coach/aggregate",{ method:"POST" });
+      const res  = await apiFetch("/api/coach/aggregate",{ method:"POST" });
       const json = await res.json() as AggregateData & { insufficient_data?:boolean; no_team?:boolean };
       if (json.no_team)          { setNoTeam(true);             return; }
       if (json.insufficient_data){ setData(DEMO); setIsDemo(true); return; }

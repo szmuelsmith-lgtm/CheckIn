@@ -293,7 +293,7 @@ export default function AthleteJournalPage() {
                       <p className="text-[14px] whitespace-pre-wrap leading-relaxed pt-4" style={{ color: T.textSub }}>
                         {entry.body}
                       </p>
-                      <div className="flex items-center gap-2 mt-4">
+                      <div className="flex items-center justify-between flex-wrap gap-2 mt-4">
                         <button
                           onClick={() => startEdit(entry)}
                           className="flex items-center gap-1.5 h-9 px-3 text-[12px] font-semibold rounded-2xl"
@@ -303,7 +303,7 @@ export default function AthleteJournalPage() {
                         </button>
 
                         {deleteConfirmId === entry.id ? (
-                          <div className="flex items-center gap-2 ml-auto">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="text-[12px]" style={{ color: T.textMuted }}>Delete this entry?</span>
                             <button
                               onClick={() => handleDelete(entry.id)}
@@ -323,7 +323,7 @@ export default function AthleteJournalPage() {
                         ) : (
                           <button
                             onClick={() => setDeleteConfirmId(entry.id)}
-                            className="flex items-center gap-1.5 h-9 px-3 text-[12px] font-semibold rounded-2xl ml-auto"
+                            className="flex items-center gap-1.5 h-9 px-3 text-[12px] font-semibold rounded-2xl"
                             style={{ border: "1px solid #fecaca", color: "#ef4444" }}
                           >
                             <Trash2 className="h-3 w-3" />Delete

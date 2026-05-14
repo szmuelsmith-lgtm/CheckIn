@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
 import { Trash2, AlertTriangle, LogOut } from "lucide-react";
+import { apiFetch } from "@/lib/api-url";
 
 const T = {
   surface:   "#ffffff",
@@ -43,7 +44,7 @@ export default function AccountPage() {
     setPhase("deleting");
     setError("");
     try {
-      const res  = await fetch("/api/account/delete", { method: "DELETE" });
+      const res  = await apiFetch("/api/account/delete", { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Unknown error");
       setPhase("done");

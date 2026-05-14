@@ -1,10 +1,10 @@
 // POST /api/psychiatrist/athlete  body: { id: athleteId }
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createRequestSupabaseClient } from '@/lib/supabase/server';
 import { checkConsent } from '@/lib/consent';
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createRequestSupabaseClient(request);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

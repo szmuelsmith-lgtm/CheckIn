@@ -8,6 +8,7 @@ import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import { CheckCircle, ChevronRight, ChevronLeft, AlertCircle, Heart, Shield, Zap, Users, ClipboardList } from "lucide-react";
+import { apiFetch } from "@/lib/api-url";
 
 const T = {
   surface:   "#ffffff",
@@ -238,9 +239,8 @@ export default function ScreeningCheckinPage() {
     if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true); setError("");
     try {
-      const res = await fetch("/api/checkins", {
+      const res = await apiFetch("/api/checkins", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "screening",
           responses,

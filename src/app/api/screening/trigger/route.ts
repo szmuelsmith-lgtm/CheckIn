@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createRequestSupabaseClient } from '@/lib/supabase/server';
 
 interface TriggerBody {
   org_id?: string;
@@ -8,7 +8,7 @@ interface TriggerBody {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createRequestSupabaseClient(request);
 
   // Verify authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();

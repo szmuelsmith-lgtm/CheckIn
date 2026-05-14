@@ -118,14 +118,14 @@ export default function AdminResourcesPage() {
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Resources</h1>
             <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>Manage support resources visible to athletes</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all"
+            className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all self-start"
             style={showForm
               ? { border: `1px solid ${T.border}`, color: T.textSub, background: T.raised }
               : { background: `linear-gradient(135deg, ${T.greenDeep}, ${T.green})`, color: "#fff" }}
@@ -161,7 +161,7 @@ export default function AdminResourcesPage() {
                   style={{ borderColor: T.border, color: T.text }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Category</label>
                   <select

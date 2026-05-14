@@ -222,7 +222,7 @@ export default function AdminAuditLogsPage() {
       <div className="max-w-5xl mx-auto space-y-4">
 
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-[24px] font-bold tracking-tight" style={{ color: T.text }}>Audit Logs</h1>
             <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>Complete record of all system actions and access</p>
@@ -231,7 +231,7 @@ export default function AdminAuditLogsPage() {
             <button
               onClick={handleExportCSV}
               disabled={logs.length === 0}
-              className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl border transition-colors disabled:opacity-40"
+              className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl border transition-colors disabled:opacity-40 self-start"
               style={{ borderColor: T.border, color: T.textSub, background: T.raised }}
             >
               <Download className="h-4 w-4" />Export CSV
@@ -240,7 +240,7 @@ export default function AdminAuditLogsPage() {
         </div>
 
         {/* Tab bar */}
-        <div className="flex gap-1 rounded-2xl p-1 w-fit" style={{ background: T.raised, border: `1px solid ${T.borderSub}` }}>
+        <div className="flex gap-1 rounded-2xl p-1 overflow-x-auto" style={{ background: T.raised, border: `1px solid ${T.borderSub}` }}>
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -276,7 +276,7 @@ export default function AdminAuditLogsPage() {
                         className="flex items-start gap-4 px-5 py-3"
                         style={{ borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined }}
                       >
-                        <div className="text-[11px] w-32 shrink-0 tabular-nums pt-0.5" style={{ color: T.textMuted }}>
+                        <div className="text-[11px] w-24 sm:w-32 shrink-0 tabular-nums pt-0.5" style={{ color: T.textMuted }}>
                           {date.toLocaleDateString()}<br />
                           {date.toLocaleTimeString()}
                         </div>
@@ -334,7 +334,7 @@ export default function AdminAuditLogsPage() {
             ) : (
               <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[580px]">
                     <thead>
                       <tr>
                         <th style={thStyle}>Athlete</th>
@@ -402,7 +402,7 @@ export default function AdminAuditLogsPage() {
             ) : (
               <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[440px]">
                     <thead>
                       <tr>
                         <th style={thStyle}>Viewer</th>

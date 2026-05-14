@@ -106,10 +106,7 @@ export function DashboardLayout({ children, role: hintRole, userName, dark }: Da
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         <div
-          className={`p-5 lg:p-8 ${isAthlete
-            ? "pt-[calc(3.5rem+env(safe-area-inset-top,0px)+20px)] lg:pt-8"
-            : "pt-16 lg:pt-8"
-          } max-w-7xl mx-auto`}
+          className="p-5 lg:p-8 pt-[calc(3.5rem+env(safe-area-inset-top,0px)+20px)] lg:pt-8 max-w-7xl mx-auto"
         >
           {children}
         </div>

@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createRequestSupabaseClient } from '@/lib/supabase/server';
 import { scoreToPillarLevel } from '@/lib/pillar-scoring';
 import type { PillarLevel } from '@/lib/pillar-scoring';
 import type { Pillar } from '@/types/database';
@@ -40,8 +40,8 @@ function changePct(cur: number, prev: number): number {
 }
 
 // POST /api/coach/aggregate  (no body needed)
-export async function POST() {
-  const supabase = createServerSupabaseClient();
+export async function POST(request: NextRequest) {
+  const supabase = createRequestSupabaseClient(request);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {

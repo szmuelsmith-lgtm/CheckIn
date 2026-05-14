@@ -6,12 +6,8 @@ const config: CapacitorConfig = {
   appId: 'com.athleteanchor.checkin',
   appName: 'Check-In',
   webDir: 'out',
-  server: {
-    // Production: load the live Vercel deployment so server-side API routes work.
-    // For local dev, swap this for url: 'http://localhost:3000' + cleartext: true.
-    url: 'https://check-in-gilt.vercel.app',
-    allowNavigation: ['check-in-gilt.vercel.app', 'doeycpheigjihvfvupid.supabase.co'],
-  },
+  // No server.url — the app loads from the bundled static files in webDir.
+  // API calls use apiUrl() helper which prefixes with the production server for app builds.
   ios: {
     contentInset: 'automatic',
     scrollEnabled: true,

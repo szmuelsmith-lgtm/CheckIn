@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createRequestSupabaseClient } from '@/lib/supabase/server';
 import { selectQuestionsForSession } from '@/lib/question-engine';
 import type { CheckinMode } from '@/types/database';
 
 // POST /api/questions  body: { mode: 'weekly' | 'screening' }
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient();
+  const supabase = createRequestSupabaseClient(request);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

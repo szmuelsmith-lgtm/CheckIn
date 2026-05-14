@@ -193,25 +193,67 @@ export function Sidebar({ role, userName, dark }: SidebarProps) {
 
   return (
     <>
+      {/* Mobile header bar — staff roles only (athletes use DashboardLayout's header) */}
       {!isAthlete && (
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="fixed top-3 left-3 z-50 flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl lg:hidden"
-          style={dark ? {
-            background: "#161b22",
-            border: "1px solid #30363d",
-            color: "#e6edf3",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-          } : {
-            background: "#ffffff",
-            border: "1px solid #e8edf2",
-            color: "#334155",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+        <header
+          className="fixed top-0 left-0 right-0 z-50 lg:hidden"
+          style={{
+            background: dark ? "rgba(13,17,23,0.95)" : "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            borderBottom: `1px solid ${dark ? "#21262d" : "#f1f5f9"}`,
+            boxShadow: "0 1px 0 rgba(0,0,0,0.05), 0 2px 12px rgba(0,0,0,0.04)",
           }}
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+          <div
+            className="flex items-center justify-between px-4 h-14"
+            style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+          >
+            {/* Hamburger */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl -ml-2"
+              style={{ color: dark ? "#8b949e" : "#64748b" }}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+
+            {/* Logo + app name */}
+            <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+              <div
+                className="h-7 w-7 rounded-[9px] flex items-center justify-center shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, #065f46, #059669)",
+                  boxShadow: "0 2px 8px rgba(5,150,105,0.3)",
+                }}
+              >
+                <Anchor className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="leading-none">
+                <p
+                  className="font-bold text-[15px] tracking-tight"
+                  style={{ color: dark ? "#e6edf3" : "#0f172a" }}
+                >
+                  Check-In
+                </p>
+              </div>
+            </div>
+
+            {/* User avatar */}
+            <div
+              className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+                boxShadow: "0 1px 4px rgba(5,150,105,0.15)",
+              }}
+            >
+              <span className="text-[13px] font-bold" style={{ color: "#047857" }}>
+                {userName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </header>
       )}
 
       {mobileOpen && !isAthlete && (
@@ -224,7 +266,11 @@ export function Sidebar({ role, userName, dark }: SidebarProps) {
 
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-64 z-40 transition-transform duration-200",
+          "fixed left-0 z-40 transition-transform duration-200 w-64",
+          // Non-athlete: on mobile the aside starts below the header (accounts for safe-area); full height on desktop
+          isAthlete
+            ? "top-0 h-full"
+            : "top-[calc(3.5rem+env(safe-area-inset-top,0px))] h-[calc(100%-3.5rem-env(safe-area-inset-top,0px))] lg:top-0 lg:h-full",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
         style={{
