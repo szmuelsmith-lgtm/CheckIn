@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle, AlertTriangle, Clock, User } from "lucide-react";
+import { CheckCircle, AlertTriangle, Clock, User, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const T = {
   bg:        "#f8fafc",
@@ -26,6 +27,7 @@ interface AlertWithDetails {
   status: "open" | "acknowledged" | "resolved";
   created_at: string;
   resolved_at: string | null;
+  organization_id: string | null;
   athlete: { id: string; full_name: string; team_id: string | null };
   checkin: {
     emotional_score: number | null; resilience_score: number | null;
@@ -42,25 +44,49 @@ function getTimeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// Low score = concerning (red). High score = healthy (green).
+function scoreColor(val: number | null): string {
+  if (val === null) return T.textMuted;
+  if (val <= 3) return T.red;
+  if (val <= 5) return T.amber;
+  return T.green;
+}
+
 export default function AdminAlertsPage() {
-  const [alerts, setAlerts]   = useState<AlertWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null);
+  const router = useRouter();
+  const [alerts,      setAlerts]      = useState<AlertWithDetails[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [profile,     setProfile]     = useState<{ full_name: string; role: string; id: string; organization_id: string | null } | null>(null);
+  const [creatingFollowup, setCreatingFollowup] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: prof } = await supabase.from("profiles").select("full_name, role").eq("auth_user_id", user.id).single();
+
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("id, full_name, role, organization_id")
+        .eq("auth_user_id", user.id)
+        .single();
       if (prof) setProfile(prof);
-      const { data: alertData } = await supabase
+
+      // Build query — filter by org if the user has one
+      let query = supabase
         .from("alerts")
-        .select(`id, severity, trigger_type, status, created_at, resolved_at,
+        .select(`id, severity, trigger_type, status, created_at, resolved_at, organization_id,
           athlete:profiles!alerts_athlete_id_fkey(id, full_name, team_id),
           checkin:checkins!alerts_checkin_id_fkey(emotional_score, resilience_score, recovery_score, support_score)`)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(100);
+
+      // Scope to the admin's org if they have one (prevents cross-org data leakage)
+      if (prof?.organization_id) {
+        query = query.eq("organization_id", prof.organization_id);
+      }
+
+      const { data: alertData } = await query;
       if (alertData) setAlerts(alertData as unknown as AlertWithDetails[]);
       setLoading(false);
     }
@@ -72,11 +98,53 @@ export default function AdminAlertsPage() {
     const update: Record<string, unknown> = { status: newStatus };
     if (newStatus === "resolved") update.resolved_at = new Date().toISOString();
     await supabase.from("alerts").update(update).eq("id", alertId);
-    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, status: newStatus, ...(newStatus === "resolved" ? { resolved_at: new Date().toISOString() } : {}) } : a));
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: prof } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).single();
-      if (prof) await supabase.from("audit_logs").insert({ actor_profile_id: prof.id, action: "update", target_type: "alert", target_id: alertId, metadata: { new_status: newStatus } });
+    setAlerts(prev => prev.map(a =>
+      a.id === alertId
+        ? { ...a, status: newStatus, ...(newStatus === "resolved" ? { resolved_at: new Date().toISOString() } : {}) }
+        : a
+    ));
+    if (profile?.id) {
+      await supabase.from("audit_logs").insert({
+        actor_profile_id: profile.id,
+        action: "update",
+        target_type: "alert",
+        target_id: alertId,
+        metadata: { new_status: newStatus },
+      });
+    }
+  };
+
+  // Create a followup task for this alert then navigate to followups page
+  const handleCreateFollowup = async (alert: AlertWithDetails) => {
+    if (!profile?.id) return;
+    setCreatingFollowup(alert.id);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("followups").insert({
+        athlete_id:             alert.athlete.id,
+        alert_id:               alert.id,
+        assigned_to_profile_id: null,          // unassigned — admin assigns on followups page
+        reason:                 alert.trigger_type === "wants_followup"
+          ? "Athlete requested to be contacted"
+          : "Risk score triggered alert",
+        status: "open",
+      });
+
+      if (!error) {
+        // Acknowledge the alert so it's clear someone is handling it
+        await supabase.from("alerts").update({ status: "acknowledged" }).eq("id", alert.id);
+        setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, status: "acknowledged" } : a));
+        await supabase.from("audit_logs").insert({
+          actor_profile_id: profile.id,
+          action: "create",
+          target_type: "followup",
+          target_id: alert.id,
+          metadata: { from_alert: alert.id, trigger: alert.trigger_type },
+        });
+        router.push("/admin/followups");
+      }
+    } finally {
+      setCreatingFollowup(null);
     }
   };
 
@@ -96,7 +164,7 @@ export default function AdminAlertsPage() {
   }
 
   return (
-    <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
+    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName={profile?.full_name || roleName}>
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
@@ -136,16 +204,25 @@ export default function AdminAlertsPage() {
         ) : (
           <div className="space-y-2">
             {alerts.map(alert => {
-              const isSevere  = alert.severity === "red";
-              const isOpen    = alert.status === "open";
+              const isSevere   = alert.severity === "red";
+              const isOpen     = alert.status === "open";
               const isResolved = alert.status === "resolved";
+              const isWantsFollowup = alert.trigger_type === "wants_followup";
               const severityColor = isSevere ? T.red : T.amber;
               const severityBg    = isSevere ? "#fee2e2" : "#fef3c7";
               const statusLabel   = isOpen ? "Open" : alert.status === "acknowledged" ? "Acknowledged" : "Resolved";
               const statusColor   = isOpen ? T.red : isResolved ? T.green : T.amber;
+              const isCreating    = creatingFollowup === alert.id;
 
               return (
-                <div key={alert.id} className="rounded-2xl p-4" style={{ background: T.surface, border: `1px solid ${isOpen ? severityColor + "40" : T.border}` }}>
+                <div
+                  key={alert.id}
+                  className="rounded-2xl p-4"
+                  style={{
+                    background: isWantsFollowup && isOpen ? "#fffbeb" : T.surface,
+                    border: `1px solid ${isOpen ? severityColor + "40" : T.border}`,
+                  }}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                       <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ background: severityBg }}>
@@ -153,15 +230,32 @@ export default function AdminAlertsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-[14px]" style={{ color: T.text }}>{alert.athlete?.full_name || "Unknown Athlete"}</span>
+                          <span className="font-semibold text-[14px]" style={{ color: T.text }}>
+                            {alert.athlete?.full_name || "Unknown Athlete"}
+                          </span>
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: severityBg, color: severityColor }}>
                             {alert.severity.toUpperCase()}
                           </span>
                           <span className="text-[11px] font-medium" style={{ color: statusColor }}>{statusLabel}</span>
                         </div>
-                        <p className="text-[12px] mt-1" style={{ color: T.textMuted }}>
-                          {alert.trigger_type === "wants_followup" ? "Requested follow-up" : "Risk score triggered"} · {getTimeAgo(alert.created_at)}
-                        </p>
+
+                        {/* Highlight athlete-requested outreach */}
+                        {isWantsFollowup ? (
+                          <p className="text-[12px] font-semibold mt-1" style={{ color: "#92400e" }}>
+                            ✋ This athlete asked to be contacted by a counselor
+                          </p>
+                        ) : (
+                          <p className="text-[12px] mt-1" style={{ color: T.textMuted }}>
+                            Risk score triggered · {getTimeAgo(alert.created_at)}
+                          </p>
+                        )}
+                        {isWantsFollowup && (
+                          <p className="text-[11px] mt-0.5" style={{ color: T.textMuted }}>
+                            {getTimeAgo(alert.created_at)}
+                          </p>
+                        )}
+
+                        {/* Pillar scores — low is bad, high is good */}
                         {alert.checkin && (
                           <div className="flex gap-3 mt-2 flex-wrap">
                             {[
@@ -172,7 +266,9 @@ export default function AdminAlertsPage() {
                             ].map(({ label, val }) => (
                               <div key={label} className="flex items-center gap-1 px-2 py-0.5 rounded-lg" style={{ background: T.raised }}>
                                 <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</span>
-                                <span className="text-[11px] font-bold tabular-nums" style={{ color: val !== null && val > 7 ? T.red : T.textSub }}>{val ?? "—"}</span>
+                                <span className="text-[11px] font-bold tabular-nums" style={{ color: scoreColor(val) }}>
+                                  {val ?? "—"}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -180,7 +276,22 @@ export default function AdminAlertsPage() {
                       </div>
                     </div>
 
+                    {/* Action buttons */}
                     <div className="flex flex-col gap-2 shrink-0">
+                      {/* Primary action for wants_followup: create a followup task */}
+                      {isWantsFollowup && !isResolved && (
+                        <button
+                          onClick={() => handleCreateFollowup(alert)}
+                          disabled={isCreating}
+                          className="h-8 px-3 text-[12px] font-semibold text-white rounded-lg transition-opacity disabled:opacity-60 flex items-center gap-1.5"
+                          style={{ background: "linear-gradient(135deg, #92400e, #d97706)" }}
+                        >
+                          {isCreating
+                            ? <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                            : <><Plus className="h-3 w-3" />Assign follow-up</>}
+                        </button>
+                      )}
+
                       {isOpen && (
                         <button
                           onClick={() => handleStatusChange(alert.id, "acknowledged")}

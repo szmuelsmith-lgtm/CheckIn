@@ -402,8 +402,77 @@ export default function AdminDashboard() {
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleGenerateReport() {
+    if (!stats) return;
     setReportState("loading");
     try {
+      const now       = new Date();
+      const dateStr   = now.toISOString().split("T")[0];
+      const orgName   = orgData?.name ?? "Organization";
+
+      // ── Build CSV rows ──────────────────────────────────────────────────────
+      const rows: string[][] = [];
+
+      // Summary section
+      rows.push(["WELLNESS SUMMARY REPORT"]);
+      rows.push([orgName]);
+      rows.push([`Generated: ${now.toLocaleString()}`]);
+      rows.push([]);
+      rows.push(["ORGANIZATION OVERVIEW"]);
+      rows.push(["Metric", "Value"]);
+      rows.push(["Total athletes",          String(stats.totalAthletes)]);
+      rows.push(["7-day check-in rate",     `${stats.checkinRate7d}%`]);
+      rows.push(["Month-over-month change", `${stats.checkinRateMoM > 0 ? "+" : ""}${stats.checkinRateMoM}%`]);
+      rows.push(["Active athletes (30d)",   String(stats.activeThis30d)]);
+      rows.push(["Open alerts",             String(stats.openAlerts)]);
+      rows.push(["High-priority alerts",    String(stats.redAlerts)]);
+      rows.push(["Moderate alerts",         String(stats.yellowAlerts)]);
+      rows.push([]);
+
+      // Risk distribution
+      rows.push(["RISK DISTRIBUTION (latest check-in per athlete)"]);
+      rows.push(["Status", "Count", "Percentage"]);
+      const totalRisk = stats.greenCount + stats.yellowCount + stats.redCount;
+      const pct = (n: number) => totalRisk > 0 ? `${Math.round((n / totalRisk) * 100)}%` : "—";
+      rows.push(["Stable (green)",   String(stats.greenCount),  pct(stats.greenCount)]);
+      rows.push(["Moderate (yellow)",String(stats.yellowCount), pct(stats.yellowCount)]);
+      rows.push(["High risk (red)",  String(stats.redCount),    pct(stats.redCount)]);
+      rows.push([]);
+
+      // Per-team breakdown
+      if (teams.length > 0) {
+        rows.push(["TEAM BREAKDOWN"]);
+        rows.push(["Team", "Athletes", "7-day check-in rate", "Stable", "Moderate", "High risk", "Open alerts"]);
+        teams.forEach(t => {
+          rows.push([
+            t.name,
+            String(t.athleteCount),
+            `${t.checkinRate7d}%`,
+            String(t.greenCount),
+            String(t.yellowCount),
+            String(t.redCount),
+            String(t.alertCount),
+          ]);
+        });
+        rows.push([]);
+      }
+
+      rows.push(["Note: Individual athlete data is not included in this report to protect athlete privacy."]);
+      rows.push(["Coaches see only anonymized team averages. Individual responses are private to each athlete."]);
+
+      // ── Serialize to CSV ─────────────────────────────────────────────────────
+      const escape = (s: string) => /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      const csv    = rows.map(r => r.map(escape).join(",")).join("\n");
+      const blob   = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url    = URL.createObjectURL(blob);
+      const link   = document.createElement("a");
+      link.href     = url;
+      link.download = `wellness-report-${orgName.replace(/\s+/g, "-").toLowerCase()}-${dateStr}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Log to audit trail
       if (profId && !isDemo) {
         const supabase = createClient();
         await supabase.from("audit_logs").insert({
@@ -411,10 +480,10 @@ export default function AdminDashboard() {
           action: "report_generated",
           target_type: "organization",
           target_id: orgData?.id ?? null,
-          metadata: { report_type: "wellness_summary", generated_at: new Date().toISOString() },
+          metadata: { report_type: "wellness_summary", generated_at: now.toISOString() },
         });
       }
-      await new Promise(r => setTimeout(r, 800));
+
       setReportState("done");
       setTimeout(() => setReportState("idle"), 3000);
     } catch { setReportState("idle"); }

@@ -139,11 +139,13 @@ export async function POST(request: NextRequest) {
     const { error: alertError } = await serviceClient
       .from('alerts')
       .insert({
-        athlete_id:   profile.id,
-        checkin_id:   checkin.id,
-        severity:     riskLevel,
-        trigger_type: triggerType,
-        status:       'open',
+        athlete_id:      profile.id,
+        checkin_id:      checkin.id,
+        severity:        riskLevel,
+        trigger_type:    triggerType,
+        status:          'open',
+        team_id:         profile.team_id         ?? null,
+        organization_id: profile.organization_id ?? null,
       });
 
     if (alertError) {
