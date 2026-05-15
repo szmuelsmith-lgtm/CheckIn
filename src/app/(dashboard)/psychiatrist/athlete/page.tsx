@@ -194,7 +194,8 @@ function AthleteView() {
         }));
 
         setData({ athlete_name: athleteObj?.full_name ?? "Unknown", scope: consent.scope, granted_at: consent.granted_at, checkins: entries });
-      } catch {
+      } catch (e: unknown) {
+        console.error("[psychiatrist/athlete] load failed:", e);
         setError(true);
       } finally {
         setLoading(false);

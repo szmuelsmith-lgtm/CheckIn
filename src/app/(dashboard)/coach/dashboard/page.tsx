@@ -131,8 +131,10 @@ export default function CoachDashboard() {
       if (json.no_team)          { setNoTeam(true);             return; }
       if (json.insufficient_data){ setData(DEMO); setIsDemo(true); return; }
       setData(json); setIsDemo(false);
-    } catch { setError(true); }
-    finally { setLoading(false); }
+    } catch (e: unknown) {
+      console.error("[coach/dashboard] load failed:", e);
+      setError(true);
+    } finally { setLoading(false); }
   }
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
