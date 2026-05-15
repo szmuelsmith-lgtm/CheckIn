@@ -58,10 +58,12 @@ export default function AdminAlertsPage() {
   const [loading,     setLoading]     = useState(true);
   const [profile,     setProfile]     = useState<{ full_name: string; role: string; id: string; organization_id: string | null } | null>(null);
   const [creatingFollowup, setCreatingFollowup] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
+
     async function load() {
-      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -89,15 +91,60 @@ export default function AdminAlertsPage() {
       const { data: alertData } = await query;
       if (alertData) setAlerts(alertData as unknown as AlertWithDetails[]);
       setLoading(false);
+
+      // Real-time: subscribe to new alerts and status changes for this org
+      const filter = prof?.organization_id
+        ? `organization_id=eq.${prof.organization_id}`
+        : undefined;
+      const channel = supabase
+        .channel("alerts-realtime")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "alerts", ...(filter ? { filter } : {}) },
+          async (payload) => {
+            // Fetch full alert with joins since realtime payload lacks joined fields
+            const { data: newAlert } = await supabase
+              .from("alerts")
+              .select(`id, severity, trigger_type, status, created_at, resolved_at, organization_id,
+                athlete:profiles!alerts_athlete_id_fkey(id, full_name, team_id),
+                checkin:checkins!alerts_checkin_id_fkey(emotional_score, resilience_score, recovery_score, support_score)`)
+              .eq("id", payload.new.id)
+              .single();
+            if (newAlert) setAlerts(prev => [newAlert as unknown as AlertWithDetails, ...prev]);
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "alerts", ...(filter ? { filter } : {}) },
+          (payload) => {
+            setAlerts(prev => prev.map(a =>
+              a.id === payload.new.id ? { ...a, status: payload.new.status, resolved_at: payload.new.resolved_at } : a
+            ));
+          }
+        )
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
     }
-    load();
+    let channelCleanup: (() => void) | undefined;
+    load().then(fn => { channelCleanup = fn; });
+    return () => { channelCleanup?.(); };
   }, []);
 
   const handleStatusChange = async (alertId: string, newStatus: "acknowledged" | "resolved") => {
+    setActionError(null);
     const supabase = createClient();
     const update: Record<string, unknown> = { status: newStatus };
     if (newStatus === "resolved") update.resolved_at = new Date().toISOString();
-    await supabase.from("alerts").update(update).eq("id", alertId);
+    const { error } = await supabase.from("alerts").update(update).eq("id", alertId);
+    if (error) {
+      setActionError(
+        error.code === "42501"
+          ? "Permission denied — your account may not have rights to update alerts."
+          : (error.message ?? "Failed to update alert. Please try again.")
+      );
+      return;
+    }
     setAlerts(prev => prev.map(a =>
       a.id === alertId
         ? { ...a, status: newStatus, ...(newStatus === "resolved" ? { resolved_at: new Date().toISOString() } : {}) }
@@ -118,6 +165,7 @@ export default function AdminAlertsPage() {
   const handleCreateFollowup = async (alert: AlertWithDetails) => {
     if (!profile?.id) return;
     setCreatingFollowup(alert.id);
+    setActionError(null);
     try {
       const supabase = createClient();
       const { error } = await supabase.from("followups").insert({
@@ -130,19 +178,26 @@ export default function AdminAlertsPage() {
         status: "open",
       });
 
-      if (!error) {
-        // Acknowledge the alert so it's clear someone is handling it
-        await supabase.from("alerts").update({ status: "acknowledged" }).eq("id", alert.id);
-        setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, status: "acknowledged" } : a));
-        await supabase.from("audit_logs").insert({
-          actor_profile_id: profile.id,
-          action: "create",
-          target_type: "followup",
-          target_id: alert.id,
-          metadata: { from_alert: alert.id, trigger: alert.trigger_type },
-        });
-        router.push("/admin/followups");
+      if (error) {
+        setActionError(
+          error.code === "42501"
+            ? "Permission denied — your account may not have rights to create follow-ups."
+            : (error.message ?? "Failed to create follow-up. Please try again.")
+        );
+        return;
       }
+
+      // Acknowledge the alert so it's clear someone is handling it
+      await supabase.from("alerts").update({ status: "acknowledged" }).eq("id", alert.id);
+      setAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, status: "acknowledged" } : a));
+      await supabase.from("audit_logs").insert({
+        actor_profile_id: profile.id,
+        action: "create",
+        target_type: "followup",
+        target_id: alert.id,
+        metadata: { from_alert: alert.id, trigger: alert.trigger_type },
+      });
+      router.push("/admin/followups");
     } finally {
       setCreatingFollowup(null);
     }
@@ -174,6 +229,17 @@ export default function AdminAlertsPage() {
             {openAlerts.length} open alert{openAlerts.length !== 1 ? "s" : ""} requiring attention
           </p>
         </div>
+
+        {/* Action error banner */}
+        {actionError && (
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{actionError}</span>
+            <button onClick={() => setActionError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
+          </div>
+        )}
 
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-3">

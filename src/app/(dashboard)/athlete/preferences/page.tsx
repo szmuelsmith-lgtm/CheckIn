@@ -74,6 +74,7 @@ export default function AthletePreferencesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -99,19 +100,26 @@ export default function AthletePreferencesPage() {
 
   const handleSave = async () => {
     if (!profile) return;
-    setSaving(true); setSaved(false);
+    setSaving(true); setSaved(false); setSaveError(null);
     const supabase = createClient();
     const { error } = await supabase
       .from("athlete_preferences")
       .upsert({ athlete_id: profile.id, ...prefs, updated_at: new Date().toISOString() }, { onConflict: "athlete_id" });
-    if (!error) {
-      await supabase.from("audit_logs").insert({
-        actor_profile_id: profile.id, action: "update",
-        target_type: "preferences", target_id: profile.id, metadata: prefs,
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+    if (error) {
+      setSaveError(
+        error.code === "42501"
+          ? "Permission denied. Your account may not have rights to update preferences."
+          : (error.message ?? "Failed to save preferences. Please try again.")
+      );
+      setSaving(false);
+      return;
     }
+    await supabase.from("audit_logs").insert({
+      actor_profile_id: profile.id, action: "update",
+      target_type: "preferences", target_id: profile.id, metadata: prefs,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
     setSaving(false);
   };
 
@@ -184,6 +192,17 @@ export default function AthletePreferencesPage() {
               onChange={v => setPrefs(p => ({ ...p, opt_out_reminders: !v }))} />
           </div>
         </div>
+
+        {/* Save error */}
+        {saveError && (
+          <div className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{saveError}</span>
+            <button onClick={() => setSaveError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
+          </div>
+        )}
 
         {/* Save */}
         <div className="flex items-center gap-3">

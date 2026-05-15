@@ -57,12 +57,16 @@ export default function AdminFollowupsPage() {
   const [loading, setLoading]       = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [alerts, setAlerts]         = useState<AlertForFollowup[]>([]);
+  const [athletes, setAthletes]     = useState<{ id: string; full_name: string }[]>([]);
   const [staff, setStaff]           = useState<StaffMember[]>([]);
-  const [selectedAlertId, setSelectedAlertId] = useState("");
+  const [selectedAlertId, setSelectedAlertId]   = useState("");
+  const [selectedAthleteId, setSelectedAthleteId] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [reason, setReason]         = useState("");
   const [dueDate, setDueDate]       = useState("");
   const [creating, setCreating]     = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const loadFollowups = async () => {
     const supabase = createClient();
@@ -94,10 +98,15 @@ export default function AdminFollowupsPage() {
       if (!prof) return;
       setProfile(prof);
       await loadFollowups();
-      const { data: alertData } = await supabase
+      let alertQuery = supabase
         .from("alerts")
         .select(`id, severity, trigger_type, created_at, athlete:profiles!alerts_athlete_id_fkey(id, full_name)`)
         .in("status", ["open", "acknowledged"]).order("created_at", { ascending: false }).limit(50);
+      // Scope to org to avoid cross-org leakage and improve perf
+      if (prof.organization_id) {
+        alertQuery = alertQuery.eq("organization_id", prof.organization_id);
+      }
+      const { data: alertData } = await alertQuery;
       if (alertData) {
         setAlerts(alertData.map(a => ({
           id: a.id, severity: a.severity, trigger_type: a.trigger_type,
@@ -105,37 +114,80 @@ export default function AdminFollowupsPage() {
           athlete_id: (a.athlete as unknown as { id: string })?.id || "", created_at: a.created_at,
         })));
       }
+      // Include counseling staff (psychiatrists/trusted adults) alongside admin staff
       const { data: staffData } = await supabase.from("profiles").select("id, full_name, role")
-        .eq("organization_id", prof.organization_id).in("role", ["coach", "support", "admin"]).order("full_name");
+        .eq("organization_id", prof.organization_id)
+        .in("role", ["admin", "support", "psychiatrist", "trusted_adult"])
+        .order("full_name");
       if (staffData) setStaff(staffData);
+
+      // Load athletes for the "no linked alert" creation path
+      const { data: athleteData } = await supabase.from("profiles").select("id, full_name")
+        .eq("organization_id", prof.organization_id)
+        .eq("role", "athlete")
+        .order("full_name");
+      if (athleteData) setAthletes(athleteData);
+
       setLoading(false);
     }
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const resolvedAthleteId = selectedAlertId
+    ? (alerts.find(a => a.id === selectedAlertId)?.athlete_id ?? "")
+    : selectedAthleteId;
+
   const handleCreate = async () => {
-    if (!selectedAlertId || !reason.trim()) return;
+    // Require a reason always; require either an alert OR a manually selected athlete
+    if (!reason.trim()) { setCreateError("Please enter a reason for this follow-up."); return; }
+    if (!selectedAlertId && !selectedAthleteId) { setCreateError("Select an alert or an athlete to link this follow-up."); return; }
+    if (!resolvedAthleteId) { setCreateError("Could not determine athlete — please reselect the alert or athlete."); return; }
     setCreating(true);
+    setCreateError(null);
     const supabase = createClient();
-    const selectedAlert = alerts.find(a => a.id === selectedAlertId);
     const { error } = await supabase.from("followups").insert({
-      athlete_id: selectedAlert?.athlete_id, alert_id: selectedAlertId,
-      assigned_to_profile_id: assignedTo || null, assigned_by_profile_id: profile?.id,
-      reason: reason.trim(), status: "open", due_date: dueDate || null,
+      athlete_id:             resolvedAthleteId,
+      alert_id:               selectedAlertId || null,
+      assigned_to_profile_id: assignedTo || null,
+      assigned_by_profile_id: profile?.id,
+      reason:                 reason.trim(),
+      status:                 "open",
+      due_date:               dueDate || null,
     });
-    if (!error) {
-      await supabase.from("audit_logs").insert({ actor_profile_id: profile?.id, action: "create", target_type: "followup", target_id: selectedAlertId, metadata: { alert_id: selectedAlertId, assigned_to: assignedTo || null } });
-      await loadFollowups();
-      setShowCreate(false); setSelectedAlertId(""); setAssignedTo(""); setReason(""); setDueDate("");
+    if (error) {
+      setCreateError(
+        error.code === "42501"
+          ? "Permission denied — your account may not have rights to create follow-ups."
+          : (error.message ?? "Failed to create follow-up. Please try again.")
+      );
+      setCreating(false);
+      return;
     }
+    await supabase.from("audit_logs").insert({
+      actor_profile_id: profile?.id, action: "create", target_type: "followup",
+      target_id: selectedAlertId || resolvedAthleteId,
+      metadata: { alert_id: selectedAlertId || null, athlete_id: resolvedAthleteId, assigned_to: assignedTo || null },
+    });
+    await loadFollowups();
+    setShowCreate(false);
+    setSelectedAlertId(""); setSelectedAthleteId(""); setAssignedTo(""); setReason(""); setDueDate("");
     setCreating(false);
   };
 
   const handleStatusChange = async (followupId: string, newStatus: "in_progress" | "completed") => {
+    setStatusError(null);
     const supabase = createClient();
     const update: Record<string, unknown> = { status: newStatus };
     if (newStatus === "completed") update.completed_at = new Date().toISOString();
-    await supabase.from("followups").update(update).eq("id", followupId);
+    const { error } = await supabase.from("followups").update(update).eq("id", followupId);
+    if (error) {
+      setStatusError(
+        error.code === "42501"
+          ? "Permission denied — your account may not have rights to update follow-ups."
+          : (error.message ?? "Failed to update follow-up status. Please try again.")
+      );
+      return;
+    }
     setFollowups(prev => prev.map(f => f.id === followupId ? { ...f, status: newStatus, ...(newStatus === "completed" ? { completed_at: new Date().toISOString() } : {}) } : f));
     await supabase.from("audit_logs").insert({ actor_profile_id: profile?.id, action: "update", target_type: "followup", target_id: followupId, metadata: { new_status: newStatus } });
   };
@@ -146,11 +198,11 @@ export default function AdminFollowupsPage() {
     return true;
   });
   const activeCount = followups.filter(f => f.status !== "completed").length;
-  const roleName = profile?.role === "support" ? "Support" : "Admin";
+  const roleName = profile?.role === "support" ? "Support" : profile?.role === "psychiatrist" ? "Counselor" : profile?.role === "trusted_adult" ? "Trusted Adult" : "Admin";
 
   if (loading) {
     return (
-      <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName="...">
+      <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName="...">
         <div className="flex items-center justify-center h-64">
           <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
@@ -161,7 +213,7 @@ export default function AdminFollowupsPage() {
   const inputCls = "w-full h-10 px-3.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors";
 
   return (
-    <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
+    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName={profile?.full_name || roleName}>
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
@@ -171,7 +223,7 @@ export default function AdminFollowupsPage() {
             <p className="text-[13px] mt-0.5" style={{ color: T.textMuted }}>{activeCount} active follow-up{activeCount !== 1 ? "s" : ""}</p>
           </div>
           <button
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => { setShowCreate(!showCreate); setCreateError(null); }}
             className="flex items-center gap-2 h-9 px-4 text-[13px] font-semibold rounded-xl transition-all self-start"
             style={showCreate ? { border: `1px solid ${T.border}`, color: T.textSub, background: T.raised } : { background: "linear-gradient(135deg,#065f46,#047857)", color: "#fff" }}
           >
@@ -183,13 +235,24 @@ export default function AdminFollowupsPage() {
         {/* Create form */}
         {showCreate && (
           <div className="rounded-2xl p-5 space-y-4" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-            <p className="text-[13px] font-semibold" style={{ color: "#065f46" }}>Create Follow-up from Alert</p>
+            <p className="text-[13px] font-semibold" style={{ color: "#065f46" }}>Create Follow-up</p>
+
+            {/* Error banner */}
+            {createError && (
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl" style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+                <span className="text-[12px] font-medium" style={{ color: "#991b1b" }}>{createError}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-3">
+              {/* Linked alert (optional) */}
               <div>
-                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Alert</label>
-                <select value={selectedAlertId} onChange={e => setSelectedAlertId(e.target.value)}
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>
+                  Linked Alert <span style={{ color: T.textMuted, fontWeight: 400 }}>(optional)</span>
+                </label>
+                <select value={selectedAlertId} onChange={e => { setSelectedAlertId(e.target.value); setSelectedAthleteId(""); setCreateError(null); }}
                   className={inputCls} style={{ borderColor: T.border, color: T.text }}>
-                  <option value="">Select an alert…</option>
+                  <option value="">No linked alert</option>
                   {alerts.map(a => (
                     <option key={a.id} value={a.id}>
                       {a.athlete_name} — {a.severity.toUpperCase()} ({a.trigger_type}) — {new Date(a.created_at).toLocaleDateString()}
@@ -197,6 +260,24 @@ export default function AdminFollowupsPage() {
                   ))}
                 </select>
               </div>
+
+              {/* Athlete selector — only shown when no alert is selected */}
+              {!selectedAlertId && (
+                <div>
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>
+                    Athlete <span style={{ color: T.red, fontSize: 10 }}>required</span>
+                  </label>
+                  <select value={selectedAthleteId} onChange={e => { setSelectedAthleteId(e.target.value); setCreateError(null); }}
+                    className={inputCls} style={{ borderColor: T.border, color: T.text }}>
+                    <option value="">Select athlete…</option>
+                    {athletes.map(a => <option key={a.id} value={a.id}>{a.full_name}</option>)}
+                  </select>
+                  {athletes.length === 0 && (
+                    <p className="text-[11px] mt-1" style={{ color: T.textMuted }}>No athletes in your organization yet.</p>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Assign To</label>
                 <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)}
@@ -206,10 +287,10 @@ export default function AdminFollowupsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Reason / Notes</label>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: T.textSub }}>Reason / Notes <span style={{ color: T.red, fontSize: 10 }}>required</span></label>
                 <textarea
                   placeholder="Describe the follow-up action needed..."
-                  value={reason} onChange={e => setReason(e.target.value)} rows={3}
+                  value={reason} onChange={e => { setReason(e.target.value); if (createError) setCreateError(null); }} rows={3}
                   className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors resize-none"
                   style={{ borderColor: T.border, color: T.text }}
                 />
@@ -222,11 +303,22 @@ export default function AdminFollowupsPage() {
             </div>
             <button
               onClick={handleCreate}
-              disabled={!selectedAlertId || !reason.trim() || creating}
+              disabled={creating}
               className="h-9 px-5 text-[13px] font-semibold text-white rounded-xl disabled:opacity-50 transition-opacity hover:opacity-90"
               style={{ background: "linear-gradient(135deg,#065f46,#047857)" }}
             >
               {creating ? "Creating…" : "Create Follow-up"}
+            </button>
+          </div>
+        )}
+
+        {/* Status change error banner */}
+        {statusError && (
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{statusError}</span>
+            <button onClick={() => setStatusError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
             </button>
           </div>
         )}

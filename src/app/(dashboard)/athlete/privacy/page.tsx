@@ -58,13 +58,15 @@ export default function PrivacyPage() {
   const [selectedTarget, setSelectedTarget] = useState("");
   const [selectedScope, setSelectedScope]   = useState<ConsentScope>("summary");
   const [sharing, setSharing]   = useState(false);
+  const [revokeError, setRevokeError] = useState<string | null>(null);
+  const [shareError, setShareError]   = useState<string | null>(null);
 
   async function loadAll(supabase = createClient()) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const { data: prof } = await supabase
-      .from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
+      .from("profiles").select("id, full_name, organization_id").eq("auth_user_id", user.id).single();
     if (!prof) return;
     setProfile(prof);
 
@@ -81,8 +83,13 @@ export default function PrivacyPage() {
       .limit(20);
     setAccessLogs(logs ?? []);
 
-    const { data: tgts } = await supabase
+    // Only show counselors from the same organization
+    let tgtQuery = supabase
       .from("profiles").select("id, full_name, role").in("role", ["psychiatrist", "trusted_adult"]);
+    if (prof.organization_id) {
+      tgtQuery = tgtQuery.eq("organization_id", prof.organization_id);
+    }
+    const { data: tgts } = await tgtQuery;
     setTargets(tgts ?? []);
 
     setLoading(false);
@@ -93,6 +100,7 @@ export default function PrivacyPage() {
   async function handleRevoke(consentId: string) {
     if (!profile) return;
     setRevoking(consentId);
+    setRevokeError(null);
     const supabase = createClient();
     try {
       await revokeConsent(consentId, undefined, supabase);
@@ -100,7 +108,11 @@ export default function PrivacyPage() {
         actor_profile_id: profile.id, action: "revoke_consent",
         target_type: "consent_log", target_id: consentId,
       });
-    } catch { /* non-fatal */ }
+    } catch (err) {
+      setRevokeError(err instanceof Error ? err.message : "Failed to revoke access. Please try again.");
+      setRevoking(null);
+      return;
+    }
     await loadAll(supabase);
     setRevoking(null);
   }
@@ -108,6 +120,7 @@ export default function PrivacyPage() {
   async function handleShare() {
     if (!selectedTarget || !profile) return;
     setSharing(true);
+    setShareError(null);
     const target = targets.find(t => t.id === selectedTarget);
     if (!target) { setSharing(false); return; }
     const supabase = createClient();
@@ -123,7 +136,11 @@ export default function PrivacyPage() {
         target_type: "consent_log", target_id: consent.id,
         metadata: { target_profile_id: selectedTarget, target_role: target.role, scope: selectedScope },
       });
-    } catch { /* non-fatal */ }
+    } catch (err) {
+      setShareError(err instanceof Error ? err.message : "Failed to share data. Please try again.");
+      setSharing(false);
+      return;
+    }
     setShowShare(false);
     setSelectedTarget("");
     setSelectedScope("summary");
@@ -151,6 +168,17 @@ export default function PrivacyPage() {
           <h1 className="text-[26px] font-bold tracking-tight" style={{ color: T.text }}>Privacy & Sharing</h1>
           <p className="text-[14px] mt-0.5" style={{ color: T.textMuted }}>Your data is private by default. Only you decide who sees it.</p>
         </div>
+
+        {/* Revoke error banner */}
+        {revokeError && (
+          <div className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{revokeError}</span>
+            <button onClick={() => setRevokeError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
+          </div>
+        )}
 
         {/* Privacy guarantee */}
         <div
@@ -247,9 +275,14 @@ export default function PrivacyPage() {
                     ))}
                   </div>
                 </div>
+                {shareError && (
+                  <div className="rounded-xl px-4 py-3 text-[12px] font-medium" style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5" }}>
+                    {shareError}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { setShowShare(false); setSelectedTarget(""); setSelectedScope("summary"); }}
+                    onClick={() => { setShowShare(false); setSelectedTarget(""); setSelectedScope("summary"); setShareError(null); }}
                     className="flex-1 h-10 font-medium text-[13px] rounded-2xl"
                     style={{ border: `1px solid ${T.border}`, color: T.textSub }}
                   >

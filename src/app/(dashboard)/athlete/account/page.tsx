@@ -24,6 +24,7 @@ export default function AccountPage() {
   const [phase, setPhase]         = useState<"idle" | "confirm" | "deleting" | "done">("idle");
   const [confirmText, setConfirm] = useState("");
   const [error, setError]         = useState("");
+  const [signOutError, setSignOutError] = useState("");
   const [userName, setUserName]   = useState("Athlete");
 
   useEffect(() => {
@@ -35,7 +36,12 @@ export default function AccountPage() {
   }, []);
 
   const handleSignOut = async () => {
-    await createClient().auth.signOut();
+    setSignOutError("");
+    const { error: signOutErr } = await createClient().auth.signOut();
+    if (signOutErr) {
+      setSignOutError(signOutErr.message ?? "Failed to sign out. Please try again.");
+      return;
+    }
     router.push("/login");
   };
 
@@ -103,6 +109,14 @@ export default function AccountPage() {
             </button>
           </div>
         </div>
+
+        {/* Sign out error */}
+        {signOutError && (
+          <div className="rounded-2xl px-4 py-3 text-[12px] font-medium"
+               style={{ background: T.redLight, color: "#b91c1c", border: `1px solid ${T.redBorder}` }}>
+            {signOutError}
+          </div>
+        )}
 
         {/* Delete account */}
         <div

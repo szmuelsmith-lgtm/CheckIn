@@ -46,6 +46,7 @@ export default function AthleteJournalPage() {
   const [expandedId, setExpandedId]   = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [saveError, setSaveError]     = useState<string | null>(null);
 
   const loadEntries = async (athleteId: string) => {
     const supabase = createClient();
@@ -73,13 +74,24 @@ export default function AthleteJournalPage() {
   const handleSave = async () => {
     if (!profile || !title.trim() || !body.trim()) return;
     setSaving(true);
+    setSaveError(null);
     const supabase = createClient();
     if (editingId) {
-      await supabase.from("journals").update({ title: title.trim(), body: body.trim() }).eq("id", editingId);
+      const { error } = await supabase.from("journals").update({ title: title.trim(), body: body.trim() }).eq("id", editingId);
+      if (error) {
+        setSaveError(error.message ?? "Failed to update entry. Please try again.");
+        setSaving(false);
+        return;
+      }
       await supabase.from("audit_logs").insert({ actor_profile_id: profile.id, action: "update", target_type: "journal", target_id: editingId });
     } else {
-      const { data: entry } = await supabase
+      const { data: entry, error } = await supabase
         .from("journals").insert({ athlete_id: profile.id, title: title.trim(), body: body.trim() }).select().single();
+      if (error) {
+        setSaveError(error.message ?? "Failed to save entry. Please try again.");
+        setSaving(false);
+        return;
+      }
       if (entry) await supabase.from("audit_logs").insert({ actor_profile_id: profile.id, action: "create", target_type: "journal", target_id: entry.id });
     }
     await loadEntries(profile.id);
@@ -89,8 +101,14 @@ export default function AthleteJournalPage() {
 
   const handleDelete = async (id: string) => {
     if (!profile) return;
+    setSaveError(null);
     const supabase = createClient();
-    await supabase.from("journals").delete().eq("id", id);
+    const { error } = await supabase.from("journals").delete().eq("id", id);
+    if (error) {
+      setSaveError(error.message ?? "Failed to delete entry. Please try again.");
+      setDeleteConfirmId(null);
+      return;
+    }
     await supabase.from("audit_logs").insert({ actor_profile_id: profile.id, action: "delete", target_type: "journal", target_id: id });
     setEntries(prev => prev.filter(e => e.id !== id));
     if (expandedId === id) setExpandedId(null);
@@ -103,7 +121,7 @@ export default function AthleteJournalPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const resetForm = () => { setShowForm(false); setEditingId(null); setTitle(""); setBody(""); };
+  const resetForm = () => { setShowForm(false); setEditingId(null); setTitle(""); setBody(""); setSaveError(null); };
 
   if (loading) return (
     <DashboardLayout role="athlete" userName="...">
@@ -187,6 +205,11 @@ export default function AthleteJournalPage() {
               </button>
             </div>
             <div className="p-5 space-y-4">
+              {saveError && (
+                <div className="rounded-xl px-4 py-3 text-[12px] font-medium" style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5" }}>
+                  {saveError}
+                </div>
+              )}
               <div>
                 <label className="block text-[13px] font-semibold mb-1.5" style={{ color: T.textSub }}>Title</label>
                 <input

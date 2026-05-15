@@ -54,14 +54,16 @@ export default function CoachTeamPulsePage() {
   const [totalAthletes, setTotalAthletes] = useState(0);
   const [loading, setLoading]             = useState(true);
   const [insufficientData, setInsufficientData] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
+      setLoadError(null);
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: prof } = await supabase.from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
-      if (!prof) return;
+      const { data: prof, error: profError } = await supabase.from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
+      if (profError || !prof) { setLoadError("Failed to load your profile. Please try again."); setLoading(false); return; }
       setProfile(prof);
 
       if (prof.team_id) {
@@ -69,7 +71,8 @@ export default function CoachTeamPulsePage() {
         if (team) setTeamName(team.name);
       }
 
-      const { data: teamAthletes } = await supabase.from("profiles").select("id").eq("team_id", prof.team_id).eq("role", "athlete");
+      const { data: teamAthletes, error: teamErr } = await supabase.from("profiles").select("id").eq("team_id", prof.team_id).eq("role", "athlete");
+      if (teamErr) { setLoadError("Failed to load team roster. Please try again."); setLoading(false); return; }
       if (!teamAthletes || teamAthletes.length === 0) { setLoading(false); return; }
       setTotalAthletes(teamAthletes.length);
 
@@ -142,7 +145,12 @@ export default function CoachTeamPulsePage() {
           </p>
         </div>
 
-        {insufficientData ? (
+        {loadError ? (
+          <div className="rounded-3xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <p className="text-[15px] font-semibold mb-2" style={{ color: "#dc2626" }}>{loadError}</p>
+            <button onClick={() => { setLoading(true); }} className="text-[13px] font-semibold" style={{ color: T.green }}>Retry</button>
+          </div>
+        ) : insufficientData ? (
           <div className="rounded-3xl p-14 text-center" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
             <Lock className="h-10 w-10 mx-auto mb-4" style={{ color: "#cbd5e1" }} />
             <h2 className="text-[16px] font-semibold mb-2" style={{ color: T.text }}>Not enough data to display</h2>

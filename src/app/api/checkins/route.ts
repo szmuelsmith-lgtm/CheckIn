@@ -136,6 +136,23 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceSupabaseClient();
     const triggerType   = wantsFollowup ? 'wants_followup' : 'risk_score';
 
+    // Resolve organization_id: athlete profile may not have it set directly,
+    // so fall back to the team's organization_id if needed.
+    let resolvedOrgId = profile.organization_id ?? null;
+    if (!resolvedOrgId && profile.team_id) {
+      const { data: teamRow } = await serviceClient
+        .from('teams')
+        .select('organization_id')
+        .eq('id', profile.team_id)
+        .single();
+      resolvedOrgId = teamRow?.organization_id ?? null;
+      if (resolvedOrgId) {
+        console.log(`[checkin] resolved org_id=${resolvedOrgId} from team ${profile.team_id}`);
+      } else {
+        console.warn('[checkin] could not resolve organization_id — alert will have org_id=null');
+      }
+    }
+
     const { error: alertError } = await serviceClient
       .from('alerts')
       .insert({
@@ -144,8 +161,8 @@ export async function POST(request: NextRequest) {
         severity:        riskLevel,
         trigger_type:    triggerType,
         status:          'open',
-        team_id:         profile.team_id         ?? null,
-        organization_id: profile.organization_id ?? null,
+        team_id:         profile.team_id ?? null,
+        organization_id: resolvedOrgId,
       });
 
     if (alertError) {

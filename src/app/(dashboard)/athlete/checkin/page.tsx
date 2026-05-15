@@ -12,6 +12,7 @@ import {
   CheckCircle, ChevronRight, ChevronLeft,
   AlertCircle, ArrowRight, Heart, X,
 } from "lucide-react";
+import { useDiagnostic, DiagnosticToast } from "@/components/diagnostic";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -178,6 +179,7 @@ function ResultView({ pillarScores, triggerSupport, onDone }: {
 // ─── Main check-in page ────────────────────────────────────────────────────────
 export default function WeeklyCheckinPage() {
   const router = useRouter();
+  const diag = useDiagnostic();
   const [userName, setUserName]         = useState("...");
   const [questions, setQuestions]       = useState<Question[]>([]);
   const [responses, setResponses]       = useState<Record<string, number>>({});
@@ -194,25 +196,57 @@ export default function WeeklyCheckinPage() {
   const [profileId, setProfileId]       = useState<string | null>(null);
 
   async function loadQuestions() {
+    alert("loadQuestions() called");
     setLoading(true); setLoadError("");
+    diag.step(1, "Loading check-in questions");
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
 
-      const { data: prof } = await supabase
+      const { data: prof, error: profErr } = await supabase
         .from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
-      if (!prof) { setLoadError("Profile not found. Please sign in again."); setLoading(false); return; }
+      if (profErr || !prof) {
+        const msg = profErr?.message ?? "Profile not found.";
+        window.alert(`FAILED: profiles lookup\n${msg}`);
+        diag.fail(1, `profiles lookup failed: ${msg}`);
+        setLoadError("Profile not found. Please sign in again.");
+        setLoading(false); return;
+      }
+      alert(`Profile loaded: ${prof.full_name}\nteam_id: ${prof.team_id ?? "NULL"}\nprofile_id: ${prof.id}`);
 
       setUserName(prof.full_name);
       setProfileId(prof.id);
+      console.log(`[DIAG] athlete profile_id=${prof.id} team_id=${prof.team_id ?? "NULL"}`);
 
+      // Step 10: Check if semester screening is active — redirect automatically if so
+      if (prof.team_id) {
+        const { data: teamData } = await supabase.from("teams").select("organization_id").eq("id", prof.team_id).single();
+        if (teamData?.organization_id) {
+          const { data: orgData } = await supabase.from("organizations").select("screening_active").eq("id", teamData.organization_id).single();
+          if (orgData?.screening_active) {
+            diag.success("organizations", `screening_active=true → redirecting to screening form`);
+            router.replace("/athlete/checkin/screening");
+            return;
+          }
+        }
+      }
+
+      diag.step(1, `Fetching questions from DB (team_id=${prof.team_id ?? "null"})`);
       const { data: allQuestions, error: qErr } = await supabase.from("questions").select("*").eq("active", true);
-      if (qErr) { setLoadError(`Failed to load questions: ${qErr.message}`); setLoading(false); return; }
+      if (qErr) {
+        window.alert(`FAILED: questions table\nCode: ${qErr.code}\nMessage: ${qErr.message}\nHint: ${qErr.hint ?? "none"}`);
+        diag.fail(1, `questions table error: ${qErr.message}`);
+        setLoadError(`Failed to load questions: ${qErr.message}`);
+        setLoading(false); return;
+      }
       if (!allQuestions || allQuestions.length === 0) {
+        window.alert("FAILED: questions table returned 0 rows.\nAdmin must add active questions in Supabase.");
+        diag.fail(1, "questions table returned 0 rows — admin must add questions first");
         setLoadError("No check-in questions found. Please ask your admin to add questions.");
         setLoading(false); return;
       }
+      alert(`Questions loaded: ${allQuestions.length} active questions found`);
 
       const cutoff = new Date(Date.now() - 14 * 86400000).toISOString();
       const { data: recentUsage } = await supabase
@@ -221,21 +255,27 @@ export default function WeeklyCheckinPage() {
       const selected = selectQuestionsForSession(prof.id, "weekly", allQuestions as Question[], recentUsage ?? []);
       const qs = selected.length > 0 ? selected : (allQuestions as Question[]).slice(0, 8);
 
+      diag.success("questions", `${qs.length} questions loaded`);
       setQuestions(qs);
       const initial: Record<string, number> = {};
       for (const q of qs) initial[q.id] = 5;
       setResponses(initial);
       setCurrentQ(0);
-    } catch (e) { setLoadError(String(e)); }
+    } catch (e) {
+      diag.fail(1, e);
+      setLoadError(String(e));
+    }
     setLoading(false);
   }
 
   useEffect(() => { loadQuestions(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(consentOverride?: boolean) {
+    alert(`handleSubmit() called\nwants_followup: ${consentOverride ?? outreachConsent ?? false}`);
     if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true); setError("");
     const wantsFollowup = consentOverride ?? outreachConsent ?? false;
+    diag.step(2, `Submitting check-in (wants_followup=${wantsFollowup})`);
     try {
       const res = await apiFetch("/api/checkins", {
         method: "POST",
@@ -248,14 +288,25 @@ export default function WeeklyCheckinPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        window.alert(`FAILED: POST /api/checkins\nStatus: ${res.status}\nError: ${data.error ?? res.statusText}\n\nIf 401: not logged in\nIf 403: RLS blocking write\nIf 404: API route missing from Vercel`);
+        diag.fail(2, `POST /api/checkins → ${res.status}: ${data.error ?? res.statusText}`);
         setError(`Submission failed: ${data.error ?? res.statusText}`);
         setSubmitting(false);
         return;
       }
       const data = await res.json();
+      alert(`SUCCESS: Check-in written to DB\ncheckin_id: ${data.checkin_id}\nrisk: ${data.riskLevel}\n\n${(data.riskLevel === "yellow" || data.riskLevel === "red") ? "⚠️ Alert row created in alerts table" : "✅ No alert needed (green)"}`);
+      diag.success("checkins", `checkin_id=${data.checkin_id} risk=${data.riskLevel}`);
+      if (data.riskLevel === "yellow" || data.riskLevel === "red") {
+        diag.step(3, `Alert creation triggered (severity=${data.riskLevel}) — check Supabase alerts table`);
+      }
       setPillarScores(data.pillarScores);
       setTriggerSupport(data.triggerSupport ?? false);
-    } catch (e) { setError(`An error occurred: ${String(e)}`); }
+    } catch (e) {
+      window.alert(`FAILED: handleSubmit threw an exception\n${String(e)}\n\nLikely cause: network error or API unreachable`);
+      diag.fail(2, e);
+      setError(`An error occurred: ${String(e)}`);
+    }
     setSubmitting(false);
   }
 
@@ -286,6 +337,7 @@ export default function WeeklyCheckinPage() {
   if (pillarScores) return (
     <DashboardLayout role="athlete" userName={userName}>
       <ResultView pillarScores={pillarScores} triggerSupport={triggerSupport} onDone={() => router.push("/athlete/dashboard")} />
+      <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
 
@@ -521,6 +573,7 @@ export default function WeeklyCheckinPage() {
           About 3 minutes · Coaches never see individual responses
         </p>
       </div>
+      <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
 }

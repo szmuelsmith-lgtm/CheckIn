@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { evaluateRiskLevel } from "@/lib/pillar-scoring";
+import { useDiagnostic, DiagnosticToast } from "@/components/diagnostic";
 
 // ─── Design tokens — Indigo (matches app) ────────────────────────────────────
 const T = {
@@ -123,6 +124,7 @@ function PillarBar({ label, score, color, trackBg }: { label: string; score: num
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PsychiatristDashboard() {
+  const diag = useDiagnostic();
   const [athletes,    setAthletes]    = useState<SharedAthlete[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
@@ -137,23 +139,31 @@ export default function PsychiatristDashboard() {
   const [responding,  setResponding]  = useState<string | null>(null);
   const [scheduling,  setScheduling]  = useState<string | null>(null);
   const [responded,   setResponded]   = useState<Record<string, "accepted"|"dismissed">>({});
+  const [actError,    setActError]    = useState<string | null>(null);
+  const [referring,   setReferring]   = useState<string | null>(null);
+  const [referred,    setReferred]    = useState<Record<string, boolean>>({});
   const [mobilePanel, setMobilePanel] = useState<"list"|"workspace">("list");
 
   useEffect(() => {
-    async function load() {
+    async function load(): Promise<(() => void) | undefined> {
       try {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data: prof } = await supabase.from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
-        if (!prof) { setError("Profile not found."); return; }
+        diag.step(6, "Loading consent gate — checking consent_logs");
+        const { data: prof, error: profErr } = await supabase.from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
+        if (profErr || !prof) { setError("Profile not found."); diag.fail(6, profErr?.message ?? "profile not found"); return; }
         setUserName(prof.full_name); setProfId(prof.id);
+        console.log(`[DIAG] counselor profile_id=${prof.id}`);
 
         type ConsentRow = { athlete_id: string; scope: "summary"|"full"; granted_at: string; expires_at: string|null; athlete: { full_name: string }[]|{ full_name: string }|null; };
-        const { data: consents } = await supabase.from("consent_logs")
+        const { data: consents, error: consentErr } = await supabase.from("consent_logs")
           .select("athlete_id, scope, granted_at, expires_at, athlete:athlete_id(full_name)")
           .eq("target_profile_id", prof.id).eq("is_active", true);
+        if (consentErr) { diag.fail(6, `consent_logs error: ${consentErr.message}`); }
+        else { diag.success("consent_logs", `${(consents ?? []).length} active consent(s) found`); }
+        console.log(`[DIAG] consent gate: ${(consents ?? []).length} athletes have granted access`);
 
         const cutoff14 = new Date(Date.now() - 14 * 86400000).toISOString();
         const shared: SharedAthlete[] = await Promise.all(
@@ -191,28 +201,102 @@ export default function PsychiatristDashboard() {
 
         const display = shared.length > 0 ? shared : DEMO;
         setAthletes(display); setIsDemo(shared.length===0);
+
+        // Real-time: when athlete grants/revokes consent, reload the queue
+        const channel = supabase
+          .channel("counselor-consent-realtime")
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "consent_logs", filter: `target_profile_id=eq.${prof.id}` },
+            () => { load(); }
+          )
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "consent_logs", filter: `target_profile_id=eq.${prof.id}` },
+            () => { load(); }
+          )
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "alerts" },
+            (payload) => {
+              // Update open_alert_id for the relevant athlete if they're in the queue
+              setAthletes(prev => prev.map(a =>
+                a.athlete_id === payload.new.athlete_id && !a.open_alert_id
+                  ? { ...a, open_alert_id: payload.new.id }
+                  : a
+              ));
+            }
+          )
+          .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+
       } catch { setError("An unexpected error occurred."); }
       finally { setLoading(false); }
     }
-    load();
+    let channelCleanup: (() => void) | undefined;
+    load().then(fn => { channelCleanup = fn; });
+    return () => { channelCleanup?.(); };
   }, []);
 
   async function handleOutreach(athlete: SharedAthlete, decision: "accepted"|"dismissed") {
+    alert(`Button Clicked: handleOutreach\nAthlete: ${athlete.athlete_name}\nDecision: ${decision}`);
     setResponding(athlete.athlete_id);
+    setActError(null);
+    diag.step(4, `Outreach ${decision} for ${athlete.athlete_name}`);
     try {
       if (athlete.open_alert_id && !athlete.athlete_id.startsWith("d")) {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
-        await supabase.from("alerts").update({ status: decision==="accepted"?"acknowledged":"resolved", assigned_to_profile_id: decision==="accepted"?profId:null }).eq("id", athlete.open_alert_id);
+        console.log(`[DIAG] updating alerts id=${athlete.open_alert_id} → ${decision}`);
+        const { error: alertErr } = await supabase.from("alerts")
+          .update({ status: decision==="accepted"?"acknowledged":"resolved", assigned_to_profile_id: decision==="accepted"?profId:null })
+          .eq("id", athlete.open_alert_id);
+        if (alertErr) {
+          window.alert(`FAILED: alerts.update in handleOutreach\nCode: ${alertErr.code}\nMessage: ${alertErr.message}`);
+          diag.fail(4, `alerts update failed: ${alertErr.message}`);
+          setActError(alertErr.code==="42501"
+            ? "Permission denied — check that consent is active for this athlete."
+            : `Could not update alert: ${alertErr.message}`);
+          setResponding(null);
+          return;
+        }
+        diag.success("alerts", `status → ${decision==="accepted"?"acknowledged":"resolved"}`);
         await supabase.from("audit_logs").insert({ actor_profile_id: profId, action: decision==="accepted"?"outreach_accepted":"outreach_declined", target_type:"alert", target_id: athlete.open_alert_id, metadata:{ athlete_id: athlete.athlete_id, decision } });
+        diag.success("audit_logs", `outreach_${decision} logged`);
       }
       setResponded(r=>({...r,[athlete.athlete_id]:decision}));
       if (decision==="accepted") setContacted(c=>({...c,[athlete.athlete_id]:true}));
-    } catch { /* non-fatal */ }
+    } catch (e: unknown) {
+      diag.fail(4, e);
+      setActError(e instanceof Error ? e.message : "Outreach action failed. Please try again.");
+    }
     setResponding(null);
   }
 
+  async function handleReferral(athlete: SharedAthlete) {
+    alert(`Button Clicked: handleReferral\nAthlete: ${athlete.athlete_name}`);
+    if (referring===athlete.athlete_id || referred[athlete.athlete_id]) return;
+    setReferring(athlete.athlete_id);
+    if (!athlete.athlete_id.startsWith("d")) {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        await supabase.from("audit_logs").insert({
+          actor_profile_id: profId,
+          action:           "referral_summary_sent",
+          target_type:      "athlete",
+          target_id:        athlete.athlete_id,
+          metadata:         { scope: athlete.scope, risk_level: athlete.risk_level, avg_score: athlete.avg_score },
+        });
+      } catch { /* audit log failure is non-fatal for referral */ }
+    }
+    setReferred(r=>({...r,[athlete.athlete_id]:true}));
+    setReferring(null);
+  }
+
   async function handleContact(athlete: SharedAthlete) {
+    alert(`Button Clicked: handleContact\nAthlete: ${athlete.athlete_name}`);
     if (responding===athlete.athlete_id) return;
     if (athlete.open_alert_id && !responded[athlete.athlete_id]) { await handleOutreach(athlete,"accepted"); return; }
     if (!athlete.athlete_id.startsWith("d")) {
@@ -225,17 +309,59 @@ export default function PsychiatristDashboard() {
   }
 
   async function handleSchedule(athlete: SharedAthlete) {
+    alert(`Button Clicked: handleSchedule\nAthlete: ${athlete.athlete_name}`);
     setScheduling(athlete.athlete_id);
+    setActError(null);
+    diag.step(4, `Scheduling follow-up for ${athlete.athlete_name}`);
     try {
       if (!athlete.athlete_id.startsWith("d")) {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
         const tomorrow = new Date(Date.now()+86400000).toISOString().split("T")[0];
-        await supabase.from("followups").insert({ athlete_id:athlete.athlete_id, assigned_to_profile_id:profId, status:"open", due_date:tomorrow });
-        await supabase.from("audit_logs").insert({ actor_profile_id:profId, action:"followup_scheduled", target_type:"athlete", target_id:athlete.athlete_id, metadata:{ due_date:tomorrow } });
+        console.log(`[DIAG] inserting followup: athlete_id=${athlete.athlete_id} due=${tomorrow}`);
+        const { error } = await supabase.from("followups").insert({
+          athlete_id:             athlete.athlete_id,
+          // alert_id is nullable — counselor-initiated followups don't need an alert
+          alert_id:               athlete.open_alert_id ?? null,
+          assigned_to_profile_id: profId,
+          assigned_by_profile_id: profId,
+          reason:                 "Counselor scheduled follow-up session",
+          status:                 "open",
+          due_date:               tomorrow,
+        });
+        if (error) {
+          window.alert(`FAILED: followups.insert in handleSchedule\nCode: ${error.code}\nMessage: ${error.message}`);
+          diag.fail(4, `followups insert failed: ${error.message}`);
+          setActError(
+            error.code === "42501"
+              ? "Permission denied — check that consent is active for this athlete."
+              : `Could not schedule follow-up: ${error.message}`
+          );
+          setScheduling(null);
+          return;
+        }
+        diag.success("followups", `due_date=${tomorrow}`);
+        // If there was an alert, acknowledge it
+        if (athlete.open_alert_id) {
+          await supabase.from("alerts")
+            .update({ status: "acknowledged", assigned_to_profile_id: profId })
+            .eq("id", athlete.open_alert_id);
+          diag.success("alerts", "status → acknowledged");
+        }
+        await supabase.from("audit_logs").insert({
+          actor_profile_id: profId,
+          action:           "followup_scheduled",
+          target_type:      "athlete",
+          target_id:        athlete.athlete_id,
+          metadata:         { due_date: tomorrow, alert_id: athlete.open_alert_id },
+        });
+        diag.success("audit_logs", "followup_scheduled logged");
       }
       setScheduled(s=>({...s,[athlete.athlete_id]:true}));
-    } catch { /* non-fatal */ }
+    } catch (e: unknown) {
+      diag.fail(4, e);
+      setActError(e instanceof Error ? e.message : "Failed to schedule follow-up. Please try again.");
+    }
     setScheduling(null);
   }
 
@@ -275,6 +401,22 @@ export default function PsychiatristDashboard() {
           </div>
         </div>
 
+        {/* ── Demo mode banner ────────────────────────────────────────── */}
+        {isDemo && (
+          <div className="rounded-xl px-4 py-3.5 flex items-start gap-3"
+               style={{ background:"#fefce8", border:"1px solid #fde68a" }}>
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" style={{ color:"#92400e" }}/>
+            <div>
+              <p className="text-[13px] font-semibold" style={{ color:"#92400e" }}>Demo data — no real patients yet</p>
+              <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color:"#78350f" }}>
+                The Patient Queue shows sample data because no athletes have granted you consent.
+                Ask athletes to open <strong>Privacy Settings</strong> in their dashboard and share their data with you.
+                Once they do, real check-in scores and alerts will appear here.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── Two-panel layout ─────────────────────────────────────────── */}
         <div className="flex flex-col lg:flex-row gap-5" style={{ minHeight: 600 }}>
 
@@ -310,6 +452,20 @@ export default function PsychiatristDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* ACT error banner */}
+            {actError && (
+              <div className="rounded-xl px-4 py-3 flex items-start gap-2" style={{ background:T.redLight, border:`1px solid ${T.redBorder}` }}>
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" style={{ color:T.red }}/>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold" style={{ color:"#991b1b" }}>Action failed</p>
+                  <p className="text-[11px] mt-0.5" style={{ color:T.red }}>{actError}</p>
+                </div>
+                <button onClick={()=>setActError(null)} className="shrink-0 p-0.5 rounded" style={{ color:T.red }}>
+                  <X className="h-3.5 w-3.5"/>
+                </button>
               </div>
             )}
 
@@ -601,10 +757,22 @@ export default function PsychiatristDashboard() {
                         <p className="text-[12px] mb-3 leading-relaxed" style={{ color:T.blueDark }}>
                           Share an anonymized wellness summary with this athlete&apos;s primary counselor. Only aggregate trend data — no session notes.
                         </p>
-                        <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold text-white"
-                                style={{ background:T.blue, boxShadow:"0 1px 4px rgba(75,156,211,0.4)" }}>
-                          <ArrowUpRight className="h-3.5 w-3.5"/> Send referral summary
-                        </button>
+                        {referred[selected.athlete_id] ? (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold"
+                               style={{ background:T.greenLight, color:T.green, border:`1px solid #bbf7d0` }}>
+                            <Check className="h-3.5 w-3.5"/> Referral summary sent
+                          </div>
+                        ) : (
+                          <button
+                            onClick={()=>handleReferral(selected)}
+                            disabled={referring===selected.athlete_id}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                            style={{ background:T.blue, boxShadow:"0 1px 4px rgba(75,156,211,0.4)" }}>
+                            {referring===selected.athlete_id
+                              ? <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block"/>
+                              : <><ArrowUpRight className="h-3.5 w-3.5"/> Send referral summary</>}
+                          </button>
+                        )}
                       </div>
 
                       {/* Quick tags */}
@@ -648,6 +816,7 @@ export default function PsychiatristDashboard() {
           </p>
         </div>
       </div>
+      <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
 }

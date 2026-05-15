@@ -239,6 +239,7 @@ export default function AdminDashboard() {
   const [profile,          setProfile]          = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
   const [orgData,          setOrgData]          = useState<OrgData | null>(null);
   const [screeningLoading, setScreeningLoading] = useState(false);
+  const [screeningError,  setScreeningError]   = useState<string | null>(null);
   const [loading,          setLoading]          = useState(true);
   const [error,            setError]            = useState(false);
   const [isDemo,           setIsDemo]           = useState(false);
@@ -248,6 +249,7 @@ export default function AdminDashboard() {
   const [providers,        setProviders]        = useState<ProviderLoad[]>([]);
   const [profId,           setProfId]           = useState<string | null>(null);
   const [reportState,      setReportState]      = useState<"idle"|"loading"|"done">("idle");
+  const [reportError,      setReportError]      = useState<string | null>(null);
 
   const demoTrends = useMemo(() => buildDemoTrends(), []);
 
@@ -299,10 +301,10 @@ export default function AdminDashboard() {
         supabase.from("checkins").select("athlete_id")
           .in("athlete_id", athleteIds).gte("completed_at", d60).lt("completed_at", d30),
         supabase.from("alerts").select("id, athlete_id, severity, created_at")
-          .eq("status", "open").order("created_at", { ascending: false }).limit(20),
+          .eq("status", "open").in("athlete_id", athleteIds).order("created_at", { ascending: false }).limit(20),
         supabase.from("audit_logs")
-          .select("id, action, created_at, actor:actor_profile_id(full_name)")
-          .order("created_at", { ascending: false }).limit(10),
+          .select("id, action, created_at, actor:actor_profile_id(full_name, organization_id)")
+          .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(10),
         supabase.from("consent_logs")
           .select("target_profile_id, provider:target_profile_id(full_name, role)")
           .eq("is_active", true),
@@ -404,6 +406,7 @@ export default function AdminDashboard() {
   async function handleGenerateReport() {
     if (!stats) return;
     setReportState("loading");
+    setReportError(null);
     try {
       const now       = new Date();
       const dateStr   = now.toISOString().split("T")[0];
@@ -486,7 +489,10 @@ export default function AdminDashboard() {
 
       setReportState("done");
       setTimeout(() => setReportState("idle"), 3000);
-    } catch { setReportState("idle"); }
+    } catch (e: unknown) {
+      setReportError(e instanceof Error ? e.message : "Failed to generate report. Please try again.");
+      setReportState("idle");
+    }
   }
 
   const roleName = profile?.role === "support" ? "Support" : "Admin";
@@ -556,6 +562,17 @@ export default function AdminDashboard() {
             </button>
           </div>
         </div>
+
+        {/* Report error banner */}
+        {reportError && (
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{reportError}</span>
+            <button onClick={() => setReportError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
+          </div>
+        )}
 
         {/* ── KPI strip ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -881,14 +898,18 @@ export default function AdminDashboard() {
                   <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
                     Athletes see the full semester screening form.
                   </p>
+                  {screeningError && (
+                    <p className="text-[11px] font-medium rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>{screeningError}</p>
+                  )}
                   <button
                     disabled={screeningLoading}
                     onClick={async () => {
                       if (!orgData?.id) return;
-                      setScreeningLoading(true);
+                      setScreeningLoading(true); setScreeningError(null);
                       try {
-                        await createClient().from("organizations").update({ screening_active: false }).eq("id", orgData.id);
-                        setOrgData(prev => prev ? { ...prev, screening_active: false } : prev);
+                        const { error: updateErr } = await createClient().from("organizations").update({ screening_active: false }).eq("id", orgData.id);
+                        if (updateErr) { setScreeningError("Failed to deactivate. Check your permissions."); }
+                        else { setOrgData(prev => prev ? { ...prev, screening_active: false } : prev); }
                       } finally { setScreeningLoading(false); }
                     }}
                     className="w-full flex items-center justify-center gap-2 h-9 text-[12px] font-semibold rounded-lg border transition-colors disabled:opacity-50"
@@ -902,15 +923,18 @@ export default function AdminDashboard() {
                   <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
                     Push a full wellness screening to all athletes.
                   </p>
+                  {screeningError && (
+                    <p className="text-[11px] font-medium rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>{screeningError}</p>
+                  )}
                   <button
                     disabled={screeningLoading}
                     onClick={async () => {
-                      setScreeningLoading(true);
+                      setScreeningLoading(true); setScreeningError(null);
                       try {
-                        if (orgData?.id) {
-                          await createClient().from("organizations").update({ screening_active: true }).eq("id", orgData.id);
-                          setOrgData(prev => prev ? { ...prev, screening_active: true } : prev);
-                        }
+                        if (!orgData?.id) { setScreeningError("No organization found. Contact support."); return; }
+                        const { error: updateErr } = await createClient().from("organizations").update({ screening_active: true }).eq("id", orgData.id);
+                        if (updateErr) { setScreeningError("Failed to activate. Check your permissions."); }
+                        else { setOrgData(prev => prev ? { ...prev, screening_active: true } : prev); }
                       } finally { setScreeningLoading(false); }
                     }}
                     className="w-full flex items-center justify-center gap-2 h-9 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"

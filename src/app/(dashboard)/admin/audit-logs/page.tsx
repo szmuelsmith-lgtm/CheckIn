@@ -63,6 +63,7 @@ export default function AdminAuditLogsPage() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsPage, setLogsPage] = useState(0);
   const [logsHasMore, setLogsHasMore] = useState(true);
+  const [logsError, setLogsError] = useState<string | null>(null);
   const PAGE_SIZE = 50;
 
   const [consentLogs, setConsentLogs] = useState<ConsentEntry[]>([]);
@@ -75,6 +76,7 @@ export default function AdminAuditLogsPage() {
 
   const loadSystemLogs = async (pageNum: number, orgId?: string) => {
     setLogsLoading(true);
+    setLogsError(null);
     const supabase = createClient();
     let query = supabase
       .from("audit_logs")
@@ -84,7 +86,17 @@ export default function AdminAuditLogsPage() {
       .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
     // Belt-and-suspenders: filter by org even though RLS enforces it server-side
     if (orgId) query = query.eq("organization_id", orgId);
-    const { data } = await query;
+    const { data, error } = await query;
+
+    if (error) {
+      setLogsError(
+        error.code === "42501"
+          ? "Permission denied. Your account may not have rights to view audit logs."
+          : (error.message ?? "Failed to load audit logs. Please try again.")
+      );
+      setLogsLoading(false);
+      return;
+    }
 
     if (data) {
       const entries: AuditLogEntry[] = data.map((d) => ({
@@ -254,6 +266,17 @@ export default function AdminAuditLogsPage() {
             </button>
           ))}
         </div>
+
+        {/* Logs error banner */}
+        {logsError && activeTab === "system" && (
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{logsError}</span>
+            <button onClick={() => setLogsError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
+          </div>
+        )}
 
         {/* Tab 1: System Logs */}
         {activeTab === "system" && (

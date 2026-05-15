@@ -65,12 +65,15 @@ export default function AdminTeamsPage() {
   const [teamSport, setTeamSport] = useState("");
   const [teamSeason, setTeamSeason] = useState("");
   const [creating, setCreating]   = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   // Org edit
   const [editingOrg, setEditingOrg] = useState(false);
   const [orgDivision, setOrgDivision] = useState("");
   const [orgConference, setOrgConference] = useState("");
   const [savingOrg, setSavingOrg] = useState(false);
+  const [orgSaveError, setOrgSaveError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const [copiedId, setCopiedId]   = useState<string | null>(null);
 
@@ -152,6 +155,7 @@ export default function AdminTeamsPage() {
   const handleCreateTeam = async () => {
     if (!profile || !teamName.trim() || !teamSport.trim()) return;
     setCreating(true);
+    setCreateError(null);
     const supabase = createClient();
     const { data: team, error } = await supabase.from("teams").insert({
       organization_id: profile.organization_id,
@@ -161,32 +165,46 @@ export default function AdminTeamsPage() {
       active: true,
     }).select().single();
 
-    if (team && !error) {
-      const athleteCode = generateCode();
-      const coachCode   = generateCode();
-      await supabase.from("invite_codes").insert([
-        { organization_id: profile.organization_id, team_id: team.id, code: athleteCode, role: "athlete", created_by: profile.id },
-        { organization_id: profile.organization_id, team_id: team.id, code: coachCode,   role: "coach",   created_by: profile.id },
-      ]);
-      await supabase.from("audit_logs").insert({
-        actor_profile_id: profile.id, action: "create", target_type: "team", target_id: team.id,
-        metadata: { name: teamName.trim(), sport: teamSport.trim(), season: teamSeason.trim() || null },
-      });
-      setTeams((prev) => [...prev, {
-        id: team.id, name: team.name, sport: team.sport,
-        season: team.season || null, active: true,
-        athlete_count: 0, checkin_rate: 0,
-        risk_distribution: { green: 0, yellow: 0, red: 0 },
-        invite_codes: [{ code: athleteCode, role: "athlete" }, { code: coachCode, role: "coach" }],
-      }]);
-      setShowForm(false); setTeamName(""); setTeamSport(""); setTeamSeason("");
+    if (error || !team) {
+      console.error("Create team error:", error);
+      setCreateError(
+        error?.code === "42501"
+          ? "Permission denied. Your account may not have admin rights to create teams."
+          : (error?.message ?? "Failed to create team. Please try again.")
+      );
+      setCreating(false);
+      return;
     }
+
+    const athleteCode = generateCode();
+    const coachCode   = generateCode();
+    await supabase.from("invite_codes").insert([
+      { organization_id: profile.organization_id, team_id: team.id, code: athleteCode, role: "athlete", created_by: profile.id },
+      { organization_id: profile.organization_id, team_id: team.id, code: coachCode,   role: "coach",   created_by: profile.id },
+    ]);
+    await supabase.from("audit_logs").insert({
+      actor_profile_id: profile.id, action: "create", target_type: "team", target_id: team.id,
+      metadata: { name: teamName.trim(), sport: teamSport.trim(), season: teamSeason.trim() || null },
+    });
+    setTeams((prev) => [...prev, {
+      id: team.id, name: team.name, sport: team.sport,
+      season: team.season || null, active: true,
+      athlete_count: 0, checkin_rate: 0,
+      risk_distribution: { green: 0, yellow: 0, red: 0 },
+      invite_codes: [{ code: athleteCode, role: "athlete" }, { code: coachCode, role: "coach" }],
+    }]);
+    setShowForm(false); setTeamName(""); setTeamSport(""); setTeamSeason("");
     setCreating(false);
   };
 
   const handleToggleActive = async (teamId: string, currentActive: boolean) => {
+    setActionError(null);
     const supabase = createClient();
-    await supabase.from("teams").update({ active: !currentActive }).eq("id", teamId);
+    const { error } = await supabase.from("teams").update({ active: !currentActive }).eq("id", teamId);
+    if (error) {
+      setActionError(error.message ?? "Failed to update team status. Please try again.");
+      return;
+    }
     await supabase.from("audit_logs").insert({
       actor_profile_id: profile?.id, action: "update", target_type: "team", target_id: teamId,
       metadata: { active: !currentActive },
@@ -195,11 +213,16 @@ export default function AdminTeamsPage() {
   };
 
   const handleRegenerateCode = async (teamId: string, role: string) => {
+    setActionError(null);
     const supabase = createClient();
     const newCode = generateCode();
-    await supabase.from("invite_codes")
+    const { error } = await supabase.from("invite_codes")
       .update({ code: newCode })
       .eq("team_id", teamId).eq("role", role);
+    if (error) {
+      setActionError(error.message ?? "Failed to regenerate invite code. Please try again.");
+      return;
+    }
     setTeams((prev) => prev.map((t) => t.id === teamId
       ? { ...t, invite_codes: t.invite_codes.map((ic) => ic.role === role ? { ...ic, code: newCode } : ic) }
       : t));
@@ -208,11 +231,17 @@ export default function AdminTeamsPage() {
   const handleSaveOrg = async () => {
     if (!org) return;
     setSavingOrg(true);
+    setOrgSaveError(null);
     const supabase = createClient();
-    await supabase.from("organizations").update({
+    const { error } = await supabase.from("organizations").update({
       division:   orgDivision.trim() || null,
       conference: orgConference.trim() || null,
     }).eq("id", org.id);
+    if (error) {
+      setOrgSaveError(error.message ?? "Failed to save organization info. Please try again.");
+      setSavingOrg(false);
+      return;
+    }
     setOrg((o) => o ? { ...o, division: orgDivision.trim() || null, conference: orgConference.trim() || null } : o);
     setEditingOrg(false);
     setSavingOrg(false);
@@ -270,6 +299,17 @@ export default function AdminTeamsPage() {
           </button>
         </div>
 
+        {/* Action error banner */}
+        {actionError && (
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{actionError}</span>
+            <button onClick={() => setActionError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
+          </div>
+        )}
+
         {/* Org info card */}
         {org && (
           <div className="rounded-3xl p-4" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
@@ -307,7 +347,12 @@ export default function AdminTeamsPage() {
                     style={{ borderColor: T.border, color: T.text }}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 space-y-2">
+                  {orgSaveError && (
+                    <div className="rounded-xl px-4 py-3 text-[12px] font-medium" style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5" }}>
+                      {orgSaveError}
+                    </div>
+                  )}
                   <button
                     onClick={handleSaveOrg}
                     disabled={savingOrg}
@@ -384,6 +429,11 @@ export default function AdminTeamsPage() {
             <p className="text-[11px]" style={{ color: T.textMuted }}>
               Two invite codes will be generated automatically — one for athletes, one for coaches.
             </p>
+            {createError && (
+              <div className="rounded-xl px-4 py-3 text-[12px] font-medium" style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5" }}>
+                {createError}
+              </div>
+            )}
             <button
               onClick={handleCreateTeam}
               disabled={!teamName.trim() || !teamSport.trim() || creating}

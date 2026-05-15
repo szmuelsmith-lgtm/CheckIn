@@ -53,6 +53,8 @@ export default function AdminResourcesPage() {
   const [formCategory, setFormCategory] = useState("wellness");
   const [formUrl, setFormUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadResources = async () => {
     const supabase = createClient();
@@ -76,12 +78,23 @@ export default function AdminResourcesPage() {
   const handleCreate = async () => {
     if (!profile || !formTitle.trim() || !formUrl.trim()) return;
     setSaving(true);
+    setSaveError(null);
     const supabase = createClient();
-    await supabase.from("resources").insert({
+    const { error } = await supabase.from("resources").insert({
       organization_id: profile.organization_id,
       title: formTitle.trim(), description: formDesc.trim(),
       category: formCategory, url: formUrl.trim(), created_by: profile.id,
     });
+    if (error) {
+      console.error("Add resource error:", error);
+      setSaveError(
+        error.code === "42501"
+          ? "Permission denied. Your account may not have rights to add resources."
+          : (error.message ?? "Failed to save resource. Please try again.")
+      );
+      setSaving(false);
+      return;
+    }
     await supabase.from("audit_logs").insert({
       actor_profile_id: profile.id, action: "create", target_type: "resource",
       metadata: { title: formTitle.trim(), category: formCategory },
@@ -93,15 +106,24 @@ export default function AdminResourcesPage() {
 
   const handleDelete = async (id: string) => {
     if (!profile) return;
+    setDeleteError(null);
     const supabase = createClient();
-    await supabase.from("resources").delete().eq("id", id);
+    const { error } = await supabase.from("resources").delete().eq("id", id);
+    if (error) {
+      setDeleteError(
+        error.code === "42501"
+          ? "Permission denied — your account may not have rights to delete resources."
+          : (error.message ?? "Failed to delete resource. Please try again.")
+      );
+      return;
+    }
     await supabase.from("audit_logs").insert({
       actor_profile_id: profile.id, action: "delete", target_type: "resource", target_id: id,
     });
     setResources((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const roleName = profile?.role === "support" ? "Support" : "Admin";
+  const roleName = profile?.role === "support" ? "Support" : profile?.role === "psychiatrist" ? "Counselor" : profile?.role === "trusted_adult" ? "Trusted Adult" : "Admin";
 
   if (loading) {
     return (
@@ -114,7 +136,7 @@ export default function AdminResourcesPage() {
   }
 
   return (
-    <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
+    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName={profile?.full_name || roleName}>
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
@@ -186,6 +208,11 @@ export default function AdminResourcesPage() {
                   />
                 </div>
               </div>
+              {saveError && (
+                <div className="rounded-xl px-4 py-3 text-[12px] font-medium" style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5" }}>
+                  {saveError}
+                </div>
+              )}
               <button
                 onClick={handleCreate}
                 disabled={!formTitle.trim() || !formUrl.trim() || saving}
@@ -195,6 +222,17 @@ export default function AdminResourcesPage() {
                 {saving ? "Saving..." : "Add Resource"}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Delete error banner */}
+        {deleteError && (
+          <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+               style={{ background: "#fee2e2", border: "1px solid #fca5a5" }}>
+            <span className="text-[13px] font-medium" style={{ color: "#991b1b" }}>{deleteError}</span>
+            <button onClick={() => setDeleteError(null)} style={{ color: "#991b1b" }}>
+              <span className="text-[18px] leading-none">×</span>
+            </button>
           </div>
         )}
 
