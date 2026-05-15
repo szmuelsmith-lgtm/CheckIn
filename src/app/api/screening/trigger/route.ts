@@ -42,13 +42,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Determine target org: use body.org_id if provided, else fall back to admin's own org
-  const targetOrgId = body.org_id ?? profile.organization_id;
+  // Always use the admin's own org — never trust body.org_id to prevent cross-org activation
+  const targetOrgId = profile.organization_id;
 
   if (!targetOrgId) {
     return NextResponse.json(
-      { error: 'No org_id provided and admin has no organization_id on their profile' },
+      { error: 'Admin profile has no organization_id — cannot scope screening activation' },
       { status: 400 }
+    );
+  }
+
+  // If caller explicitly passed org_id, make sure it matches (catches misconfigured clients)
+  if (body.org_id && body.org_id !== targetOrgId) {
+    return NextResponse.json(
+      { error: 'Forbidden: org_id does not match your organization' },
+      { status: 403 }
     );
   }
 

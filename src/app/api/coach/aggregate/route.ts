@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
     .from('profiles')
     .select('id')
     .eq('team_id', profile.team_id)
-    .eq('role', 'athlete');
+    .eq('role', 'athlete')
+    // Defense-in-depth: double-scope to org so cross-org team_id collisions are impossible
+    .eq('organization_id', profile.organization_id ?? '');
 
   if (athletesError) {
     return NextResponse.json({ error: 'Failed to fetch athletes' }, { status: 500 });
