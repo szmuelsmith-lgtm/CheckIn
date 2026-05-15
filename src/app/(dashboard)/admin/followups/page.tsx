@@ -68,15 +68,20 @@ export default function AdminFollowupsPage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  const loadFollowups = async () => {
+  const loadFollowups = async (orgAthleteIds?: string[]) => {
     const supabase = createClient();
-    const { data: followupData } = await supabase
+    let query = supabase
       .from("followups")
       .select(`id, athlete_id, alert_id, assigned_to_profile_id, reason, status, due_date, created_at, completed_at,
         athlete:profiles!followups_athlete_id_fkey(full_name),
         assignee:profiles!followups_assigned_to_profile_id_fkey(full_name)`)
       .order("created_at", { ascending: false })
       .limit(100);
+    // Scope to org: only show followups for athletes in this organization
+    if (orgAthleteIds && orgAthleteIds.length > 0) {
+      query = query.in("athlete_id", orgAthleteIds);
+    }
+    const { data: followupData } = await query;
     if (followupData) {
       setFollowups(followupData.map(f => ({
         id: f.id, athlete_id: f.athlete_id, alert_id: f.alert_id,
@@ -97,7 +102,17 @@ export default function AdminFollowupsPage() {
       const { data: prof } = await supabase.from("profiles").select("id, full_name, role, organization_id").eq("auth_user_id", user.id).single();
       if (!prof) return;
       setProfile(prof);
-      await loadFollowups();
+
+      // Load athletes first so we can org-scope the followups query
+      const { data: athleteData } = await supabase.from("profiles").select("id, full_name")
+        .eq("organization_id", prof.organization_id)
+        .eq("role", "athlete")
+        .order("full_name");
+      if (athleteData) setAthletes(athleteData);
+      const orgAthleteIds = (athleteData ?? []).map(a => a.id);
+
+      await loadFollowups(orgAthleteIds);
+
       let alertQuery = supabase
         .from("alerts")
         .select(`id, severity, trigger_type, created_at, athlete:profiles!alerts_athlete_id_fkey(id, full_name)`)
@@ -120,13 +135,6 @@ export default function AdminFollowupsPage() {
         .in("role", ["admin", "support", "psychiatrist", "trusted_adult"])
         .order("full_name");
       if (staffData) setStaff(staffData);
-
-      // Load athletes for the "no linked alert" creation path
-      const { data: athleteData } = await supabase.from("profiles").select("id, full_name")
-        .eq("organization_id", prof.organization_id)
-        .eq("role", "athlete")
-        .order("full_name");
-      if (athleteData) setAthletes(athleteData);
 
       setLoading(false);
     }
