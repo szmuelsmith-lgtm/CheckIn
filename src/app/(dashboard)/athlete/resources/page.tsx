@@ -8,6 +8,17 @@ import {
   Sparkles, AlertTriangle,
 } from "lucide-react";
 
+// In Capacitor's WKWebView, target="_blank" stays inside the app.
+// _system tells Capacitor to hand the URL to iOS (Safari, Phone, Messages).
+// On plain web it falls back to _blank.
+function openUrl(url: string) {
+  if (!url) return;
+  const target = typeof window !== "undefined" && (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.()
+    ? "_system"
+    : "_blank";
+  window.open(url, target);
+}
+
 const T = {
   surface:   "#ffffff",
   raised:    "#f8fafc",
@@ -183,15 +194,15 @@ export default function AthleteResourcesPage() {
           </div>
           <div className="grid grid-cols-3 gap-2.5">
             {CRISIS_RESOURCES.map(r => (
-              <a
+              <button
                 key={r.id}
-                href={r.url}
-                className="rounded-2xl p-3 text-center block transition-all active:scale-95"
+                onClick={() => openUrl(r.url)}
+                className="rounded-2xl p-3 text-center block transition-all active:scale-95 w-full"
                 style={{ background: "rgba(255,255,255,0.15)" }}
               >
                 <p className="text-[20px] font-bold text-white">{r.number}</p>
                 <p className="text-[10px] mt-0.5 leading-tight" style={{ color: "rgba(255,255,255,0.75)" }}>{r.title}</p>
-              </a>
+              </button>
             ))}
           </div>
           <p className="text-[11px] mt-3" style={{ color: "rgba(255,255,255,0.6)" }}>Free · Confidential · 24/7</p>
@@ -246,18 +257,19 @@ export default function AthleteResourcesPage() {
             {filtered.map((resource, i) => {
               const cfg = CATEGORY_CONFIG[resource.category] || CATEGORY_CONFIG.other;
               const Icon = cfg.icon;
+              const hasLink = !!resource.url;
               return (
-                <a
+                <button
                   key={resource.id}
-                  href={resource.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-start gap-3 p-4 rounded-3xl border transition-all active:scale-[0.99] animate-fade-in-up group"
+                  onClick={() => hasLink && openUrl(resource.url)}
+                  disabled={!hasLink}
+                  className="flex items-start gap-3 p-4 rounded-3xl border transition-all active:scale-[0.99] animate-fade-in-up group w-full text-left"
                   style={{
                     background: cfg.cardBg,
                     borderColor: cfg.cardBorder,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
                     animationDelay: `${i * 40}ms`,
+                    cursor: hasLink ? "pointer" : "default",
                   }}
                 >
                   <div className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
@@ -267,7 +279,7 @@ export default function AthleteResourcesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold text-[14px] leading-snug" style={{ color: T.text }}>{resource.title}</p>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-colors" style={{ color: T.textMuted }} />
+                      {hasLink && <ExternalLink className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-colors" style={{ color: T.textMuted }} />}
                     </div>
                     <p className="text-[12px] mt-1 leading-relaxed line-clamp-2" style={{ color: T.textMuted }}>{resource.description}</p>
                     <span className="inline-block mt-2 px-2 py-0.5 rounded-full text-[10px] font-semibold"
@@ -275,7 +287,7 @@ export default function AthleteResourcesPage() {
                       {cfg.label}
                     </span>
                   </div>
-                </a>
+                </button>
               );
             })}
           </div>

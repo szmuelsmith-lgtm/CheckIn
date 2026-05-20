@@ -5,9 +5,8 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
-  AlertTriangle, PlayCircle, StopCircle, Shield,
-  TrendingUp, TrendingDown, Minus,
-  ChevronRight, Activity, Users2, Zap, Bell,
+  AlertTriangle, Shield,
+  Activity, Users2, Zap, Bell,
   FileText, UserCheck, Download, Check,
 } from "lucide-react";
 import { evaluateRiskLevel } from "@/lib/pillar-scoring";
@@ -15,6 +14,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const T = {
@@ -71,9 +71,8 @@ interface TeamStat {
 }
 
 interface OrgData {
-  id:               string;
-  name:             string;
-  screening_active: boolean;
+  id:   string;
+  name: string;
 }
 
 interface AlertFeedItem {
@@ -188,21 +187,6 @@ function actionColor(action: string): { color: string; bg: string } {
   return { color: T.green, bg: T.greenLight };
 }
 
-function Delta({ pct }: { pct: number }) {
-  if (pct === 0) return (
-    <span className="inline-flex items-center gap-0.5 text-[11px] font-medium" style={{ color: T.textMuted }}>
-      <Minus className="h-3 w-3" />0%
-    </span>
-  );
-  const up = pct > 0;
-  return (
-    <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold"
-          style={{ color: up ? T.green : T.red }}>
-      {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-      {up ? "+" : ""}{pct}%
-    </span>
-  );
-}
 
 function timeAgoShort(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -238,8 +222,6 @@ export default function AdminDashboard() {
   const [teams,            setTeams]            = useState<TeamStat[]>([]);
   const [profile,          setProfile]          = useState<{ full_name: string; role: string; organization_id: string | null } | null>(null);
   const [orgData,          setOrgData]          = useState<OrgData | null>(null);
-  const [screeningLoading, setScreeningLoading] = useState(false);
-  const [screeningError,  setScreeningError]   = useState<string | null>(null);
   const [loading,          setLoading]          = useState(true);
   const [error,            setError]            = useState(false);
   const [isDemo,           setIsDemo]           = useState(false);
@@ -272,22 +254,34 @@ export default function AdminDashboard() {
         setIsDemo(true); setLoading(false); return;
       }
 
-      const [{ data: org }, { data: teamsData }, { data: athleteProfiles }] = await Promise.all([
-        supabase.from("organizations").select("id, name, screening_active").eq("id", orgId).single(),
+      // RPC calls run server-side GROUP BY — avoids the 1,000-row PostgREST cap
+      // that silently truncated totalAthletes and team breakdowns at 10K athletes.
+      const [{ data: org }, { data: teamsData }, { data: teamAthleteCounts }, { data: orgTotalCount }, { data: orgProviders }] = await Promise.all([
+        supabase.from("organizations").select("id, name").eq("id", orgId).single(),
         supabase.from("teams").select("id, name").eq("organization_id", orgId),
-        supabase.from("profiles").select("id, team_id").eq("organization_id", orgId).eq("role", "athlete"),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        supabase.rpc("get_team_athlete_counts", { p_org_id: orgId }) as any as Promise<{ data: { team_id: string; athlete_count: number }[] | null; error: unknown }>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        supabase.rpc("get_org_athlete_count",   { p_org_id: orgId }) as any as Promise<{ data: number | null; error: unknown }>,
+        // Fetch clinical providers for this org (for provider-load widget)
+        supabase.from("profiles").select("id, full_name, role").eq("organization_id", orgId).in("role", ["psychiatrist", "support"]),
       ]);
 
       if (org) setOrgData(org as OrgData);
 
-      const totalAthletes = athleteProfiles?.length ?? 0;
+      const totalAthletes = orgTotalCount ?? 0;
       if (totalAthletes === 0) {
         setStats(DEMO_STATS); setTeams(DEMO_TEAMS); setTrends(demoTrends);
         setAlertFeed(DEMO_ALERTS); setAuditLog(DEMO_AUDIT); setProviders(DEMO_PROVIDERS);
         setIsDemo(true); setLoading(false); return;
       }
 
-      const athleteIds = (athleteProfiles ?? []).map(p => p.id);
+      // KEY SCALE FIX: filter checkins/alerts by team_id (≤30 IDs) not athlete_id (up to 1500).
+      // PostgREST sends .in() as a URL query param — 1500 UUIDs ≈ 54 KB, well over the 8 KB limit.
+      // 30 team UUIDs ≈ 1 KB. Same data, URL stays short.
+      const teamIds       = (teamsData   ?? []).map(t => t.id);
+      const orgProviderIds = (orgProviders ?? []).map(p => p.id);
+      const NULL_UUID     = "00000000-0000-0000-0000-000000000000"; // fallback so .in() is never empty
       const now  = Date.now();
       const d7   = new Date(now - 7  * 86400000).toISOString();
       const d30  = new Date(now - 30 * 86400000).toISOString();
@@ -295,37 +289,51 @@ export default function AdminDashboard() {
       const d84  = new Date(now - 84 * 86400000).toISOString();
 
       const [{ data: checkins84 }, { data: checkinsPrev }, { data: alertsData }, { data: auditData }, { data: consentData }] = await Promise.all([
+        // 84-day window for trend chart — team_id filter, hard limit prevents memory blowout
         supabase.from("checkins")
-          .select("athlete_id, completed_at, emotional_score, resilience_score, recovery_score, support_score")
-          .in("athlete_id", athleteIds).gte("completed_at", d84).order("completed_at", { ascending: false }),
+          .select("athlete_id, team_id, completed_at, emotional_score, resilience_score, recovery_score, support_score")
+          .in("team_id", teamIds.length ? teamIds : [NULL_UUID])
+          .gte("completed_at", d84)
+          .order("completed_at", { ascending: false })
+          .limit(50000),  // 100 teams × 100 athletes × 4 wks = 40K rows; headroom to 50K
+        // Previous 30d window for MoM check-in rate
         supabase.from("checkins").select("athlete_id")
-          .in("athlete_id", athleteIds).gte("completed_at", d60).lt("completed_at", d30),
-        supabase.from("alerts").select("id, athlete_id, severity, created_at")
-          .eq("status", "open").in("athlete_id", athleteIds).order("created_at", { ascending: false }).limit(20),
+          .in("team_id", teamIds.length ? teamIds : [NULL_UUID])
+          .gte("completed_at", d60).lt("completed_at", d30)
+          .limit(3000),
+        // Open alerts scoped to org's teams
+        supabase.from("alerts").select("id, athlete_id, team_id, severity, created_at")
+          .eq("status", "open")
+          .in("team_id", teamIds.length ? teamIds : [NULL_UUID])
+          .order("created_at", { ascending: false })
+          .limit(50),
         supabase.from("audit_logs")
           .select("id, action, created_at, actor:actor_profile_id(full_name, organization_id)")
           .eq("organization_id", orgId).order("created_at", { ascending: false }).limit(10),
-        supabase.from("consent_logs")
-          .select("target_profile_id, provider:target_profile_id(full_name, role)")
-          .eq("is_active", true),
+        // Consent counts for THIS org's providers only — prevents cross-org data leak + URL blowout
+        orgProviderIds.length
+          ? supabase.from("consent_logs").select("target_profile_id")
+              .eq("is_active", true).in("target_profile_id", orgProviderIds).limit(500)
+          : Promise.resolve({ data: [] as { target_profile_id: string }[], error: null }),
       ]);
 
       // ── KPI ──
-      const checkins30    = (checkins84 ?? []).filter(c => c.completed_at >= d30);
-      const checked7d     = new Set((checkins30 ?? []).filter(c => c.completed_at >= d7).map(c => c.athlete_id)).size;
+      type CheckinRow = {
+        athlete_id: string; team_id: string | null; completed_at: string;
+        emotional_score: number | null; resilience_score: number | null;
+        recovery_score: number | null; support_score: number | null;
+      };
+      const checkins30    = (checkins84 ?? []).filter(c => c.completed_at >= d30) as CheckinRow[];
+      const checked7d     = new Set(checkins30.filter(c => c.completed_at >= d7).map(c => c.athlete_id)).size;
       const checkinRate7d = totalAthletes > 0 ? Math.round((checked7d / totalAthletes) * 100) : 0;
       const activeThis30d = new Set(checkins30.map(c => c.athlete_id)).size;
       const activeLast30d = new Set((checkinsPrev ?? []).map(c => c.athlete_id)).size;
       const checkinRateMoM = activeLast30d > 0
         ? Math.round(((activeThis30d - activeLast30d) / activeLast30d) * 100) : 0;
 
-      type CheckinRow = {
-        athlete_id: string; completed_at: string;
-        emotional_score: number | null; resilience_score: number | null;
-        recovery_score: number | null; support_score: number | null;
-      };
+      // Latest check-in per athlete for risk distribution
       const latestByAthlete = new Map<string, CheckinRow>();
-      checkins30.forEach(c => { if (!latestByAthlete.has(c.athlete_id)) latestByAthlete.set(c.athlete_id, c as CheckinRow); });
+      checkins30.forEach(c => { if (!latestByAthlete.has(c.athlete_id)) latestByAthlete.set(c.athlete_id, c); });
       let greenCount = 0, yellowCount = 0, redCount = 0;
       latestByAthlete.forEach(c => {
         const lvl = evaluateRiskLevel({ emotional: c.emotional_score ?? 5, resilience: c.resilience_score ?? 5, recovery: c.recovery_score ?? 5, support: c.support_score ?? 5 }, false);
@@ -339,11 +347,12 @@ export default function AdminDashboard() {
       setStats({ totalAthletes, checkinRate7d, checkinRateMoM, activeThis30d, activeLast30d, openAlerts, redAlerts, yellowAlerts, greenCount, yellowCount, redCount });
 
       // ── Weekly trends ──
+      const checkins84Typed = (checkins84 ?? []) as CheckinRow[];
       const weeklyTrends: WeeklyTrend[] = [];
       for (let w = 7; w >= 0; w--) {
         const wStart = new Date(now - (w + 1) * 7 * 86400000).toISOString();
         const wEnd   = new Date(now - w * 7 * 86400000).toISOString();
-        const wRows  = (checkins84 ?? []).filter(c => c.completed_at >= wStart && c.completed_at < wEnd) as CheckinRow[];
+        const wRows  = checkins84Typed.filter(c => c.completed_at >= wStart && c.completed_at < wEnd);
         const avg = (key: keyof CheckinRow) => {
           const vals = wRows.map(r => r[key] as number | null).filter((v): v is number => v != null);
           return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : 0;
@@ -365,35 +374,55 @@ export default function AdminDashboard() {
       setAuditLog(auditItems.length > 0 ? auditItems : DEMO_AUDIT);
 
       // ── Provider load ──
-      type ConsentRaw = { target_profile_id: string; provider: { full_name: string; role: string }[]|{ full_name: string; role: string }|null };
-      const provMap = new Map<string, { name: string; role: string; count: number }>();
-      (consentData ?? []).forEach((c: ConsentRaw) => {
-        const p = Array.isArray(c.provider) ? c.provider[0] : c.provider;
-        if (!p) return;
-        const cur = provMap.get(c.target_profile_id) ?? { name: p.full_name, role: p.role, count: 0 };
-        provMap.set(c.target_profile_id, { ...cur, count: cur.count + 1 });
+      // Count consents per provider from the pre-scoped consent query
+      const provCounts = new Map<string, number>();
+      (consentData ?? []).forEach((c: { target_profile_id: string }) => {
+        provCounts.set(c.target_profile_id, (provCounts.get(c.target_profile_id) ?? 0) + 1);
       });
       const CAPACITY: Record<string, number> = { psychiatrist: 12, coach: 20, support: 25 };
-      const provRows: ProviderLoad[] = Array.from(provMap.entries()).map(([id, v]) => ({
-        id, name: v.name, role: v.role, caseload: v.count, capacity: CAPACITY[v.role] ?? 20,
+      const provRows: ProviderLoad[] = (orgProviders ?? []).map(p => ({
+        id: p.id, name: p.full_name, role: p.role,
+        caseload: provCounts.get(p.id) ?? 0,
+        capacity: CAPACITY[p.role] ?? 20,
       })).sort((a, b) => (b.caseload / b.capacity) - (a.caseload / a.capacity));
       setProviders(provRows.length > 0 ? provRows : DEMO_PROVIDERS);
 
-      // ── Teams ──
-      const alertsByAthlete = new Map<string, number>();
-      (alertsData ?? []).forEach(a => alertsByAthlete.set(a.athlete_id, (alertsByAthlete.get(a.athlete_id) ?? 0) + 1));
+      // ── Teams — O(n) with pre-built Maps instead of O(n×m) nested includes() ──
+      // Pre-group checkins and alerts by team_id so each team loop is O(1) lookup
+      const checkinsByTeam = new Map<string, CheckinRow[]>();
+      checkins30.forEach(c => {
+        if (!c.team_id) return;
+        const arr = checkinsByTeam.get(c.team_id) ?? [];
+        arr.push(c);
+        checkinsByTeam.set(c.team_id, arr);
+      });
+      const alertsByTeam = new Map<string, number>();
+      (alertsData ?? []).forEach(a => {
+        if (!a.team_id) return;
+        alertsByTeam.set(a.team_id, (alertsByTeam.get(a.team_id) ?? 0) + 1);
+      });
+      // Built from the server-side RPC result — no client-side profile rows needed
+      const athleteCountByTeam = new Map<string, number>(
+        (teamAthleteCounts ?? []).map(r => [r.team_id, Number(r.athlete_count)])
+      );
+
       const teamRows: TeamStat[] = (teamsData ?? []).map(team => {
-        const teamIds = (athleteProfiles ?? []).filter(p => p.team_id === team.id).map(p => p.id);
-        if (teamIds.length === 0) return null;
-        const tc7 = checkins30.filter(c => teamIds.includes(c.athlete_id) && c.completed_at >= d7);
+        const athleteCount = athleteCountByTeam.get(team.id) ?? 0;
+        if (athleteCount === 0) return null;
+        const teamCheckins7d = (checkinsByTeam.get(team.id) ?? []).filter(c => c.completed_at >= d7);
         const ltByTeam = new Map<string, CheckinRow>();
-        tc7.forEach(c => { if (!ltByTeam.has(c.athlete_id)) ltByTeam.set(c.athlete_id, c as CheckinRow); });
+        teamCheckins7d.forEach(c => { if (!ltByTeam.has(c.athlete_id)) ltByTeam.set(c.athlete_id, c); });
         let tG = 0, tY = 0, tR = 0;
         ltByTeam.forEach(c => {
           const lvl = evaluateRiskLevel({ emotional: c.emotional_score ?? 5, resilience: c.resilience_score ?? 5, recovery: c.recovery_score ?? 5, support: c.support_score ?? 5 }, false);
           if (lvl === "red") tR++; else if (lvl === "yellow") tY++; else tG++;
         });
-        return { id: team.id, name: team.name, athleteCount: teamIds.length, checkinRate7d: Math.round((new Set(tc7.map(c => c.athlete_id)).size / teamIds.length) * 100), greenCount: tG, yellowCount: tY, redCount: tR, alertCount: teamIds.reduce((s, id) => s + (alertsByAthlete.get(id) ?? 0), 0) };
+        return {
+          id: team.id, name: team.name, athleteCount,
+          checkinRate7d: Math.round((ltByTeam.size / athleteCount) * 100),
+          greenCount: tG, yellowCount: tY, redCount: tR,
+          alertCount: alertsByTeam.get(team.id) ?? 0,
+        };
       }).filter((t): t is TeamStat => t !== null);
       setTeams(teamRows);
       setIsDemo(false);
@@ -540,12 +569,6 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/* Screening status pill */}
-            <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium px-2.5 sm:px-3 py-1.5 rounded-full"
-                 style={{ background: orgData?.screening_active ? T.greenLight : T.borderSub, color: orgData?.screening_active ? T.green : T.textMuted, border: `1px solid ${orgData?.screening_active ? T.greenBorder : T.border}` }}>
-              <div className="h-1.5 w-1.5 rounded-full" style={{ background: orgData?.screening_active ? T.green : T.textMuted }} />
-              {orgData?.screening_active ? "Screening active" : "Weekly check-ins"}
-            </div>
             {/* Generate Report */}
             <button
               onClick={handleGenerateReport}
@@ -577,75 +600,56 @@ export default function AdminDashboard() {
         {/* ── KPI strip ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
-          <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center mb-4" style={{ background: T.indigoLight }}>
-              <Users2 className="h-4 w-4" style={{ color: T.indigo }} />
-            </div>
-            <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: T.text }}>{stats?.totalAthletes ?? "—"}</p>
-            <p className="text-[12px] font-medium" style={{ color: T.textMuted }}>Total athletes</p>
-          </div>
+          <MetricCard
+            ariaLabel={`Total athletes: ${stats?.totalAthletes ?? "loading"}`}
+            label="Total Athletes"
+            value={stats?.totalAthletes ?? "—"}
+            icon={<Users2 className="h-4 w-4" aria-hidden />}
+            iconColor={T.indigo}
+            iconBg={T.indigoLight}
+          />
 
-          <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: T.indigoLight }}>
-                <Zap className="h-4 w-4" style={{ color: T.indigo }} />
-              </div>
-              <Delta pct={stats?.checkinRateMoM ?? 0} />
-            </div>
-            <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: T.text }}>
-              {stats?.checkinRate7d ?? "—"}<span className="text-[16px] font-medium ml-0.5" style={{ color: T.textMuted }}>%</span>
-            </p>
-            <p className="text-[12px] font-medium mb-3" style={{ color: T.textMuted }}>7-day check-in rate</p>
-            <div className="h-1 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
-              <div className="h-full rounded-full" style={{ width: `${stats?.checkinRate7d ?? 0}%`, background: `linear-gradient(90deg, ${T.indigo}, #7c3aed)` }} />
-            </div>
-          </div>
+          <MetricCard
+            ariaLabel={`7-day check-in rate: ${stats?.checkinRate7d ?? "loading"} percent, ${stats?.checkinRateMoM ?? 0 >= 0 ? "up" : "down"} ${Math.abs(stats?.checkinRateMoM ?? 0).toFixed(1)} percent month over month`}
+            label="7-Day Check-In Rate"
+            value={stats?.checkinRate7d ?? "—"}
+            valueSuffix="%"
+            icon={<Zap className="h-4 w-4" aria-hidden />}
+            iconColor={T.indigo}
+            iconBg={T.indigoLight}
+            trendPct={stats?.checkinRateMoM ?? 0}
+            progress={stats?.checkinRate7d ?? 0}
+            progressColor={`linear-gradient(90deg, ${T.indigo}, #7c3aed)`}
+          />
 
-          <Link href="/admin/alerts" className="block rounded-xl p-5 group transition-shadow hover:shadow-md"
-                style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center"
-                   style={{ background: (stats?.openAlerts ?? 0) > 0 ? T.redLight : T.borderSub }}>
-                <AlertTriangle className="h-4 w-4" style={{ color: (stats?.openAlerts ?? 0) > 0 ? T.red : T.textMuted }} />
-              </div>
-              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" style={{ color: T.textMuted }} />
-            </div>
-            <p className="text-[30px] font-bold tabular-nums leading-none mb-1"
-               style={{ color: (stats?.openAlerts ?? 0) > 0 ? T.red : T.text }}>
-              {stats?.openAlerts ?? "—"}
-            </p>
-            <p className="text-[12px] font-medium mb-2" style={{ color: T.textMuted }}>Open alerts</p>
-            {(stats?.openAlerts ?? 0) > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {(stats?.redAlerts ?? 0) > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: T.redLight, color: T.red }}>
-                    {stats?.redAlerts} high
-                  </span>
-                )}
-                {(stats?.yellowAlerts ?? 0) > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: T.amberLight, color: T.amber }}>
-                    {stats?.yellowAlerts} moderate
-                  </span>
-                )}
-              </div>
-            )}
-          </Link>
+          <MetricCard
+            ariaLabel={`Open alerts: ${stats?.openAlerts ?? "loading"}${(stats?.openAlerts ?? 0) > 0 ? `, ${stats?.redAlerts ?? 0} high severity, ${stats?.yellowAlerts ?? 0} moderate` : ""}`}
+            label="Open Alerts"
+            value={stats?.openAlerts ?? "—"}
+            valueColor={(stats?.openAlerts ?? 0) > 0 ? T.red : T.text}
+            icon={<AlertTriangle className="h-4 w-4" aria-hidden />}
+            iconColor={(stats?.openAlerts ?? 0) > 0 ? T.red : T.textMuted}
+            iconBg={(stats?.openAlerts ?? 0) > 0 ? T.redLight : T.borderSub}
+            href="/admin/alerts"
+            badges={[
+              ...((stats?.redAlerts ?? 0) > 0 ? [{ label: `${stats!.redAlerts} high`,     color: T.red,   bg: T.redLight   }] : []),
+              ...((stats?.yellowAlerts ?? 0) > 0 ? [{ label: `${stats!.yellowAlerts} moderate`, color: T.amber, bg: T.amberLight }] : []),
+            ]}
+          />
 
-          <div className="rounded-xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: T.greenLight }}>
-                <UserCheck className="h-4 w-4" style={{ color: T.green }} />
-              </div>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: T.greenLight, color: T.green }}>
-                {providers.filter(p => p.caseload < p.capacity).length} available
-              </span>
-            </div>
-            <p className="text-[30px] font-bold tabular-nums leading-none mb-1" style={{ color: T.text }}>
-              {providers.length}
-            </p>
-            <p className="text-[12px] font-medium" style={{ color: T.textMuted }}>Active providers</p>
-          </div>
+          <MetricCard
+            ariaLabel={`Active providers: ${providers.length} total, ${providers.filter(p => p.caseload < p.capacity).length} available`}
+            label="Active Providers"
+            value={providers.length}
+            icon={<UserCheck className="h-4 w-4" aria-hidden />}
+            iconColor={T.green}
+            iconBg={T.greenLight}
+            statusBadge={{
+              label: `${providers.filter(p => p.caseload < p.capacity).length} available`,
+              color: T.green,
+              bg:    T.greenLight,
+            }}
+          />
         </div>
 
         {/* ── Body: left content + right sidebar ──────────────────────────── */}
@@ -886,65 +890,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Semester screening */}
-            <div className="rounded-xl p-4" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: shadow }}>
-              <p className="text-[13px] font-semibold mb-3" style={{ color: T.text }}>Semester Screening</p>
-              {orgData?.screening_active ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full animate-pulse" style={{ background: T.green }} />
-                    <p className="text-[12px] font-semibold" style={{ color: T.green }}>Screening is live</p>
-                  </div>
-                  <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
-                    Athletes see the full semester screening form.
-                  </p>
-                  {screeningError && (
-                    <p className="text-[11px] font-medium rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>{screeningError}</p>
-                  )}
-                  <button
-                    disabled={screeningLoading}
-                    onClick={async () => {
-                      if (!orgData?.id) return;
-                      setScreeningLoading(true); setScreeningError(null);
-                      try {
-                        const { error: updateErr } = await createClient().from("organizations").update({ screening_active: false }).eq("id", orgData.id);
-                        if (updateErr) { setScreeningError("Failed to deactivate. Check your permissions."); }
-                        else { setOrgData(prev => prev ? { ...prev, screening_active: false } : prev); }
-                      } finally { setScreeningLoading(false); }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 h-9 text-[12px] font-semibold rounded-lg border transition-colors disabled:opacity-50"
-                    style={{ borderColor: T.border, color: T.textSub, background: T.raised }}>
-                    <StopCircle className="h-3.5 w-3.5" />
-                    {screeningLoading ? "Deactivating…" : "Deactivate"}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-[11px] leading-relaxed" style={{ color: T.textMuted }}>
-                    Push a full wellness screening to all athletes.
-                  </p>
-                  {screeningError && (
-                    <p className="text-[11px] font-medium rounded-lg px-3 py-2" style={{ background: "#fee2e2", color: "#991b1b" }}>{screeningError}</p>
-                  )}
-                  <button
-                    disabled={screeningLoading}
-                    onClick={async () => {
-                      setScreeningLoading(true); setScreeningError(null);
-                      try {
-                        if (!orgData?.id) { setScreeningError("No organization found. Contact support."); return; }
-                        const { error: updateErr } = await createClient().from("organizations").update({ screening_active: true }).eq("id", orgData.id);
-                        if (updateErr) { setScreeningError("Failed to activate. Check your permissions."); }
-                        else { setOrgData(prev => prev ? { ...prev, screening_active: true } : prev); }
-                      } finally { setScreeningLoading(false); }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 h-9 text-[12px] font-semibold text-white rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
-                    style={{ background: `linear-gradient(135deg, ${T.indigoDark}, ${T.indigo})`, boxShadow: shadowMd }}>
-                    <PlayCircle className="h-3.5 w-3.5" />
-                    {screeningLoading ? "Activating…" : "Activate Screening"}
-                  </button>
-                </div>
-              )}
-            </div>
 
           </div>
         </div>

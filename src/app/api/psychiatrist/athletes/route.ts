@@ -20,8 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
-  // Both psychiatrists and trusted adults can view shared athletes
-  if (profile.role !== 'psychiatrist' && profile.role !== 'trusted_adult') {
+  if (profile.role !== 'psychiatrist') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -53,13 +52,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ athletes: [] });
   }
 
-  // Fetch latest check-in date for each athlete
+  // Fetch latest check-in date for each consented athlete.
+  // Scope to last 90 days to avoid unbounded full-history scans as athlete count grows.
   const athleteIds = consents.map(c => c.athlete_id);
+  const cutoff90 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const { data: latestCheckins } = await supabase
     .from('checkins')
     .select('athlete_id, completed_at')
     .in('athlete_id', athleteIds)
-    .order('completed_at', { ascending: false });
+    .gte('completed_at', cutoff90)
+    .order('completed_at', { ascending: false })
+    .limit(athleteIds.length * 10); // at most ~10 checkins per athlete to find the latest
 
   // Build a map of athlete_id → latest completed_at
   const latestCheckinMap = new Map<string, string>();

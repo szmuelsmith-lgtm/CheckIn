@@ -60,12 +60,10 @@ export async function sendRedAlertEmail({
 
 export async function sendSupportRequestEmail({
   to,
-  scope,
 }: {
   to: string;
-  scope: 'psychiatrist' | 'trusted_adult';
 }): Promise<void> {
-  const roleLabel = scope === 'psychiatrist' ? 'counselor' : 'trusted adult';
+  const roleLabel = 'psychiatrist';
   await getResend().emails.send({
     from: process.env.EMAIL_FROM ?? 'Check-In <notifications@athleteanchor.com>',
     to,

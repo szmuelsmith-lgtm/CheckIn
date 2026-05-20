@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     .from('profiles').select('id, role').eq('auth_user_id', user.id).single();
 
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-  if (profile.role !== 'psychiatrist' && profile.role !== 'trusted_adult')
+  if (profile.role !== 'psychiatrist')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   let athleteId: string | null = null;
@@ -34,11 +34,14 @@ export async function POST(request: NextRequest) {
     ? '*'
     : 'id, athlete_id, team_id, mode, emotional_score, resilience_score, recovery_score, support_score, completed_at';
 
+  // Limit to 2 years of weekly checkins (104 rows) — prevents unbounded history scans
+  // for long-tenured athletes. Psychiatrists can view full profile page for full history.
   const { data: checkins, error: checkinsError } = await supabase
     .from('checkins')
     .select(selectCols)
     .eq('athlete_id', athleteId)
-    .order('completed_at', { ascending: false });
+    .order('completed_at', { ascending: false })
+    .limit(104);
 
   if (checkinsError) return NextResponse.json({ error: 'Failed to fetch checkins' }, { status: 500 });
 

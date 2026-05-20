@@ -123,7 +123,7 @@ export default function AdminResourcesPage() {
     setResources((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const roleName = profile?.role === "support" ? "Support" : profile?.role === "psychiatrist" ? "Counselor" : profile?.role === "trusted_adult" ? "Trusted Adult" : "Admin";
+  const roleName = profile?.role === "support" ? "Support" : profile?.role === "psychiatrist" ? "Psychiatrist" : "Admin";
 
   if (loading) {
     return (
@@ -136,7 +136,7 @@ export default function AdminResourcesPage() {
   }
 
   return (
-    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName={profile?.full_name || roleName}>
+    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist") || "admin"} userName={profile?.full_name || roleName}>
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}

@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/client";
 import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import type { Pillar } from "@/types/database";
 import { Activity, Lock, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine,
+} from "recharts";
 
 const T = {
   surface:   "#ffffff",
@@ -36,6 +40,31 @@ interface WeeklyPulse {
   support: number | null;
   checkinCount: number;
   totalAthletes: number;
+}
+
+function PulseChartTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  return (
+    <div className="rounded-xl p-3 text-[12px]"
+         style={{ background:"#ffffff", border:"1px solid #e8edf2", boxShadow:"0 4px 20px rgba(0,0,0,0.08)" }}>
+      <p className="font-semibold mb-1.5" style={{ color:T.textSub }}>Week of {label}</p>
+      {payload.map((entry) => (
+        <div key={entry.name} className="flex items-center justify-between gap-4 mb-0.5">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full" style={{ background: entry.color }} />
+            <span style={{ color: T.textMuted }}>{entry.name}</span>
+          </div>
+          <span className="font-bold tabular-nums" style={{ color: entry.color }}>
+            {entry.value ?? "—"}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function TrendIndicator({ current, previous }: { current: number | null; previous: number | null }) {
@@ -166,6 +195,43 @@ export default function CoachTeamPulsePage() {
           </div>
         ) : (
           <>
+            {/* 8-week pillar chart */}
+            <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.borderSub}` }}>
+                <p className="text-[14px] font-semibold" style={{ color: T.textSub }}>8-week pillar trend</p>
+              </div>
+              <div className="px-4 pt-4 pb-1">
+                <div style={{ height: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={weeks} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="weekLabel" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={{ stroke: "#e8edf2" }} />
+                      <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                      <ReferenceLine y={5} stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} />
+                      <Tooltip content={<PulseChartTooltip />} />
+                      {PILLARS.map(p => (
+                        <Line key={p} type="monotone" dataKey={p}
+                              stroke={PILLAR_COLOR[p]} strokeWidth={2.5}
+                              dot={{ r: 4, fill: PILLAR_COLOR[p], strokeWidth: 0 }}
+                              activeDot={{ r: 6, strokeWidth: 0 }}
+                              connectNulls
+                              name={PILLAR_LABELS[p]} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-2 mb-3">
+                  {PILLARS.map(p => (
+                    <div key={p} className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full" style={{ background: PILLAR_COLOR[p] }} />
+                      <span className="text-[11px] font-medium" style={{ color: T.textSub }}>{PILLAR_LABELS[p]}</span>
+                    </div>
+                  ))}
+                  <span className="text-[11px] ml-auto" style={{ color: T.textMuted }}>Shown when 5+ athletes checked in</span>
+                </div>
+              </div>
+            </div>
+
             {/* Weekly table */}
             <div className="rounded-3xl overflow-hidden" style={{ background: T.surface, border: `1px solid ${T.border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
               <div className="px-5 py-4" style={{ borderBottom: `1px solid ${T.borderSub}` }}>

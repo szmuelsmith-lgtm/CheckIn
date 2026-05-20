@@ -194,6 +194,16 @@ function AthleteView() {
         }));
 
         setData({ athlete_name: athleteObj?.full_name ?? "Unknown", scope: consent.scope, granted_at: consent.granted_at, checkins: entries });
+
+        // FERPA compliance: log every access to athlete data.
+        // Fire-and-forget — a failed log write must never block the clinician's view.
+        void supabase.from("access_logs").insert({
+          viewer_profile_id: prof.id,
+          athlete_id:        id,
+          access_type:       consent.scope === "full" ? "view_full" : "view_summary",
+          metadata:          { scope: consent.scope, checkin_count: entries.length, page: "psychiatrist/athlete" },
+        }).then(() => {}, () => {/* non-fatal */});
+
       } catch (e: unknown) {
         console.error("[psychiatrist/athlete] load failed:", e);
         setError(true);

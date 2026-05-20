@@ -106,12 +106,14 @@ export async function POST(request: NextRequest) {
 
   const rows = (allCheckins ?? []) as Record<string, unknown>[];
 
-  // Split into time windows
+  // Split into non-overlapping time windows
   const thisWeekRows = rows.filter(c => new Date(c.completed_at as string).getTime() >= thisWeekFrom);
   const lastWeekRows = rows.filter(c => {
     const t = new Date(c.completed_at as string).getTime();
     return t >= lastWeekFrom && t < thisWeekFrom;
   });
+  // Baseline window: 14–28 days ago (excludes this week and last week so all 3 points are independent)
+  const earlyRows = rows.filter(c => new Date(c.completed_at as string).getTime() < lastWeekFrom);
 
   // One row per athlete (most recent) for current snapshot — within last 14 days
   const seenAthletes = new Set<string>();
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
     const col    = PILLAR_SCORE_COLUMNS[pillar];
     const twAvg  = colAvg(thisWeekRows,  col);
     const lwAvg  = colAvg(lastWeekRows,  col);
-    const moAvg  = colAvg(rows,          col);
+    const moAvg  = colAvg(earlyRows,      col);
     const curAvg = colAvg(latestCheckins, col);
     const wkPct  = changePct(twAvg, lwAvg);
 

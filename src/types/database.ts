@@ -1,8 +1,8 @@
-export type UserRole = "athlete" | "coach" | "support" | "admin" | "psychiatrist" | "trusted_adult";
+export type UserRole = "athlete" | "coach" | "support" | "admin" | "psychiatrist";
 export type CheckinMode = "weekly" | "screening";
 export type Pillar = "emotional" | "resilience" | "recovery" | "support";
 export type ConsentScope = "summary" | "full";
-export type ConsentTargetRole = "psychiatrist" | "trusted_adult";
+export type ConsentTargetRole = "psychiatrist";
 
 export interface PillarScores {
   emotional: number;

@@ -35,7 +35,6 @@ export default function LoginPage() {
     admin:         "/admin/dashboard",
     support:       "/admin/dashboard",
     psychiatrist:  "/psychiatrist/dashboard",
-    trusted_adult: "/psychiatrist/dashboard",
   };
 
   // Warm up the Supabase connection as soon as the login page loads

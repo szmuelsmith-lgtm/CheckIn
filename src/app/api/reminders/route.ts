@@ -32,37 +32,63 @@ export async function POST(request: NextRequest) {
 
     const orgIds = orgs.map((o) => o.id);
 
-    // Get athletes in those orgs who haven't opted out of reminders
-    // Left join with athlete_preferences to check opt-out
+    // Get athletes in those orgs who haven't opted out of reminders.
+    // .range(0, 19999) raises PostgREST's default 1,000-row cap to 20K,
+    // which covers 100 teams × 100 athletes = 10K athletes with headroom.
     const { data: athletes } = await supabase
       .from("profiles")
       .select("id, full_name, email")
       .in("organization_id", orgIds)
-      .eq("role", "athlete");
+      .eq("role", "athlete")
+      .range(0, 19999);
 
     if (!athletes || athletes.length === 0) {
       return NextResponse.json({ success: true, message: "No athletes to remind", sent: 0 });
     }
 
-    // Check for opt-outs
+    // Check for opt-outs and recent check-ins.
+    // PostgREST URL limit: a single .in() with 10K UUIDs ≈ 360 KB — way over the 8 KB cap.
+    // Chunk into batches of 200 (≈ 7.2 KB each). Run at most 5 in parallel to avoid
+    // saturating the Supabase connection pool at 10K athletes (= 50 chunks).
     const athleteIds = athletes.map((a) => a.id);
-    const { data: prefs } = await supabase
-      .from("athlete_preferences")
-      .select("athlete_id, opt_out_reminders")
-      .in("athlete_id", athleteIds)
-      .eq("opt_out_reminders", true);
+    const CHUNK = 200;
+    const CONCURRENCY = 5;
+    const idChunks: string[][] = [];
+    for (let i = 0; i < athleteIds.length; i += CHUNK) idChunks.push(athleteIds.slice(i, i + CHUNK));
 
-    const optedOut = new Set(prefs?.map((p) => p.athlete_id) || []);
+    // Serially drain chunks at max CONCURRENCY to avoid overwhelming the connection pool.
+    // At 10K athletes / 200 per chunk = 50 chunks; CONCURRENCY=5 means 10 round-trips.
+    const optedOutIds: string[] = [];
+    for (let i = 0; i < idChunks.length; i += CONCURRENCY) {
+      const batch = idChunks.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map(chunk =>
+          supabase.from("athlete_preferences")
+            .select("athlete_id")
+            .in("athlete_id", chunk)
+            .eq("opt_out_reminders", true)
+        )
+      );
+      batchResults.forEach(r => { (r.data ?? []).forEach((p: { athlete_id: string }) => optedOutIds.push(p.athlete_id)); });
+    }
+    const optedOut = new Set(optedOutIds);
 
-    // Check who already checked in this week (skip them)
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: recentCheckins } = await supabase
-      .from("checkins")
-      .select("athlete_id")
-      .in("athlete_id", athleteIds)
-      .gte("completed_at", weekAgo);
-
-    const alreadyCheckedIn = new Set(recentCheckins?.map((c) => c.athlete_id) || []);
+    const checkedInIds: string[] = [];
+    for (let i = 0; i < idChunks.length; i += CONCURRENCY) {
+      const batch = idChunks.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map(chunk =>
+          supabase.from("checkins")
+            .select("athlete_id")
+            .in("athlete_id", chunk)
+            .gte("completed_at", weekAgo)
+            .limit(chunk.length) // one per athlete is enough
+        )
+      );
+      batchResults.forEach(r => { (r.data ?? []).forEach((c: { athlete_id: string }) => checkedInIds.push(c.athlete_id)); });
+    }
+    const alreadyCheckedIn = new Set(checkedInIds);
 
     // Filter to athletes who need a reminder
     const toRemind = athletes.filter(

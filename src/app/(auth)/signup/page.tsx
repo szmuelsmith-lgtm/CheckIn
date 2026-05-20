@@ -77,7 +77,6 @@ function SignupForm() {
           admin:         "/admin/dashboard",
           support:       "/admin/dashboard",
           psychiatrist:  "/psychiatrist/dashboard",
-          trusted_adult: "/psychiatrist/dashboard",
         };
         router.push(redirectMap[json.role] ?? "/athlete/dashboard");
         return;

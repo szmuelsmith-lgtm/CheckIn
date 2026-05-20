@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { createClient } from "@/lib/supabase/client";
 import {
   BookOpen, Plus, X, Trash2, ChevronDown, ChevronUp,
-  Lock, Edit2, AlertCircle, Search,
+  Lock, Edit2, AlertCircle, Search, Activity,
 } from "lucide-react";
 
 const T = {
@@ -28,6 +28,28 @@ interface JournalEntry {
   created_at: string;
 }
 
+interface CheckinWeek {
+  weekKey: string; // "YYYY-Www"
+  emotional: number | null;
+  resilience: number | null;
+  recovery: number | null;
+  support: number | null;
+}
+
+// ISO week key — "2025-W03" style — used to match entries to check-ins
+function isoWeekKey(iso: string): string {
+  const d = new Date(iso);
+  const thu = new Date(d);
+  thu.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
+  const jan4 = new Date(thu.getFullYear(), 0, 4);
+  const week = 1 + Math.round(((thu.getTime() - jan4.getTime()) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
+  return `${thu.getFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+const PILLAR_COLORS: Record<string, string> = {
+  emotional: "#059669", resilience: "#3b82f6", recovery: "#8b5cf6", support: "#06b6d4",
+};
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "short", month: "short", day: "numeric", year: "numeric",
@@ -37,6 +59,7 @@ function formatDate(iso: string) {
 export default function AthleteJournalPage() {
   const [profile, setProfile]         = useState<{ full_name: string; id: string } | null>(null);
   const [entries, setEntries]         = useState<JournalEntry[]>([]);
+  const [checkinWeeks, setCheckinWeeks] = useState<Map<string, CheckinWeek>>(new Map());
   const [loading, setLoading]         = useState(true);
   const [showForm, setShowForm]       = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);
@@ -65,7 +88,36 @@ export default function AthleteJournalPage() {
         .from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
       if (!prof) return;
       setProfile(prof);
-      await loadEntries(prof.id);
+
+      // Load journal entries and check-ins in parallel
+      const [, checkinRes] = await Promise.all([
+        loadEntries(prof.id),
+        supabase
+          .from("checkins")
+          .select("created_at, emotional_score, resilience_score, recovery_score, support_score")
+          .eq("athlete_id", prof.id)
+          .order("created_at", { ascending: false })
+          .limit(52), // one year of weekly check-ins
+      ]);
+
+      if (checkinRes.data) {
+        // Build a map: weekKey → best (most recent) check-in scores for that week
+        const weekMap = new Map<string, CheckinWeek>();
+        for (const row of checkinRes.data) {
+          const key = isoWeekKey(row.created_at);
+          if (!weekMap.has(key)) {
+            weekMap.set(key, {
+              weekKey:    key,
+              emotional:  row.emotional_score  ?? null,
+              resilience: row.resilience_score ?? null,
+              recovery:   row.recovery_score   ?? null,
+              support:    row.support_score    ?? null,
+            });
+          }
+        }
+        setCheckinWeeks(weekMap);
+      }
+
       setLoading(false);
     }
     load();
@@ -280,8 +332,10 @@ export default function AthleteJournalPage() {
         ) : (
           <div className="space-y-3">
             {filtered.map((entry, i) => {
-              const isExpanded = expandedId === entry.id;
-              const preview    = entry.body.length > 160 ? entry.body.substring(0, 160) + "…" : entry.body;
+              const isExpanded  = expandedId === entry.id;
+              const preview     = entry.body.length > 160 ? entry.body.substring(0, 160) + "…" : entry.body;
+              const entryWeek   = isoWeekKey(entry.created_at);
+              const weekCheckin = checkinWeeks.get(entryWeek);
               return (
                 <div
                   key={entry.id}
@@ -301,6 +355,28 @@ export default function AthleteJournalPage() {
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-[15px] truncate" style={{ color: T.text }}>{entry.title}</p>
                         <p className="text-[11px] mt-0.5" style={{ color: T.textMuted }}>{formatDate(entry.created_at)}</p>
+                        {/* Check-in score indicators for this week */}
+                        {weekCheckin && (
+                          <div className="flex items-center gap-1 mt-2">
+                            <Activity className="h-3 w-3 shrink-0" style={{ color: T.textMuted }} />
+                            {(["emotional", "resilience", "recovery", "support"] as const).map(p => {
+                              const score = weekCheckin[p];
+                              if (score === null) return null;
+                              const col = PILLAR_COLORS[p];
+                              return (
+                                <span
+                                  key={p}
+                                  title={`${p.charAt(0).toUpperCase() + p.slice(1)}: ${score.toFixed(1)}`}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded-lg text-[10px] font-bold tabular-nums"
+                                  style={{ background: col + "18", color: col }}
+                                >
+                                  {score.toFixed(0)}
+                                </span>
+                              );
+                            })}
+                            <span className="text-[10px]" style={{ color: T.textMuted }}>week scores</span>
+                          </div>
+                        )}
                         {!isExpanded && (
                           <p className="text-[13px] mt-2 leading-relaxed line-clamp-2" style={{ color: T.textSub }}>{preview}</p>
                         )}

@@ -23,7 +23,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  // Keep maximumScale at 1 to prevent iOS Safari from staying zoomed after
+  // input focus. userScalable stays true so pinch-zoom still works for
+  // accessibility — iOS ignores maximumScale for intentional pinch gestures.
+  maximumScale: 1,
   userScalable: true,
   themeColor: "#0F4A2E",
   viewportFit: "cover",

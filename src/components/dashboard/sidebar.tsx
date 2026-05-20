@@ -7,7 +7,7 @@ import { UserRole } from "@/types/database";
 import {
   LayoutDashboard, ClipboardCheck, BookOpen, TrendingUp, Heart,
   Settings, Users, AlertTriangle, ListChecks, FolderOpen,
-  Menu, X, LogOut, Shield, Lock, Anchor, ScrollText, UserCircle,
+  Menu, X, LogOut, Lock, Anchor, ScrollText, UserCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -27,9 +27,8 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Account",          href: "/athlete/account",     icon: <UserCircle      className="h-4 w-4" /> },
   ],
   coach: [
-    { label: "Dashboard",   href: "/coach/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { label: "Team Pulse",  href: "/coach/athletes",  icon: <Users           className="h-4 w-4" /> },
-    { label: "Support Info",href: "/coach/followups", icon: <Shield          className="h-4 w-4" /> },
+    { label: "Dashboard",  href: "/coach/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { label: "Team Pulse", href: "/coach/athletes",  icon: <Users           className="h-4 w-4" /> },
   ],
   admin: [
     { label: "Dashboard",  href: "/admin/dashboard",  icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -45,16 +44,10 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Follow-ups", href: "/admin/followups",  icon: <ListChecks      className="h-4 w-4" /> },
   ],
   psychiatrist: [
+    // Clinicians manage their own patient caseload from the dashboard.
+    // Admin alert queue and audit logs are operational/governance — not clinical scope.
     { label: "Dashboard",  href: "/psychiatrist/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { label: "Alerts",     href: "/admin/alerts",           icon: <AlertTriangle   className="h-4 w-4" /> },
-    { label: "Follow-ups", href: "/admin/followups",        icon: <ListChecks      className="h-4 w-4" /> },
     { label: "Resources",  href: "/admin/resources",        icon: <FolderOpen      className="h-4 w-4" /> },
-    { label: "Audit Logs", href: "/admin/audit-logs",       icon: <ScrollText      className="h-4 w-4" /> },
-  ],
-  trusted_adult: [
-    { label: "Dashboard",  href: "/psychiatrist/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-    { label: "Alerts",     href: "/admin/alerts",           icon: <AlertTriangle   className="h-4 w-4" /> },
-    { label: "Follow-ups", href: "/admin/followups",        icon: <ListChecks      className="h-4 w-4" /> },
   ],
 };
 
@@ -62,8 +55,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   athlete:       "Athlete",
   coach:         "Coach",
   admin:         "Admin",
-  psychiatrist:  "Counselor",
-  trusted_adult: "Trusted Adult",
+  psychiatrist:  "Psychiatrist",
   support:       "Support",
 };
 

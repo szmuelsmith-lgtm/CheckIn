@@ -69,9 +69,13 @@ export async function POST(request: NextRequest) {
   const triggerSupport = evaluateSupportTrigger(pillarScores);
   const riskLevel      = evaluateRiskLevel(pillarScores, wantsFollowup);
 
+  // All writes use the service-role client to bypass RLS.
+  // Auth and role have already been verified above using the user's own client.
+  const serviceClient = createServiceSupabaseClient();
+
   // Insert checkin record — use generated_id so we don't need a read-back
   const generatedId = crypto.randomUUID();
-  const { error: checkinError } = await supabase
+  const { error: checkinError } = await serviceClient
     .from('checkins')
     .insert({
       id:                generatedId,
@@ -104,7 +108,7 @@ export async function POST(request: NextRequest) {
     used_at:     new Date().toISOString(),
   }));
 
-  const { error: usageError } = await supabase
+  const { error: usageError } = await serviceClient
     .from('question_usage')
     .insert(usageRows);
 
@@ -114,7 +118,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Insert audit log
-  const { error: auditError } = await supabase
+  const { error: auditError } = await serviceClient
     .from('audit_logs')
     .insert({
       actor_profile_id: profile.id,
@@ -128,12 +132,11 @@ export async function POST(request: NextRequest) {
     console.error('Failed to insert audit_log:', auditError);
   }
 
-  // Auto-create alert for yellow/red risk levels — use service role to bypass RLS
+  // Auto-create alert for yellow/red risk levels
   if (riskLevel === 'yellow' || riskLevel === 'red') {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error('[checkin] SUPABASE_SERVICE_ROLE_KEY not set — alert not created for checkin', checkin.id);
     }
-    const serviceClient = createServiceSupabaseClient();
     const triggerType   = wantsFollowup ? 'wants_followup' : 'risk_score';
 
     // Resolve organization_id: athlete profile may not have it set directly,

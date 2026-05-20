@@ -6,17 +6,17 @@ import { UserRole } from "@/types/database";
 // Rules are checked in order — first match wins.
 // More specific paths must come before their parent prefix.
 const ROLE_ROUTES: { prefix: string; roles: UserRole[] }[] = [
-  // Psychiatrists / trusted adults can view operational pages under /admin
-  // (alerts, follow-ups, resources, audit-logs) but not team management or the org dashboard.
-  { prefix: "/admin/alerts",     roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
-  { prefix: "/admin/followups",  roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
-  { prefix: "/admin/resources",  roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
-  { prefix: "/admin/audit-logs", roles: ["admin", "support", "psychiatrist", "trusted_adult"] },
+  // Psychiatrists can view resources under /admin but not team management or the org dashboard.
+  { prefix: "/admin/resources",  roles: ["admin", "support", "psychiatrist"] },
+  // Operational pages: admins and support only
+  { prefix: "/admin/alerts",     roles: ["admin", "support"] },
+  { prefix: "/admin/followups",  roles: ["admin", "support"] },
+  { prefix: "/admin/audit-logs", roles: ["admin", "support"] },
   // Everything else under /admin: admins and support only
   { prefix: "/admin",        roles: ["admin", "support"] },
   { prefix: "/athlete",      roles: ["athlete"] },
   { prefix: "/coach",        roles: ["coach"] },
-  { prefix: "/psychiatrist", roles: ["psychiatrist", "trusted_adult"] },
+  { prefix: "/psychiatrist", roles: ["psychiatrist"] },
 ];
 
 export async function updateSession(request: NextRequest) {
@@ -83,7 +83,7 @@ export async function updateSession(request: NextRequest) {
         if (role === "athlete")       url.pathname = "/athlete/dashboard";
         else if (role === "coach")    url.pathname = "/coach/dashboard";
         else if (role === "admin" || role === "support") url.pathname = "/admin/dashboard";
-        else if (role === "psychiatrist" || role === "trusted_adult") url.pathname = "/psychiatrist/dashboard";
+        else if (role === "psychiatrist") url.pathname = "/psychiatrist/dashboard";
         else                          url.pathname = "/login";
         return NextResponse.redirect(url);
       }

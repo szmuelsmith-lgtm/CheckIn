@@ -3,7 +3,7 @@ import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 import { Style as StatusBarStyle } from '@capacitor/status-bar';
 
 const config: CapacitorConfig = {
-  appId: 'com.athleteanchor.checkin',
+  appId: 'com.athleteanchor.checkin.preview',
   appName: 'Check-In',
   webDir: 'out',
   // No server.url — the app loads from the bundled static files in webDir.

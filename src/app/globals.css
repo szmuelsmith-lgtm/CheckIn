@@ -76,20 +76,23 @@
   }
 
   /* Prevent iOS Safari from zooming into inputs on focus.
-     iOS zooms when font-size < 16px — this overrides without
-     affecting visual size (the component still sets its own size). */
-  @supports (-webkit-touch-callout: none) {
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="number"],
-    input[type="search"],
-    input[type="tel"],
-    input[type="url"],
-    textarea,
-    select {
-      font-size: max(16px, 1em) !important;
-    }
+     iOS zooms when font-size < 16px. Applied universally (no @supports guard)
+     so Capacitor's WKWebView always catches every input type including
+     bare <input> with no type, Radix/shadcn custom selects, and contenteditable. */
+  input,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select,
+  [contenteditable] {
+    font-size: max(16px, 1em) !important;
   }
 }
 

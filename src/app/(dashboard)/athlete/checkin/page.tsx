@@ -10,7 +10,7 @@ import { selectQuestionsForSession } from "@/lib/question-engine";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import {
   CheckCircle, ChevronRight, ChevronLeft,
-  AlertCircle, ArrowRight, Heart, X,
+  AlertCircle, ArrowRight, Heart, X, Phone, BookOpen,
 } from "lucide-react";
 import { useDiagnostic, DiagnosticToast } from "@/components/diagnostic";
 
@@ -74,13 +74,30 @@ function ResultDial({ score, color }: { score: number; color: string }) {
   );
 }
 
+// ─── Contextual resource tips per pillar ───────────────────────────────────────
+const PILLAR_RESOURCE: Record<Pillar, { tip: string; label: string }> = {
+  emotional:  { tip: "Journaling for 5 minutes after a hard day can cut emotional intensity by half.", label: "Emotional wellness" },
+  resilience: { tip: "Short breathing exercises (4-7-8) activate the parasympathetic system within 60 seconds.", label: "Resilience & mindset" },
+  recovery:   { tip: "Even 20 extra minutes of sleep improves reaction time and mood the next day.", label: "Sleep & recovery" },
+  support:    { tip: "Reaching out to one person — even a text — breaks the isolation loop.", label: "Social support" },
+};
+
 // ─── Result view ───────────────────────────────────────────────────────────────
-function ResultView({ pillarScores, triggerSupport, onDone }: {
+function ResultView({ pillarScores, triggerSupport, wantsFollowup, onDone }: {
   pillarScores: PillarScores;
   triggerSupport: boolean;
+  wantsFollowup: boolean;
   onDone: () => void;
 }) {
   const pillars: Pillar[] = ["emotional", "resilience", "recovery", "support"];
+
+  // Crisis = any pillar below 3
+  const hasCrisis = pillars.some(p => pillarScores[p] < 3);
+
+  // Lowest pillar for contextual resource
+  const lowestPillar = pillars.reduce((a, b) => pillarScores[a] <= pillarScores[b] ? a : b);
+  const lowestScore  = pillarScores[lowestPillar];
+  const showResource = lowestScore < 6 && !hasCrisis;
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
@@ -106,8 +123,71 @@ function ResultView({ pillarScores, triggerSupport, onDone }: {
         <p className="text-[14px]" style={{ color: "#047857" }}>Thanks for being honest. That takes courage.</p>
       </div>
 
-      {/* Support notice */}
-      {triggerSupport && (
+      {/* Crisis resources — shown when any pillar < 3 */}
+      {hasCrisis && (
+        <div
+          className="rounded-3xl p-5 space-y-3"
+          style={{ background: "#fff1f2", border: "1px solid #fecdd3" }}
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#e11d48" }} />
+            <div>
+              <p className="text-[14px] font-bold" style={{ color: "#9f1239" }}>You don&apos;t have to carry this alone</p>
+              <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: "#be123c" }}>
+                Your scores suggest you&apos;re going through something hard. These are free, confidential, available 24/7.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <a
+              href="tel:988"
+              className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-center transition-opacity active:opacity-70"
+              style={{ background: "#fff", border: "1px solid #fecdd3" }}
+            >
+              <Phone className="h-4 w-4" style={{ color: "#e11d48" }} />
+              <span className="text-[13px] font-bold" style={{ color: "#9f1239" }}>988</span>
+              <span className="text-[10px] leading-tight" style={{ color: "#be123c" }}>Call / Text</span>
+            </a>
+            <a
+              href="sms:741741&body=HELLO"
+              className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-center transition-opacity active:opacity-70"
+              style={{ background: "#fff", border: "1px solid #fecdd3" }}
+            >
+              <Phone className="h-4 w-4" style={{ color: "#e11d48" }} />
+              <span className="text-[13px] font-bold" style={{ color: "#9f1239" }}>741741</span>
+              <span className="text-[10px] leading-tight" style={{ color: "#be123c" }}>Crisis Text</span>
+            </a>
+            <a
+              href="tel:911"
+              className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-center transition-opacity active:opacity-70"
+              style={{ background: "#fff", border: "1px solid #fecdd3" }}
+            >
+              <Phone className="h-4 w-4" style={{ color: "#e11d48" }} />
+              <span className="text-[13px] font-bold" style={{ color: "#9f1239" }}>911</span>
+              <span className="text-[10px] leading-tight" style={{ color: "#be123c" }}>Emergency</span>
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Followup confirmation */}
+      {wantsFollowup && (
+        <div
+          className="rounded-3xl p-4 flex items-start gap-3"
+          style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}
+        >
+          <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "#16a34a" }} />
+          <div>
+            <p className="text-[14px] font-semibold" style={{ color: "#14532d" }}>Your request was received</p>
+            <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: "#15803d" }}>
+              A licensed psychiatrist — not your coach — will reach out soon. You can check the status on your dashboard.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Support notice (when triggered but athlete declined outreach) */}
+      {triggerSupport && !wantsFollowup && !hasCrisis && (
         <div
           className="rounded-3xl p-4 flex items-start gap-3"
           style={{ background: "#fffbeb", border: "1px solid #fde68a" }}
@@ -116,8 +196,7 @@ function ResultView({ pillarScores, triggerSupport, onDone }: {
           <div>
             <p className="text-[14px] font-semibold" style={{ color: "#92400e" }}>We noticed you might be struggling</p>
             <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: "#d97706" }}>
-              A support person — not your coach — may reach out. You can also call or text{" "}
-              <strong style={{ color: "#92400e" }}>988</strong> anytime, free and confidential.
+              Call or text <strong style={{ color: "#92400e" }}>988</strong> anytime — free, confidential, 24/7.
             </p>
           </div>
         </div>
@@ -161,6 +240,24 @@ function ResultView({ pillarScores, triggerSupport, onDone }: {
         These scores are private — coaches see anonymized team averages only.
       </p>
 
+      {/* Contextual resource tip for lowest pillar */}
+      {showResource && (
+        <div
+          className="rounded-3xl p-4 flex items-start gap-3"
+          style={{ background: T.raised, border: `1px solid ${T.border}` }}
+        >
+          <BookOpen className="h-5 w-5 shrink-0 mt-0.5" style={{ color: PILLAR_COLOR[lowestPillar] }} />
+          <div>
+            <p className="text-[12px] font-bold uppercase tracking-wide mb-1" style={{ color: T.textMuted }}>
+              {PILLAR_RESOURCE[lowestPillar].label}
+            </p>
+            <p className="text-[13px] leading-relaxed" style={{ color: T.textSub }}>
+              {PILLAR_RESOURCE[lowestPillar].tip}
+            </p>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={onDone}
         className="w-full flex items-center justify-center gap-2 h-13 py-3.5 font-bold text-[15px] rounded-2xl transition-opacity active:opacity-80"
@@ -196,7 +293,6 @@ export default function WeeklyCheckinPage() {
   const [profileId, setProfileId]       = useState<string | null>(null);
 
   async function loadQuestions() {
-    alert("loadQuestions() called");
     setLoading(true); setLoadError("");
     diag.step(1, "Loading check-in questions");
     try {
@@ -208,45 +304,27 @@ export default function WeeklyCheckinPage() {
         .from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
       if (profErr || !prof) {
         const msg = profErr?.message ?? "Profile not found.";
-        window.alert(`FAILED: profiles lookup\n${msg}`);
         diag.fail(1, `profiles lookup failed: ${msg}`);
         setLoadError("Profile not found. Please sign in again.");
         setLoading(false); return;
       }
-      alert(`Profile loaded: ${prof.full_name}\nteam_id: ${prof.team_id ?? "NULL"}\nprofile_id: ${prof.id}`);
 
       setUserName(prof.full_name);
       setProfileId(prof.id);
       console.log(`[DIAG] athlete profile_id=${prof.id} team_id=${prof.team_id ?? "NULL"}`);
 
-      // Step 10: Check if semester screening is active — redirect automatically if so
-      if (prof.team_id) {
-        const { data: teamData } = await supabase.from("teams").select("organization_id").eq("id", prof.team_id).single();
-        if (teamData?.organization_id) {
-          const { data: orgData } = await supabase.from("organizations").select("screening_active").eq("id", teamData.organization_id).single();
-          if (orgData?.screening_active) {
-            diag.success("organizations", `screening_active=true → redirecting to screening form`);
-            router.replace("/athlete/checkin/screening");
-            return;
-          }
-        }
-      }
-
       diag.step(1, `Fetching questions from DB (team_id=${prof.team_id ?? "null"})`);
       const { data: allQuestions, error: qErr } = await supabase.from("questions").select("*").eq("active", true);
       if (qErr) {
-        window.alert(`FAILED: questions table\nCode: ${qErr.code}\nMessage: ${qErr.message}\nHint: ${qErr.hint ?? "none"}`);
         diag.fail(1, `questions table error: ${qErr.message}`);
         setLoadError(`Failed to load questions: ${qErr.message}`);
         setLoading(false); return;
       }
       if (!allQuestions || allQuestions.length === 0) {
-        window.alert("FAILED: questions table returned 0 rows.\nAdmin must add active questions in Supabase.");
         diag.fail(1, "questions table returned 0 rows — admin must add questions first");
         setLoadError("No check-in questions found. Please ask your admin to add questions.");
         setLoading(false); return;
       }
-      alert(`Questions loaded: ${allQuestions.length} active questions found`);
 
       const cutoff = new Date(Date.now() - 14 * 86400000).toISOString();
       const { data: recentUsage } = await supabase
@@ -271,7 +349,6 @@ export default function WeeklyCheckinPage() {
   useEffect(() => { loadQuestions(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(consentOverride?: boolean) {
-    alert(`handleSubmit() called\nwants_followup: ${consentOverride ?? outreachConsent ?? false}`);
     if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true); setError("");
     const wantsFollowup = consentOverride ?? outreachConsent ?? false;
@@ -288,14 +365,12 @@ export default function WeeklyCheckinPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        window.alert(`FAILED: POST /api/checkins\nStatus: ${res.status}\nError: ${data.error ?? res.statusText}\n\nIf 401: not logged in\nIf 403: RLS blocking write\nIf 404: API route missing from Vercel`);
         diag.fail(2, `POST /api/checkins → ${res.status}: ${data.error ?? res.statusText}`);
         setError(`Submission failed: ${data.error ?? res.statusText}`);
         setSubmitting(false);
         return;
       }
       const data = await res.json();
-      alert(`SUCCESS: Check-in written to DB\ncheckin_id: ${data.checkin_id}\nrisk: ${data.riskLevel}\n\n${(data.riskLevel === "yellow" || data.riskLevel === "red") ? "⚠️ Alert row created in alerts table" : "✅ No alert needed (green)"}`);
       diag.success("checkins", `checkin_id=${data.checkin_id} risk=${data.riskLevel}`);
       if (data.riskLevel === "yellow" || data.riskLevel === "red") {
         diag.step(3, `Alert creation triggered (severity=${data.riskLevel}) — check Supabase alerts table`);
@@ -303,7 +378,6 @@ export default function WeeklyCheckinPage() {
       setPillarScores(data.pillarScores);
       setTriggerSupport(data.triggerSupport ?? false);
     } catch (e) {
-      window.alert(`FAILED: handleSubmit threw an exception\n${String(e)}\n\nLikely cause: network error or API unreachable`);
       diag.fail(2, e);
       setError(`An error occurred: ${String(e)}`);
     }
@@ -336,7 +410,7 @@ export default function WeeklyCheckinPage() {
 
   if (pillarScores) return (
     <DashboardLayout role="athlete" userName={userName}>
-      <ResultView pillarScores={pillarScores} triggerSupport={triggerSupport} onDone={() => router.push("/athlete/dashboard")} />
+      <ResultView pillarScores={pillarScores} triggerSupport={triggerSupport} wantsFollowup={outreachConsent ?? false} onDone={() => router.push("/athlete/dashboard")} />
       <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
@@ -405,10 +479,10 @@ export default function WeeklyCheckinPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-[17px] font-bold mb-2" style={{ color: T.text }}>
-                    Would it be OK for a counselor to reach out to you?
+                    Would it be OK for a psychiatrist to reach out to you?
                   </p>
                   <p className="text-[13px] leading-relaxed" style={{ color: T.textMuted }}>
-                    Your coach will <strong style={{ color: T.textSub }}>never</strong> be told. This is between you and a licensed counselor only.
+                    Your coach will <strong style={{ color: T.textSub }}>never</strong> be told. This is between you and a licensed psychiatrist only.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

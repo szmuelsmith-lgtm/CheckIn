@@ -132,7 +132,7 @@ export default function AdminFollowupsPage() {
       // Include counseling staff (psychiatrists/trusted adults) alongside admin staff
       const { data: staffData } = await supabase.from("profiles").select("id, full_name, role")
         .eq("organization_id", prof.organization_id)
-        .in("role", ["admin", "support", "psychiatrist", "trusted_adult"])
+        .in("role", ["admin", "support", "psychiatrist"])
         .order("full_name");
       if (staffData) setStaff(staffData);
 
@@ -206,11 +206,11 @@ export default function AdminFollowupsPage() {
     return true;
   });
   const activeCount = followups.filter(f => f.status !== "completed").length;
-  const roleName = profile?.role === "support" ? "Support" : profile?.role === "psychiatrist" ? "Counselor" : profile?.role === "trusted_adult" ? "Trusted Adult" : "Admin";
+  const roleName = profile?.role === "support" ? "Support" : profile?.role === "psychiatrist" ? "Psychiatrist" : "Admin";
 
   if (loading) {
     return (
-      <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName="...">
+      <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist") || "admin"} userName="...">
         <div className="flex items-center justify-center h-64">
           <div className="h-5 w-5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.green }} />
         </div>
@@ -221,7 +221,7 @@ export default function AdminFollowupsPage() {
   const inputCls = "w-full h-10 px-3.5 rounded-xl border text-[13px] bg-white focus:outline-none transition-colors";
 
   return (
-    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName={profile?.full_name || roleName}>
+    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist") || "admin"} userName={profile?.full_name || roleName}>
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Shield, User, Users, Stethoscope, UserCheck, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Shield, User, Users, Stethoscope, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 const TEST_PASSWORD = "checkin-dev-2024";
 
@@ -36,16 +36,6 @@ const ROLES = [
     icon: <Stethoscope className="h-6 w-6" />,
     color: "violet",
     description: "View check-ins for athletes who shared with you",
-    redirect: "/psychiatrist/dashboard",
-  },
-  {
-    id: "trusted_adult",
-    label: "Trusted Adult",
-    email: "checkin.trusted.test@mailinator.com",
-    name: "Taylor Trusted",
-    icon: <UserCheck className="h-6 w-6" />,
-    color: "amber",
-    description: "View check-ins shared with you by an athlete",
     redirect: "/psychiatrist/dashboard",
   },
 ] as const;

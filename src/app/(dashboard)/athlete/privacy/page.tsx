@@ -85,7 +85,7 @@ export default function PrivacyPage() {
 
     // Only show counselors from the same organization
     let tgtQuery = supabase
-      .from("profiles").select("id, full_name, role").in("role", ["psychiatrist", "trusted_adult"]);
+      .from("profiles").select("id, full_name, role").eq("role", "psychiatrist");
     if (prof.organization_id) {
       tgtQuery = tgtQuery.eq("organization_id", prof.organization_id);
     }
@@ -244,12 +244,12 @@ export default function PrivacyPage() {
                     <option value="">Select a person...</option>
                     {targets.map(t => (
                       <option key={t.id} value={t.id}>
-                        {t.full_name} ({t.role === "psychiatrist" ? "Counselor" : "Trusted Adult"})
+                        {t.full_name} ({t.role === "psychiatrist" ? "Psychiatrist" : "Psychiatrist"})
                       </option>
                     ))}
                   </select>
                   {targets.length === 0 && (
-                    <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>No counselors or trusted adults available yet.</p>
+                    <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>No psychiatrists available yet.</p>
                   )}
                 </div>
                 <div>

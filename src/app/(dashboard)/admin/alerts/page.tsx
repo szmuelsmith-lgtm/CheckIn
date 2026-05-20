@@ -44,12 +44,37 @@ function getTimeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-// Low score = concerning (red). High score = healthy (green).
-function scoreColor(val: number | null): string {
-  if (val === null) return T.textMuted;
-  if (val <= 3) return T.red;
-  if (val <= 5) return T.amber;
-  return T.green;
+function ageDays(dateStr: string) {
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+}
+
+// Driver chips: show all 4 pillars, critical first, with score + direction
+function DriverChips({ checkin }: { checkin: AlertWithDetails["checkin"] }) {
+  if (!checkin) return null;
+  const pillars = [
+    { label:"Emotional",  val: checkin.emotional_score  },
+    { label:"Resilience", val: checkin.resilience_score },
+    { label:"Recovery",   val: checkin.recovery_score   },
+    { label:"Support",    val: checkin.support_score    },
+  ].sort((a, b) => (a.val ?? 10) - (b.val ?? 10)); // critical first
+
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {pillars.map(({ label, val }) => {
+        const critical  = val !== null && val < 3;
+        const elevated  = val !== null && val >= 3 && val < 5;
+        const bg    = critical ? "#fee2e2" : elevated ? "#fef3c7" : T.raised;
+        const color = critical ? T.red     : elevated ? T.amber   : T.textMuted;
+        return (
+          <span key={label} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[11px] font-semibold"
+                style={{ background: bg, color }}>
+            {label} {val !== null ? `${val.toFixed(1)}/10` : "—"}
+            {(critical || elevated) && " ↓"}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function AdminAlertsPage() {
@@ -172,6 +197,7 @@ export default function AdminAlertsPage() {
         athlete_id:             alert.athlete.id,
         alert_id:               alert.id,
         assigned_to_profile_id: null,          // unassigned — admin assigns on followups page
+        assigned_by_profile_id: profile.id,   // who initiated this followup
         reason:                 alert.trigger_type === "wants_followup"
           ? "Athlete requested to be contacted"
           : "Risk score triggered alert",
@@ -219,7 +245,7 @@ export default function AdminAlertsPage() {
   }
 
   return (
-    <DashboardLayout role={(profile?.role as "admin" | "support" | "psychiatrist" | "trusted_adult") || "admin"} userName={profile?.full_name || roleName}>
+    <DashboardLayout role={(profile?.role as "admin" | "support") || "admin"} userName={profile?.full_name || roleName}>
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* Header */}
@@ -295,50 +321,46 @@ export default function AdminAlertsPage() {
                         <User className="h-4 w-4" style={{ color: severityColor }} />
                       </div>
                       <div className="min-w-0 flex-1">
+                        {/* Name + badges */}
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-[14px]" style={{ color: T.text }}>
                             {alert.athlete?.full_name || "Unknown Athlete"}
                           </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: severityBg, color: severityColor }}>
-                            {alert.severity.toUpperCase()}
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                style={{ background: severityBg, color: severityColor }}>
+                            {isSevere ? "HIGH RISK" : "ELEVATED"}
                           </span>
                           <span className="text-[11px] font-medium" style={{ color: statusColor }}>{statusLabel}</span>
+                          {ageDays(alert.created_at) >= 1 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                  style={{
+                                    background: ageDays(alert.created_at) >= 7 ? "#fee2e2" : ageDays(alert.created_at) >= 3 ? "#fef3c7" : T.raised,
+                                    color:      ageDays(alert.created_at) >= 7 ? T.red     : ageDays(alert.created_at) >= 3 ? T.amber   : T.textMuted,
+                                  }}>
+                              {ageDays(alert.created_at)}d open
+                            </span>
+                          )}
                         </div>
 
-                        {/* Highlight athlete-requested outreach */}
+                        {/* Why it fired */}
                         {isWantsFollowup ? (
                           <p className="text-[12px] font-semibold mt-1" style={{ color: "#92400e" }}>
-                            ✋ This athlete asked to be contacted by a counselor
+                            ✋ Athlete requested to be contacted by a psychiatrist
                           </p>
                         ) : (
                           <p className="text-[12px] mt-1" style={{ color: T.textMuted }}>
-                            Risk score triggered · {getTimeAgo(alert.created_at)}
+                            {isSevere
+                              ? "Auto-detected · one or more pillars scored below 3/10"
+                              : "Auto-detected · score average or lowest pillar fell below 5/10"}
+                            {" · "}{getTimeAgo(alert.created_at)}
                           </p>
                         )}
                         {isWantsFollowup && (
-                          <p className="text-[11px] mt-0.5" style={{ color: T.textMuted }}>
-                            {getTimeAgo(alert.created_at)}
-                          </p>
+                          <p className="text-[11px] mt-0.5" style={{ color: T.textMuted }}>{getTimeAgo(alert.created_at)}</p>
                         )}
 
-                        {/* Pillar scores — low is bad, high is good */}
-                        {alert.checkin && (
-                          <div className="flex gap-3 mt-2 flex-wrap">
-                            {[
-                              { label: "Emotional",  val: alert.checkin.emotional_score },
-                              { label: "Resilience", val: alert.checkin.resilience_score },
-                              { label: "Recovery",   val: alert.checkin.recovery_score },
-                              { label: "Support",    val: alert.checkin.support_score },
-                            ].map(({ label, val }) => (
-                              <div key={label} className="flex items-center gap-1 px-2 py-0.5 rounded-lg" style={{ background: T.raised }}>
-                                <span className="text-[10px] font-medium" style={{ color: T.textMuted }}>{label}</span>
-                                <span className="text-[11px] font-bold tabular-nums" style={{ color: scoreColor(val) }}>
-                                  {val ?? "—"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        {/* Driver chips */}
+                        <DriverChips checkin={alert.checkin} />
                       </div>
                     </div>
 

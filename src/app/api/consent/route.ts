@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     if (scope !== 'summary' && scope !== 'full')
       return NextResponse.json({ error: 'Invalid scope' }, { status: 400 });
-    if (target_role !== 'psychiatrist' && target_role !== 'trusted_adult')
+    if (target_role !== 'psychiatrist')
       return NextResponse.json({ error: 'Invalid target_role' }, { status: 400 });
 
     try {

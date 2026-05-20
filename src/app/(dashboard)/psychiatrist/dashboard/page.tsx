@@ -6,7 +6,7 @@ import {
   AlertCircle, Users2, MessageCircle,
   X, Check, Phone, Calendar, ShieldCheck,
   ArrowUpRight, Tag, Clock, FileText, Activity,
-  ChevronRight,
+  ChevronRight, TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { evaluateRiskLevel } from "@/lib/pillar-scoring";
@@ -202,6 +202,31 @@ export default function PsychiatristDashboard() {
         const display = shared.length > 0 ? shared : DEMO;
         setAthletes(display); setIsDemo(shared.length===0);
 
+        // Pre-populate today's session tags from audit_logs
+        if (shared.length > 0) {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const { data: tagLogs } = await supabase
+            .from("audit_logs")
+            .select("target_id, metadata")
+            .eq("actor_profile_id", prof.id)
+            .eq("action", "session_tag_applied")
+            .gte("created_at", todayStart.toISOString());
+          if (tagLogs && tagLogs.length > 0) {
+            const tagMap: Record<string, string[]> = {};
+            tagLogs.forEach((log) => {
+              if (log.target_id && log.metadata && typeof log.metadata === "object") {
+                const t = (log.metadata as { tag?: string }).tag;
+                if (t) {
+                  if (!tagMap[log.target_id]) tagMap[log.target_id] = [];
+                  if (!tagMap[log.target_id].includes(t)) tagMap[log.target_id].push(t);
+                }
+              }
+            });
+            setAppliedTags(tagMap);
+          }
+        }
+
         // Real-time: when athlete grants/revokes consent, reload the queue
         const channel = supabase
           .channel("counselor-consent-realtime")
@@ -237,10 +262,9 @@ export default function PsychiatristDashboard() {
     let channelCleanup: (() => void) | undefined;
     load().then(fn => { channelCleanup = fn; });
     return () => { channelCleanup?.(); };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleOutreach(athlete: SharedAthlete, decision: "accepted"|"dismissed") {
-    alert(`Button Clicked: handleOutreach\nAthlete: ${athlete.athlete_name}\nDecision: ${decision}`);
     setResponding(athlete.athlete_id);
     setActError(null);
     diag.step(4, `Outreach ${decision} for ${athlete.athlete_name}`);
@@ -253,7 +277,6 @@ export default function PsychiatristDashboard() {
           .update({ status: decision==="accepted"?"acknowledged":"resolved", assigned_to_profile_id: decision==="accepted"?profId:null })
           .eq("id", athlete.open_alert_id);
         if (alertErr) {
-          window.alert(`FAILED: alerts.update in handleOutreach\nCode: ${alertErr.code}\nMessage: ${alertErr.message}`);
           diag.fail(4, `alerts update failed: ${alertErr.message}`);
           setActError(alertErr.code==="42501"
             ? "Permission denied — check that consent is active for this athlete."
@@ -275,7 +298,6 @@ export default function PsychiatristDashboard() {
   }
 
   async function handleReferral(athlete: SharedAthlete) {
-    alert(`Button Clicked: handleReferral\nAthlete: ${athlete.athlete_name}`);
     if (referring===athlete.athlete_id || referred[athlete.athlete_id]) return;
     setReferring(athlete.athlete_id);
     if (!athlete.athlete_id.startsWith("d")) {
@@ -296,7 +318,6 @@ export default function PsychiatristDashboard() {
   }
 
   async function handleContact(athlete: SharedAthlete) {
-    alert(`Button Clicked: handleContact\nAthlete: ${athlete.athlete_name}`);
     if (responding===athlete.athlete_id) return;
     if (athlete.open_alert_id && !responded[athlete.athlete_id]) { await handleOutreach(athlete,"accepted"); return; }
     if (!athlete.athlete_id.startsWith("d")) {
@@ -309,7 +330,6 @@ export default function PsychiatristDashboard() {
   }
 
   async function handleSchedule(athlete: SharedAthlete) {
-    alert(`Button Clicked: handleSchedule\nAthlete: ${athlete.athlete_name}`);
     setScheduling(athlete.athlete_id);
     setActError(null);
     diag.step(4, `Scheduling follow-up for ${athlete.athlete_name}`);
@@ -325,12 +345,11 @@ export default function PsychiatristDashboard() {
           alert_id:               athlete.open_alert_id ?? null,
           assigned_to_profile_id: profId,
           assigned_by_profile_id: profId,
-          reason:                 "Counselor scheduled follow-up session",
+          reason:                 "Psychiatrist-scheduled follow-up session",
           status:                 "open",
           due_date:               tomorrow,
         });
         if (error) {
-          window.alert(`FAILED: followups.insert in handleSchedule\nCode: ${error.code}\nMessage: ${error.message}`);
           diag.fail(4, `followups insert failed: ${error.message}`);
           setActError(
             error.code === "42501"
@@ -385,7 +404,7 @@ export default function PsychiatristDashboard() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color:T.text }}>Counselor Dashboard</h1>
+              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color:T.text }}>Psychiatrist Dashboard</h1>
               {isDemo && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background:T.blueLight, color:T.blue, border:`1px solid ${T.blueBorder}` }}>Demo</span>}
             </div>
             <p className="text-[13px]" style={{ color:T.textMuted }}>
@@ -611,17 +630,45 @@ export default function PsychiatristDashboard() {
 
                       {/* Score + trend */}
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-xl p-4" style={{ background:T.raised, border:`1px solid ${T.border}` }}>
-                          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color:T.textMuted }}>Latest Score</p>
-                          <p className="text-[36px] font-bold tabular-nums leading-none mb-1"
-                             style={{ color:selected.risk_level?RISK_COLOR[selected.risk_level]:T.textMuted }}>
+                        {/* Latest Score card */}
+                        <div className="rounded-2xl p-5" style={{ background:T.raised, border:`1px solid ${T.border}` }}>
+                          <div className="flex items-center gap-2 mb-4">
+                            <div
+                              className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
+                              style={{ background:T.blueLight, color:T.blue }}
+                              aria-hidden
+                            >
+                              <Activity className="h-4 w-4"/>
+                            </div>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.07em]" style={{ color:T.textMuted }}>
+                              Latest Score
+                            </span>
+                          </div>
+                          <p
+                            className="text-[32px] font-bold tabular-nums tracking-tight leading-none"
+                            style={{ color:selected.risk_level?RISK_COLOR[selected.risk_level]:T.textMuted }}
+                          >
                             {selected.avg_score!=null?selected.avg_score.toFixed(1):"—"}
-                            <span className="text-[16px] font-normal ml-1" style={{ color:T.textMuted }}>/10</span>
+                            <span className="text-[18px] font-medium ml-1 tracking-normal" style={{ color:T.textMuted }}>/10</span>
                           </p>
-                          <p className="text-[11px]" style={{ color:T.textMuted }}>{selected.checkin_count_14d} check-ins in last 14 days</p>
+                          <p className="text-[11px] mt-1.5" style={{ color:T.textMuted }}>
+                            {selected.checkin_count_14d} check-ins in last 14 days
+                          </p>
                         </div>
-                        <div className="rounded-xl p-4" style={{ background:T.raised, border:`1px solid ${T.border}` }}>
-                          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color:T.textMuted }}>14-Day Trend</p>
+                        {/* 14-Day Trend card */}
+                        <div className="rounded-2xl p-5" style={{ background:T.raised, border:`1px solid ${T.border}` }}>
+                          <div className="flex items-center gap-2 mb-4">
+                            <div
+                              className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
+                              style={{ background:T.blueLight, color:T.blue }}
+                              aria-hidden
+                            >
+                              <TrendingUp className="h-4 w-4"/>
+                            </div>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.07em]" style={{ color:T.textMuted }}>
+                              14-Day Trend
+                            </span>
+                          </div>
                           <ScoreLine scores={selected.score_history} risk={selected.risk_level}/>
                           <p className="text-[11px] mt-1" style={{ color:T.textMuted }}>
                             {selected.score_history.length>=2
@@ -755,7 +802,7 @@ export default function PsychiatristDashboard() {
                           <p className="text-[13px] font-semibold" style={{ color:T.blue }}>FERPA-Compliant Referral</p>
                         </div>
                         <p className="text-[12px] mb-3 leading-relaxed" style={{ color:T.blueDark }}>
-                          Share an anonymized wellness summary with this athlete&apos;s primary counselor. Only aggregate trend data — no session notes.
+                          Share an anonymized wellness summary with this athlete&apos;s primary care provider. Only aggregate trend data — no session notes.
                         </p>
                         {referred[selected.athlete_id] ? (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold"
@@ -783,9 +830,22 @@ export default function PsychiatristDashboard() {
                             const applied = (appliedTags[selected.athlete_id]??[]).includes(tag)||(selected.tags??[]).includes(tag);
                             return (
                               <button key={tag}
-                                      onClick={()=>{
+                                      onClick={async ()=>{
                                         if (applied) return;
                                         setAppliedTags(prev=>({ ...prev, [selected.athlete_id]: [...(prev[selected.athlete_id]??[]), tag] }));
+                                        // Persist tag to audit_logs (non-blocking; skipped for demo athletes)
+                                        if (!selected.athlete_id.startsWith("d") && profId) {
+                                          try {
+                                            const { createClient: mkClient } = await import("@/lib/supabase/client");
+                                            await mkClient().from("audit_logs").insert({
+                                              actor_profile_id: profId,
+                                              action:           "session_tag_applied",
+                                              target_type:      "athlete",
+                                              target_id:        selected.athlete_id,
+                                              metadata:         { tag, athlete_id: selected.athlete_id },
+                                            });
+                                          } catch { /* tag persistence is non-critical */ }
+                                        }
                                       }}
                                       className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-full border transition-colors"
                                       style={ applied

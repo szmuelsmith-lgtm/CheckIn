@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checkin-v2';
+const CACHE_NAME = 'checkin-v4';
 const OFFLINE_URL = '/offline';
 
 // App shell — pages that should work offline
