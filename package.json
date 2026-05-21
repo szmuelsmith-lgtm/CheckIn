@@ -10,7 +10,9 @@
     "build:app": "BUILD_TARGET=app next build",
     "cap:sync": "npm run build:app && npx cap sync",
     "cap:ios": "npm run build:app && npx cap sync ios && npx cap open ios",
-    "cap:android": "npm run build:app && npx cap sync android && npx cap open android"
+    "cap:android": "npm run build:app && npx cap sync android && npx cap open android",
+    "briefing": "bun scripts/briefing/generate.ts",
+    "briefing:email": "bun scripts/briefing/generate.ts --email"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.0",

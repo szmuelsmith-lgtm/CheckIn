@@ -1,0 +1,23 @@
+{
+  "_comment": "Edit this file to track your sales pipeline. Stages: prospect | outreach | pilot_discussion | pilot_active | paid",
+  "schools": [
+    {
+      "name": "FSU — Track & Cross Country",
+      "contact": "",
+      "contact_title": "",
+      "stage": "prospect",
+      "last_contact": null,
+      "next_followup": null,
+      "notes": "Internal — you're a student here. Best first move. Find the coach directly."
+    },
+    {
+      "name": "FSU — Swimming & Diving",
+      "contact": "",
+      "contact_title": "",
+      "stage": "prospect",
+      "last_contact": null,
+      "next_followup": null,
+      "notes": "Smaller program, less political complexity than football/basketball."
+    }
+  ]
+}
