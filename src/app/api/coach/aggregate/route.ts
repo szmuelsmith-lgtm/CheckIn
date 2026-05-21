@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestSupabaseClient } from '@/lib/supabase/server';
+import { createRequestSupabaseClient, createServiceSupabaseClient } from '@/lib/supabase/server';
 import { scoreToPillarLevel } from '@/lib/pillar-scoring';
 import type { PillarLevel } from '@/lib/pillar-scoring';
 import type { Pillar } from '@/types/database';
@@ -91,8 +91,11 @@ export async function POST(request: NextRequest) {
   const thisWeekFrom = now -  7 * 24 * 60 * 60 * 1000;
   const lastWeekFrom = now - 14 * 24 * 60 * 60 * 1000;
 
-  // Fetch weekly checkins from the past 28 days for trend comparison
-  const { data: allCheckins, error: checkinsError } = await supabase
+  // Fetch weekly checkins from the past 28 days for trend comparison.
+  // Uses service role because coaches have no direct RLS policy on checkins — they
+  // only ever see pre-aggregated output from this route, never individual rows.
+  const service = createServiceSupabaseClient();
+  const { data: allCheckins, error: checkinsError } = await service
     .from('checkins')
     .select('athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at')
     .in('athlete_id', athleteIds)

@@ -91,7 +91,12 @@ export default function CoachTeamPulsePage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: prof, error: profError } = await supabase.from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
+
+      const { data: prof, error: profError } = await supabase
+        .from("profiles")
+        .select("id, full_name, team_id")
+        .eq("auth_user_id", user.id)
+        .single();
       if (profError || !prof) { setLoadError("Failed to load your profile. Please try again."); setLoading(false); return; }
       setProfile(prof);
 
@@ -100,49 +105,29 @@ export default function CoachTeamPulsePage() {
         if (team) setTeamName(team.name);
       }
 
-      const { data: teamAthletes, error: teamErr } = await supabase.from("profiles").select("id").eq("team_id", prof.team_id).eq("role", "athlete");
-      if (teamErr) { setLoadError("Failed to load team roster. Please try again."); setLoading(false); return; }
-      if (!teamAthletes || teamAthletes.length === 0) { setLoading(false); return; }
-      setTotalAthletes(teamAthletes.length);
+      // Route all checkin data through the server-side team-pulse API.
+      // Coaches have no direct RLS SELECT on checkins — the API enforces
+      // k-anonymity and returns only pre-aggregated weekly buckets.
+      const res = await fetch("/api/coach/team-pulse", { method: "POST" });
+      if (!res.ok) { setLoadError("Failed to load team data. Please try again."); setLoading(false); return; }
 
-      if (teamAthletes.length < 5) { setInsufficientData(true); setLoading(false); return; }
+      const json = await res.json() as {
+        weeks?: WeeklyPulse[];
+        total_athletes?: number;
+        insufficient_data?: boolean;
+        athlete_count?: number;
+        no_team?: boolean;
+      };
 
-      const athleteIds = teamAthletes.map((a) => a.id);
-      const eightWeeksAgo = new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: checkins } = await supabase
-        .from("checkins")
-        .select("athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at")
-        .in("athlete_id", athleteIds).gte("completed_at", eightWeeksAgo).order("completed_at", { ascending: true });
+      if (json.insufficient_data) {
+        setTotalAthletes(json.athlete_count ?? 0);
+        setInsufficientData(true);
+        setLoading(false);
+        return;
+      }
 
-      if (!checkins || checkins.length === 0) { setLoading(false); return; }
-
-      type WeekBucket = { emotional: number[]; resilience: number[]; recovery: number[]; support: number[]; athletes: Set<string>; };
-      const weekMap = new Map<string, WeekBucket>();
-      checkins.forEach((c) => {
-        const date = new Date(c.completed_at);
-        const day = date.getDay();
-        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(date);
-        monday.setDate(diff);
-        const weekKey = monday.toISOString().split("T")[0];
-        if (!weekMap.has(weekKey)) weekMap.set(weekKey, { emotional: [], resilience: [], recovery: [], support: [], athletes: new Set() });
-        const w = weekMap.get(weekKey)!;
-        if (c.emotional_score  != null) w.emotional.push(c.emotional_score);
-        if (c.resilience_score != null) w.resilience.push(c.resilience_score);
-        if (c.recovery_score   != null) w.recovery.push(c.recovery_score);
-        if (c.support_score    != null) w.support.push(c.support_score);
-        w.athletes.add(c.athlete_id);
-      });
-
-      const avg = (arr: number[]) => arr.length >= 5 ? Math.round((arr.reduce((s, v) => s + v, 0) / arr.length) * 10) / 10 : null;
-      const pulseWeeks: WeeklyPulse[] = Array.from(weekMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([weekKey, data]) => {
-          const d = new Date(weekKey);
-          return { weekLabel: `${d.getMonth() + 1}/${d.getDate()}`, emotional: avg(data.emotional), resilience: avg(data.resilience), recovery: avg(data.recovery), support: avg(data.support), checkinCount: data.athletes.size, totalAthletes: teamAthletes.length };
-        });
-
-      setWeeks(pulseWeeks);
+      setTotalAthletes(json.total_athletes ?? 0);
+      setWeeks(json.weeks ?? []);
       setLoading(false);
     }
     load();

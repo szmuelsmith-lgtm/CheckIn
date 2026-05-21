@@ -95,5 +95,22 @@ export async function POST(request: NextRequest) {
       .eq("id", invite.id);
   }
 
+  // 6. Audit the signup — retrieve the new profile id for the log entry
+  const { data: newProfile } = await service
+    .from("profiles")
+    .select("id")
+    .eq("auth_user_id", created.user.id)
+    .single();
+
+  if (newProfile) {
+    await service.from("audit_logs").insert({
+      actor_profile_id: newProfile.id,
+      action:           "user_signup",
+      target_type:      "profile",
+      target_id:        newProfile.id,
+      metadata:         { signup_method: "invite_code", invite_code: inviteCode.trim().toUpperCase(), role: invite.role },
+    });
+  }
+
   return NextResponse.json({ ok: true, role: invite.role });
 }

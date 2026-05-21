@@ -24,6 +24,17 @@ export async function DELETE(request: NextRequest) {
 
   const service = createServiceSupabaseClient();
 
+  // Audit the deletion BEFORE destroying data so the record exists even if a later
+  // step fails. actor_profile_id will be anonymised to null by the UPDATE below, but
+  // the event itself remains in the log for FERPA compliance.
+  await service.from('audit_logs').insert({
+    actor_profile_id: profile.id,
+    action:           'account_deleted',
+    target_type:      'profile',
+    target_id:        profile.id,
+    metadata:         { deletion_reason: 'user_requested' },
+  });
+
   // Delete user-generated content in dependency order.
   // audit_logs and access_logs are retained (anonymized) for compliance.
   await service.from('question_usage').delete().eq('athlete_id', profile.id);
