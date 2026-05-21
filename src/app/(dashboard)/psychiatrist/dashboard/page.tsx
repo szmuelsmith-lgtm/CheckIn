@@ -320,6 +320,7 @@ export default function PsychiatristDashboard() {
   async function handleContact(athlete: SharedAthlete) {
     if (responding===athlete.athlete_id) return;
     if (athlete.open_alert_id && !responded[athlete.athlete_id]) { await handleOutreach(athlete,"accepted"); return; }
+    diag.step(7, `Logging contact for ${athlete.athlete_name}`);
     if (!athlete.athlete_id.startsWith("d")) {
       try {
         const { createClient: makeClient } = await import("@/lib/supabase/client");
@@ -327,6 +328,7 @@ export default function PsychiatristDashboard() {
       } catch { /* non-fatal */ }
     }
     setContacted(c=>({...c,[athlete.athlete_id]:true}));
+    diag.success("contact", `Contact logged for ${athlete.athlete_name}`);
   }
 
   async function handleSchedule(athlete: SharedAthlete) {
