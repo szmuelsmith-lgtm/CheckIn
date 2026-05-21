@@ -1,0 +1,51 @@
+name: Athlete Anchor Daily Briefing
+
+# Runs at 7:00 AM EST (12:00 UTC) every weekday
+# Sends the morning intelligence briefing even when your laptop is closed.
+# The Claude scheduled task does the same thing locally — this is the server-side backup.
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch:  # allows manual trigger from GitHub Actions UI
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate and send briefing
+        env:
+          NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY:            ${{ secrets.RESEND_API_KEY }}
+          BRIEFING_TO_EMAIL:         ${{ secrets.BRIEFING_TO_EMAIL }}
+          FROM_EMAIL:                ${{ secrets.FROM_EMAIL }}
+        run: |
+          echo "Running data collection..."
+          bun scripts/briefing/generate.ts 2>&1
+
+          # The GitHub Actions version sends the text briefing only.
+          # The Claude scheduled task (local) sends the full HTML intelligence document.
+          # Both are active — local = richer, GitHub = guaranteed delivery.
+          bun scripts/briefing/generate.ts --email 2>&1
+
+      - name: Upload briefing archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: briefing-${{ github.run_id }}
+          path: scripts/briefing/archive/
+          retention-days: 30

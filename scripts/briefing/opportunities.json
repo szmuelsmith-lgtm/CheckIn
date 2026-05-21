@@ -1,0 +1,203 @@
+{
+  "_meta": {
+    "last_updated": "2026-05-21",
+    "founder": "Samuel Smith — Junior, FSU. Check-In by Athlete Anchor. Pre-revenue, working MVP.",
+    "profile": "EdTech + athlete wellness SaaS. Privacy-first. Solo founder. Target: Associate AD for Student-Athlete Welfare. $5-10/athlete/month.",
+    "instructions": "Edit status field as you progress. Statuses: apply_now | prepare | applied | accepted | rejected | passed | watch"
+  },
+  "opportunities": [
+
+    {
+      "id": "yc-fall-2026",
+      "name": "Y Combinator — Fall 2026 Batch",
+      "category": "accelerator",
+      "what": "The definitive startup accelerator. $500K investment for ~7% equity. 3-month program in SF.",
+      "deadline": "2026-08-01",
+      "deadline_note": "Estimated — Fall batch applications typically open June, close August. Check ycombinator.com/apply.",
+      "amount": "$500K SAFE + network",
+      "fit_notes": "Working MVP, real market, privacy differentiator, pre-revenue is fine. YC funds college founders constantly. Start writing answers now even before the window opens — they take time.",
+      "link": "https://www.ycombinator.com/apply",
+      "difficulty": "high",
+      "status": "prepare",
+      "priority": 1,
+      "action": "Draft your YC application now. Key questions: 'What do you make?', 'What's a problem people have that you solve?', 'How far along are you?'. Get a draft done before the window opens."
+    },
+
+    {
+      "id": "dorm-room-fund",
+      "name": "Dorm Room Fund",
+      "category": "fellowship_investment",
+      "what": "First Round Capital's student preseed fund. $90K-$250K uncapped SAFE. No board seat. Rolling.",
+      "deadline": "rolling",
+      "deadline_note": "Rolling — apply this week. No reason to wait.",
+      "amount": "$90K–$250K uncapped SAFE",
+      "fit_notes": "You are their exact profile — college founder, working product, real institutional market. Strong privacy story and B2B SaaS are both things they fund.",
+      "link": "https://www.dormroomfund.com/apply",
+      "difficulty": "medium",
+      "status": "apply_now",
+      "priority": 1,
+      "action": "Apply today. Takes 20 minutes. Rolling means the sooner the better."
+    },
+
+    {
+      "id": "thiel-fellowship",
+      "name": "Thiel Fellowship",
+      "category": "fellowship_grant",
+      "what": "$250K over 2 years to skip/leave college and build your startup. The most prestigious founder fellowship.",
+      "deadline": "2026-12-31",
+      "deadline_note": "Rolling — applications accepted year-round. Must be under 22. Must be willing to pause/leave college.",
+      "amount": "$250,000 non-dilutive",
+      "fit_notes": "Long shot statistically (dozens selected per year), but the profile fits: you're under 22, have a working product, real market, novel privacy angle. The mental health market urgency and NCAA policy angle make a compelling narrative. Apply.",
+      "link": "https://thielfellowship.org",
+      "difficulty": "high",
+      "status": "apply_now",
+      "priority": 2,
+      "action": "Apply even if it feels unlikely. The application itself forces you to sharpen your story. Downside is zero."
+    },
+
+    {
+      "id": "fsu-innolevation",
+      "name": "FSU InNOLEvation® Challenge",
+      "category": "competition",
+      "what": "FSU's flagship annual startup competition. $10K first prize, $7K second, $4K third.",
+      "deadline": "2026-10-01",
+      "deadline_note": "Estimated — annual competition, applications typically open fall semester. Walk into Jim Moran College and ask this week.",
+      "amount": "$10,000 first prize",
+      "fit_notes": "You're an FSU student. This is the home court advantage. An FSU student just won the ACC InVenture People's Choice in April 2026, which means FSU's entrepreneurship ecosystem is active right now.",
+      "link": "https://jimmorancollege.fsu.edu/innolevation-challenge",
+      "difficulty": "medium",
+      "status": "watch",
+      "priority": 2,
+      "action": "Walk into the Jim Moran College of Entrepreneurship this week. Introduce yourself. Ask about InNOLEvation timing and whether there are office hours or mentor sessions before applications open."
+    },
+
+    {
+      "id": "acc-inventure-2027",
+      "name": "ACC InVenture Prize 2027",
+      "category": "competition",
+      "what": "ACC-wide student innovation competition. FSU selects ONE team. $30K in prizes. Televised final.",
+      "deadline": "2027-02-01",
+      "deadline_note": "Internal FSU selection ~Feb 2027. An FSU student just won People's Choice in April 2026 — the program is active at FSU. Get on their radar now.",
+      "amount": "$30,000",
+      "fit_notes": "B2B SaaS for NCAA institutions is strong for an ACC competition — athletics angle is uniquely relevant. Win the FSU internal selection first, then go to the finals. People's Choice win in 2026 shows FSU sends competitive teams.",
+      "link": "https://www.accinventureprize.com",
+      "difficulty": "medium",
+      "status": "watch",
+      "priority": 3,
+      "action": "Email the Jim Moran College entrepreneurship coordinator now and ask how FSU selects its ACC InVenture representative. Get in that room."
+    },
+
+    {
+      "id": "venturewell-eteam",
+      "name": "VentureWell E-Team Program",
+      "category": "grant",
+      "what": "Non-dilutive grant up to $25K for student innovators solving social/health challenges. Includes training and mentorship.",
+      "deadline": "2027-01-27",
+      "deadline_note": "Summer 2026 deadline was April 28 (passed). Winter 2027 cohort deadline estimated ~Jan 2027.",
+      "amount": "$25,000 non-dilutive",
+      "fit_notes": "Mental health tech solving a pressing social need — exactly their mandate. Currently enrolled student check. Health impact + educational institution context is a strong fit.",
+      "link": "https://venturewell.org/e-team-program/",
+      "difficulty": "medium",
+      "status": "watch",
+      "priority": 3,
+      "action": "Set a reminder for December 2026 to apply for the Winter 2027 cohort. Sign up for their mailing list now."
+    },
+
+    {
+      "id": "nsf-icorps",
+      "name": "NSF I-Corps",
+      "category": "grant",
+      "what": "$50K non-dilutive government grant + intensive customer discovery training. Designed for early-stage tech commercialization.",
+      "deadline": "2026-09-01",
+      "deadline_note": "Rolling cohorts. Fall 2026 cohort applications likely open summer. Check nsf.gov/i-corps and your regional I-Corps Hub (Southeast Hub).",
+      "amount": "$50,000 non-dilutive",
+      "fit_notes": "Not purely 'deep tech' in the NSF sense, but the mental health data processing and privacy architecture have a technical core. The customer discovery framework is independently valuable — forces 100 customer interviews. High ROI regardless of the money.",
+      "link": "https://www.nsf.gov/funding/initiatives/i-corps",
+      "difficulty": "medium",
+      "status": "watch",
+      "priority": 3,
+      "action": "Find your FSU faculty contact for I-Corps — the program requires a PI (faculty member). Contact the Jim Moran College or FSU Research Foundation to identify who to team with."
+    },
+
+    {
+      "id": "a16z-speedrun-sr008",
+      "name": "a16z Speedrun — SR008",
+      "category": "accelerator",
+      "what": "Andreessen Horowitz's accelerator. $500K for 10% equity. 12 weeks in SF. ~50-70 companies per cohort.",
+      "deadline": "2026-10-01",
+      "deadline_note": "SR007 deadline was May 17 (just closed). SR008 applications estimated fall 2026.",
+      "amount": "$500K + $500K milestone",
+      "fit_notes": "SR007 just closed 4 days ago. SR008 will be the next shot. a16z has funded EdTech and consumer health. Privacy-first SaaS with B2B institutional distribution is their kind of story.",
+      "link": "https://speedrun.a16z.com/apply",
+      "difficulty": "high",
+      "status": "watch",
+      "priority": 3,
+      "action": "Subscribe to a16z blog and speedrun mailing list. When SR008 opens, apply immediately — don't wait until the deadline."
+    },
+
+    {
+      "id": "techstars-healthcare",
+      "name": "Techstars Northwestern Medicine Healthcare Accelerator",
+      "category": "accelerator",
+      "what": "Techstars' healthcare-focused track with Northwestern Medicine. $120K investment. 13-week Chicago program.",
+      "deadline": "2026-08-01",
+      "deadline_note": "Spring 2026 is running now. Fall/Winter 2026 applications estimated summer. Check techstars.com/accelerators/northwestern-medicine-healthcare.",
+      "amount": "$120K investment",
+      "fit_notes": "Mental health tech is explicitly in scope. Healthcare + higher education intersection is unusual — that's your wedge. The Northwestern Medicine brand carries weight in conversations with university health systems.",
+      "link": "https://www.techstars.com/accelerators/northwestern-medicine-healthcare",
+      "difficulty": "high",
+      "status": "watch",
+      "priority": 4,
+      "action": "Check application window. If open, apply. If not, set a reminder and follow their social for application announcements."
+    },
+
+    {
+      "id": "efest-2027",
+      "name": "e-Fest Student Startup Competition",
+      "category": "competition",
+      "what": "National student startup competition. $250K in total cash prizes split across teams.",
+      "deadline": "2027-03-01",
+      "deadline_note": "2026 deadline was March 1, 2026 (passed). 2027 cycle will open fall 2026.",
+      "amount": "$250K prize pool",
+      "fit_notes": "Undergraduate eligible. National stage. A working B2B MVP with a clear institutional buyer and compliance hook will stand out in a field of B2C consumer apps.",
+      "link": "https://efestcompetition.com",
+      "difficulty": "medium",
+      "status": "watch",
+      "priority": 4,
+      "action": "Mark calendar for fall 2026 when applications open. Use InNOLEvation and ACC InVenture as pitch practice before this."
+    },
+
+    {
+      "id": "sxsw-edu-launch-2027",
+      "name": "SXSW EDU Launch Startup Competition 2027",
+      "category": "competition",
+      "what": "EdTech startup showcase at SXSW EDU in Austin. High visibility, investor access, media coverage.",
+      "deadline": "2026-10-01",
+      "deadline_note": "Annual. SXSW EDU 2027 applications typically open fall 2026.",
+      "amount": "Visibility + investor exposure (no listed cash prize)",
+      "fit_notes": "EdTech is the explicit focus. NCAA wellness platform is a strong story at an education conference. Media coverage of SXSW EDU is significant for early-stage credibility.",
+      "link": "https://sxswedu.com/competitions/launch/",
+      "difficulty": "medium",
+      "status": "watch",
+      "priority": 4,
+      "action": "Watch for fall 2026 applications. Build the EdTech narrative — not just 'athlete app' but 'institutional wellness infrastructure'."
+    },
+
+    {
+      "id": "fsu-shark-tank",
+      "name": "FSU Seminole Innovators Shark Tank",
+      "category": "competition",
+      "what": "FSU student pitch competition. $1K prize. Lower stakes — good for practice and campus visibility.",
+      "deadline": "rolling",
+      "deadline_note": "Runs each semester. Check FSU Events Calendar.",
+      "amount": "$1,000",
+      "fit_notes": "Home court. Low effort to enter. The real value is practice reps and meeting FSU entrepreneurship faculty who can connect you to bigger opportunities.",
+      "link": "https://calendar.fsu.edu",
+      "difficulty": "low",
+      "status": "watch",
+      "priority": 5,
+      "action": "Enter the next one regardless of prize size. Treat it as practice for InNOLEvation and ACC InVenture."
+    }
+
+  ]
+}
