@@ -1,12 +1,13 @@
 name: Athlete Anchor Daily Briefing
 
-# Runs at 7:00 AM EST (12:00 UTC) every weekday
-# Sends the morning intelligence briefing even when your laptop is closed.
-# The Claude scheduled task does the same thing locally — this is the server-side backup.
+# Runs at 7:00 AM ET (11:00 UTC summer / 12:00 UTC winter) every day, 7 days a week.
+# Sends the morning data briefing even when your laptop is closed.
+# The Claude scheduled task (local) sends the full HTML intelligence document.
+# Both are active — local = richer, GitHub = guaranteed delivery every morning.
 
 on:
   schedule:
-    - cron: '0 12 * * 1-5'
+    - cron: '0 11 * * *'
   workflow_dispatch:  # allows manual trigger from GitHub Actions UI
 
 jobs:
