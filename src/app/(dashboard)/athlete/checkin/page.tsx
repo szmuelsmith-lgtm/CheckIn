@@ -308,7 +308,12 @@ export default function WeeklyCheckinPage() {
       setUserName(prof.full_name);
       setProfileId(prof.id);
 
-      const { data: allQuestions, error: qErr } = await supabase.from("questions").select("*").eq("active", true);
+      const cutoff = new Date(Date.now() - 14 * 86400000).toISOString();
+      const [{ data: allQuestions, error: qErr }, { data: recentUsage }] = await Promise.all([
+        supabase.from("questions").select("*").eq("active", true),
+        supabase.from("question_usage").select("*").eq("athlete_id", prof.id).gte("used_at", cutoff),
+      ]);
+
       if (qErr) {
         setLoadError(`Failed to load questions: ${qErr.message}`);
         setLoading(false); return;
@@ -317,10 +322,6 @@ export default function WeeklyCheckinPage() {
         setLoadError("No check-in questions found. Please ask your admin to add questions.");
         setLoading(false); return;
       }
-
-      const cutoff = new Date(Date.now() - 14 * 86400000).toISOString();
-      const { data: recentUsage } = await supabase
-        .from("question_usage").select("*").eq("athlete_id", prof.id).gte("used_at", cutoff);
 
       const selected = selectQuestionsForSession(prof.id, "weekly", allQuestions as Question[], recentUsage ?? []);
       const qs = selected.length > 0 ? selected : (allQuestions as Question[]).slice(0, 8);
