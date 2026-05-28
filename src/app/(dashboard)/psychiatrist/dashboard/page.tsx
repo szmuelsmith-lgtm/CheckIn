@@ -162,6 +162,17 @@ function PillarBar({ label, score, color, trackBg }: { label: string; score: num
   );
 }
 
+// ─── Demo messages (shown in demo mode so the Messages tab isn't blank) ───────
+const now = Date.now();
+const DEMO_MESSAGES: Message[] = [
+  { id:"dm1", sender_id:"counselor", recipient_id:"d2", body:"Hi Jordan — I saw your recent check-in scores and wanted to reach out. How are you feeling heading into finals week?", sent_at: new Date(now - 2*86400000 - 3*3600000).toISOString(), read_at: new Date(now - 2*86400000).toISOString() },
+  { id:"dm2", sender_id:"d2", recipient_id:"counselor", body:"Honestly pretty stressed. I have three exams back to back and practice hasn't let up at all. Sleep has been rough.", sent_at: new Date(now - 2*86400000 - 2*3600000).toISOString(), read_at: new Date(now - 2*86400000).toISOString() },
+  { id:"dm3", sender_id:"counselor", recipient_id:"d2", body:"That combination is tough. Have you been using any of the wind-down strategies we talked about last session?", sent_at: new Date(now - 2*86400000 - 1*3600000).toISOString(), read_at: new Date(now - 2*86400000).toISOString() },
+  { id:"dm4", sender_id:"d2", recipient_id:"counselor", body:"I tried the breathing thing a couple nights but I kind of forgot. I'll try again tonight.", sent_at: new Date(now - 1*86400000 - 5*3600000).toISOString(), read_at: new Date(now - 1*86400000).toISOString() },
+  { id:"dm5", sender_id:"counselor", recipient_id:"d2", body:"That's a good start. Even 5 minutes before bed makes a difference. We're meeting Thursday at 10:30 — want to add sleep tracking to your check-in until then?", sent_at: new Date(now - 1*86400000 - 2*3600000).toISOString(), read_at: new Date(now - 1*86400000).toISOString() },
+  { id:"dm6", sender_id:"d2", recipient_id:"counselor", body:"Yeah sure, that sounds helpful. Thanks for checking in.", sent_at: new Date(now - 3600000).toISOString(), read_at: null },
+];
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function PsychiatristDashboard() {
   const [athletes,    setAthletes]    = useState<SharedAthlete[]>([]);
@@ -315,6 +326,11 @@ export default function PsychiatristDashboard() {
         const display = shared.length > 0 ? shared : DEMO;
         setAthletes(display);
         setIsDemo(shared.length === 0);
+        // Auto-open the first athlete in demo mode so every tab is visible
+        if (shared.length === 0) {
+          setSelectedId("d2");
+          setMessages(DEMO_MESSAGES);
+        }
 
         // Pre-populate today's session tags
         if (shared.length > 0) {
@@ -890,10 +906,37 @@ export default function PsychiatristDashboard() {
                   {activeTab === "messages" && (
                     <>
                       {selected.athlete_id.startsWith("d") ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
-                          <MessageCircle className="h-8 w-8" style={{ color: "#cbd5e1" }} />
-                          <p className="text-[13px]" style={{ color: T.textMuted }}>Messaging not available in demo mode</p>
-                        </div>
+                        <>
+                          {/* Demo: show a real-looking thread so the UI is previewable */}
+                          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {DEMO_MESSAGES.map(msg => {
+                              const isMe = msg.sender_id === "counselor";
+                              return (
+                                <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                                  <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5"
+                                       style={{ background: isMe ? T.blue : T.raised, color: isMe ? "#fff" : T.text }}>
+                                    <p className="text-[13px] leading-relaxed">{msg.body}</p>
+                                    <p className="text-[10px] mt-1 opacity-60 text-right">
+                                      {new Date(msg.sent_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="p-3 border-t" style={{ borderColor: T.border }}>
+                            <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: T.border, background: T.raised }}>
+                              <input className="flex-1 bg-transparent text-[13px] outline-none" style={{ color: T.textMuted }}
+                                     placeholder="Demo mode — connect real athletes to send messages" disabled />
+                              <div className="flex items-center justify-center h-7 w-7 rounded-lg opacity-30" style={{ background: T.blue }}>
+                                <Send className="h-3.5 w-3.5 text-white" />
+                              </div>
+                            </div>
+                            <p className="text-[10px] mt-1.5 text-center" style={{ color: T.textMuted }}>
+                              Sample conversation · Live messaging activates when athletes share data with you
+                            </p>
+                          </div>
+                        </>
                       ) : (
                         <>
                           {/* Thread */}
