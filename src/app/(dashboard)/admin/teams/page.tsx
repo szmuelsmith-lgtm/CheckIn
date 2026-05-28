@@ -104,47 +104,50 @@ export default function AdminTeamsPage() {
         .order("name");
       if (!teamData) { setLoading(false); return; }
 
+      const teamIds = teamData.map(t => t.id);
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const teamsWithStats: TeamWithStats[] = await Promise.all(
-        teamData.map(async (team) => {
-          const { count: athleteCount } = await supabase.from("profiles")
-            .select("*", { count: "exact", head: true }).eq("team_id", team.id).eq("role", "athlete");
-          const { data: recentCheckins } = await supabase.from("checkins")
-            .select("athlete_id, emotional_score, resilience_score, recovery_score, support_score")
-            .eq("team_id", team.id).gte("completed_at", weekAgo);
 
-          const byAthlete = new Map<string, { e: number; rec: number; res: number; sup: number }>();
-          recentCheckins?.forEach((c) => {
-            if (!byAthlete.has(c.athlete_id)) {
-              byAthlete.set(c.athlete_id, {
-                e: c.emotional_score ?? 5, rec: c.recovery_score ?? 5,
-                res: c.resilience_score ?? 5, sup: c.support_score ?? 5,
-              });
-            }
-          });
+      // Batch: 3 queries instead of 3N
+      const [{ data: allAthletes }, { data: allCheckins }, { data: allInvites }] = await Promise.all([
+        supabase.from("profiles").select("id, team_id").eq("role", "athlete").in("team_id", teamIds),
+        supabase.from("checkins")
+          .select("athlete_id, team_id, emotional_score, resilience_score, recovery_score, support_score")
+          .in("team_id", teamIds).gte("completed_at", weekAgo),
+        supabase.from("invite_codes").select("code, role, team_id").in("team_id", teamIds).order("role"),
+      ]);
 
-          let green = 0, yellow = 0, red = 0;
-          byAthlete.forEach(({ e, rec, res, sup }) => {
-            const avg = (e + rec + res + sup) / 4;
-            if (avg < 4) red++;
-            else if (avg < 6) yellow++;
-            else green++;
-          });
+      const teamsWithStats: TeamWithStats[] = teamData.map((team) => {
+        const athletes = (allAthletes ?? []).filter(a => a.team_id === team.id);
+        const checkins = (allCheckins ?? []).filter(c => c.team_id === team.id);
 
-          const { data: inviteData } = await supabase.from("invite_codes")
-            .select("code, role").eq("team_id", team.id).order("role");
+        const byAthlete = new Map<string, { e: number; rec: number; res: number; sup: number }>();
+        checkins.forEach((c) => {
+          if (!byAthlete.has(c.athlete_id)) {
+            byAthlete.set(c.athlete_id, {
+              e: c.emotional_score ?? 5, rec: c.recovery_score ?? 5,
+              res: c.resilience_score ?? 5, sup: c.support_score ?? 5,
+            });
+          }
+        });
 
-          return {
-            id: team.id, name: team.name, sport: team.sport,
-            season: team.season || null, active: team.active ?? true,
-            athlete_count: athleteCount || 0,
-            checkin_rate: (athleteCount || 0) > 0
-              ? Math.round((byAthlete.size / (athleteCount || 1)) * 100) : 0,
-            risk_distribution: { green, yellow, red },
-            invite_codes: inviteData || [],
-          };
-        })
-      );
+        let green = 0, yellow = 0, red = 0;
+        byAthlete.forEach(({ e, rec, res, sup }) => {
+          const avg = (e + rec + res + sup) / 4;
+          if (avg < 4) red++;
+          else if (avg < 6) yellow++;
+          else green++;
+        });
+
+        const athleteCount = athletes.length;
+        return {
+          id: team.id, name: team.name, sport: team.sport,
+          season: team.season || null, active: team.active ?? true,
+          athlete_count: athleteCount,
+          checkin_rate: athleteCount > 0 ? Math.round((byAthlete.size / athleteCount) * 100) : 0,
+          risk_distribution: { green, yellow, red },
+          invite_codes: (allInvites ?? []).filter(ic => ic.team_id === team.id),
+        };
+      });
 
       setTeams(teamsWithStats);
       setLoading(false);
