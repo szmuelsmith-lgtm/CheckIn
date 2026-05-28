@@ -1,7 +1,7 @@
 -- Messages table for secure in-app counselor ↔ athlete messaging
 create table if not exists messages (
   id               uuid primary key default gen_random_uuid(),
-  thread_id        uuid not null,          -- counselor_profile_id || athlete_profile_id (deterministic)
+  thread_id        text not null,           -- counselor_profile_id_athlete_profile_id sorted (deterministic)
   sender_id        uuid not null references profiles(id) on delete cascade,
   recipient_id     uuid not null references profiles(id) on delete cascade,
   body             text not null check (char_length(body) <= 2000),
