@@ -7,7 +7,7 @@ import { UserRole } from "@/types/database";
 import {
   LayoutDashboard, ClipboardCheck, BookOpen, TrendingUp, Heart,
   Settings, Users, AlertTriangle, ListChecks, FolderOpen,
-  Menu, X, LogOut, Lock, Anchor, ScrollText, UserCircle,
+  Menu, X, LogOut, Lock, Anchor, ScrollText, UserCircle, MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,10 +21,11 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "Check-In",          href: "/athlete/checkin",     icon: <ClipboardCheck  className="h-4 w-4" /> },
     { label: "Journal",           href: "/athlete/journal",     icon: <BookOpen        className="h-4 w-4" /> },
     { label: "Trends",            href: "/athlete/trends",      icon: <TrendingUp      className="h-4 w-4" /> },
+    { label: "Messages",          href: "/athlete/messages",    icon: <MessageCircle   className="h-4 w-4" /> },
     { label: "Resources",         href: "/athlete/resources",   icon: <Heart           className="h-4 w-4" /> },
     { label: "Preferences",       href: "/athlete/preferences", icon: <Settings        className="h-4 w-4" /> },
     { label: "Privacy & Sharing", href: "/athlete/privacy",     icon: <Lock            className="h-4 w-4" /> },
-    { label: "Account",          href: "/athlete/account",     icon: <UserCircle      className="h-4 w-4" /> },
+    { label: "Account",           href: "/athlete/account",     icon: <UserCircle      className="h-4 w-4" /> },
   ],
   coach: [
     { label: "Dashboard",  href: "/coach/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },

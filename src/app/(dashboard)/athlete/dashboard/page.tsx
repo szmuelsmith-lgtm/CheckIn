@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   ClipboardCheck, TrendingUp, TrendingDown, Minus, Heart, Lock,
   ArrowRight, Zap, Shield, Users, ClipboardList, Phone, MessageSquare,
-  CheckCircle, Clock, Anchor, BookOpen, Sparkles,
+  CheckCircle, Clock, Anchor, BookOpen, Sparkles, MessageCircle,
 } from "lucide-react";
 
 const T = {
@@ -276,6 +276,7 @@ export default function AthleteDashboard() {
   const [openFollowup,  setOpenFollowup]  = useState<FollowupRow | null>(null);
   const [coachMessage,  setCoachMessage]  = useState<CoachMessage | null>(null);
   const [onboarded,     setOnboarded]     = useState<boolean>(true); // default true to avoid flash
+  const [unreadMsgs,    setUnreadMsgs]    = useState(0);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(false);
 
@@ -326,6 +327,14 @@ export default function AthleteDashboard() {
           .limit(1);
         setCoachMessage(msgData?.[0] ?? null);
       }
+
+      // Unread messages from counselors
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", prof.id)
+        .is("read_at", null);
+      setUnreadMsgs(count ?? 0);
     } catch { setError(true); }
     finally { setLoading(false); }
   }, []);
@@ -479,6 +488,27 @@ export default function AthleteDashboard() {
               <p className="text-[13px] leading-relaxed" style={{ color:T.greenDeep }}>{coachMessage.message}</p>
             </div>
           </div>
+        )}
+
+        {/* ── UNREAD MESSAGES — shown when counselor has sent a message ── */}
+        {unreadMsgs > 0 && (
+          <Link href="/athlete/messages"
+                className="rounded-2xl px-5 py-4 flex items-center justify-between group"
+                style={{ background:"#eff6ff", border:"1px solid #bfdbfe" }}>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+                   style={{ background:"#dbeafe" }}>
+                <MessageCircle className="h-4 w-4" style={{ color:"#2563eb" }} />
+              </div>
+              <div>
+                <p className="text-[14px] font-semibold" style={{ color:"#1e3a8a" }}>
+                  {unreadMsgs === 1 ? "1 new message" : `${unreadMsgs} new messages`} from your counselor
+                </p>
+                <p className="text-[12px]" style={{ color:"#3b82f6" }}>Tap to read and reply</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" style={{ color:"#3b82f6" }} />
+          </Link>
         )}
 
         {/* CTA */}
