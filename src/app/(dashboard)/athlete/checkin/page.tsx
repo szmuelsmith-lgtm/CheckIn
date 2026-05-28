@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { apiFetch } from "@/lib/api-url";
@@ -291,6 +291,7 @@ export default function WeeklyCheckinPage() {
   const [outreachConsent, setOutreachConsent] = useState<boolean | null>(null);
   const [showOutreachStep, setShowOutreachStep] = useState(false);
   const [profileId, setProfileId]       = useState<string | null>(null);
+  const loadCalledRef = useRef(false);
 
   async function loadQuestions() {
     setLoading(true); setLoadError("");
@@ -346,7 +347,11 @@ export default function WeeklyCheckinPage() {
     setLoading(false);
   }
 
-  useEffect(() => { loadQuestions(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (loadCalledRef.current) return;
+    loadCalledRef.current = true;
+    loadQuestions();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(consentOverride?: boolean) {
     if (!profileId) { setError("Session error — please sign in again."); return; }
