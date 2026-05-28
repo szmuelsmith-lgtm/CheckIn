@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { evaluateRiskLevel } from "@/lib/pillar-scoring";
-import { useDiagnostic, DiagnosticToast } from "@/components/diagnostic";
 
 // ─── Design tokens — Indigo (matches app) ────────────────────────────────────
 const T = {
@@ -124,7 +123,6 @@ function PillarBar({ label, score, color, trackBg }: { label: string; score: num
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PsychiatristDashboard() {
-  const diag = useDiagnostic();
   const [athletes,    setAthletes]    = useState<SharedAthlete[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
@@ -151,19 +149,14 @@ export default function PsychiatristDashboard() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        diag.step(6, "Loading consent gate — checking consent_logs");
         const { data: prof, error: profErr } = await supabase.from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
-        if (profErr || !prof) { setError("Profile not found."); diag.fail(6, profErr?.message ?? "profile not found"); return; }
+        if (profErr || !prof) { setError("Profile not found."); return; }
         setUserName(prof.full_name); setProfId(prof.id);
-        console.log(`[DIAG] counselor profile_id=${prof.id}`);
 
         type ConsentRow = { athlete_id: string; scope: "summary"|"full"; granted_at: string; expires_at: string|null; athlete: { full_name: string }[]|{ full_name: string }|null; };
-        const { data: consents, error: consentErr } = await supabase.from("consent_logs")
+        const { data: consents } = await supabase.from("consent_logs")
           .select("athlete_id, scope, granted_at, expires_at, athlete:athlete_id(full_name)")
           .eq("target_profile_id", prof.id).eq("is_active", true);
-        if (consentErr) { diag.fail(6, `consent_logs error: ${consentErr.message}`); }
-        else { diag.success("consent_logs", `${(consents ?? []).length} active consent(s) found`); }
-        console.log(`[DIAG] consent gate: ${(consents ?? []).length} athletes have granted access`);
 
         const cutoff14 = new Date(Date.now() - 14 * 86400000).toISOString();
         const shared: SharedAthlete[] = await Promise.all(
@@ -267,31 +260,25 @@ export default function PsychiatristDashboard() {
   async function handleOutreach(athlete: SharedAthlete, decision: "accepted"|"dismissed") {
     setResponding(athlete.athlete_id);
     setActError(null);
-    diag.step(4, `Outreach ${decision} for ${athlete.athlete_name}`);
     try {
       if (athlete.open_alert_id && !athlete.athlete_id.startsWith("d")) {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
-        console.log(`[DIAG] updating alerts id=${athlete.open_alert_id} → ${decision}`);
         const { error: alertErr } = await supabase.from("alerts")
           .update({ status: decision==="accepted"?"acknowledged":"resolved", assigned_to_profile_id: decision==="accepted"?profId:null })
           .eq("id", athlete.open_alert_id);
         if (alertErr) {
-          diag.fail(4, `alerts update failed: ${alertErr.message}`);
           setActError(alertErr.code==="42501"
             ? "Permission denied — check that consent is active for this athlete."
             : `Could not update alert: ${alertErr.message}`);
           setResponding(null);
           return;
         }
-        diag.success("alerts", `status → ${decision==="accepted"?"acknowledged":"resolved"}`);
         await supabase.from("audit_logs").insert({ actor_profile_id: profId, action: decision==="accepted"?"outreach_accepted":"outreach_declined", target_type:"alert", target_id: athlete.open_alert_id, metadata:{ athlete_id: athlete.athlete_id, decision } });
-        diag.success("audit_logs", `outreach_${decision} logged`);
       }
       setResponded(r=>({...r,[athlete.athlete_id]:decision}));
       if (decision==="accepted") setContacted(c=>({...c,[athlete.athlete_id]:true}));
     } catch (e: unknown) {
-      diag.fail(4, e);
       setActError(e instanceof Error ? e.message : "Outreach action failed. Please try again.");
     }
     setResponding(null);
@@ -320,7 +307,6 @@ export default function PsychiatristDashboard() {
   async function handleContact(athlete: SharedAthlete) {
     if (responding===athlete.athlete_id) return;
     if (athlete.open_alert_id && !responded[athlete.athlete_id]) { await handleOutreach(athlete,"accepted"); return; }
-    diag.step(7, `Logging contact for ${athlete.athlete_name}`);
     if (!athlete.athlete_id.startsWith("d")) {
       try {
         const { createClient: makeClient } = await import("@/lib/supabase/client");
@@ -328,22 +314,18 @@ export default function PsychiatristDashboard() {
       } catch { /* non-fatal */ }
     }
     setContacted(c=>({...c,[athlete.athlete_id]:true}));
-    diag.success("contact", `Contact logged for ${athlete.athlete_name}`);
   }
 
   async function handleSchedule(athlete: SharedAthlete) {
     setScheduling(athlete.athlete_id);
     setActError(null);
-    diag.step(4, `Scheduling follow-up for ${athlete.athlete_name}`);
     try {
       if (!athlete.athlete_id.startsWith("d")) {
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
         const tomorrow = new Date(Date.now()+86400000).toISOString().split("T")[0];
-        console.log(`[DIAG] inserting followup: athlete_id=${athlete.athlete_id} due=${tomorrow}`);
         const { error } = await supabase.from("followups").insert({
           athlete_id:             athlete.athlete_id,
-          // alert_id is nullable — counselor-initiated followups don't need an alert
           alert_id:               athlete.open_alert_id ?? null,
           assigned_to_profile_id: profId,
           assigned_by_profile_id: profId,
@@ -352,7 +334,6 @@ export default function PsychiatristDashboard() {
           due_date:               tomorrow,
         });
         if (error) {
-          diag.fail(4, `followups insert failed: ${error.message}`);
           setActError(
             error.code === "42501"
               ? "Permission denied — check that consent is active for this athlete."
@@ -361,13 +342,10 @@ export default function PsychiatristDashboard() {
           setScheduling(null);
           return;
         }
-        diag.success("followups", `due_date=${tomorrow}`);
-        // If there was an alert, acknowledge it
         if (athlete.open_alert_id) {
           await supabase.from("alerts")
             .update({ status: "acknowledged", assigned_to_profile_id: profId })
             .eq("id", athlete.open_alert_id);
-          diag.success("alerts", "status → acknowledged");
         }
         await supabase.from("audit_logs").insert({
           actor_profile_id: profId,
@@ -376,11 +354,9 @@ export default function PsychiatristDashboard() {
           target_id:        athlete.athlete_id,
           metadata:         { due_date: tomorrow, alert_id: athlete.open_alert_id },
         });
-        diag.success("audit_logs", "followup_scheduled logged");
       }
       setScheduled(s=>({...s,[athlete.athlete_id]:true}));
     } catch (e: unknown) {
-      diag.fail(4, e);
       setActError(e instanceof Error ? e.message : "Failed to schedule follow-up. Please try again.");
     }
     setScheduling(null);
@@ -878,7 +854,6 @@ export default function PsychiatristDashboard() {
           </p>
         </div>
       </div>
-      <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
 }

@@ -12,7 +12,6 @@ import {
   CheckCircle, ChevronRight, ChevronLeft,
   AlertCircle, ArrowRight, Heart, X, Phone, BookOpen,
 } from "lucide-react";
-import { useDiagnostic, DiagnosticToast } from "@/components/diagnostic";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -276,7 +275,6 @@ function ResultView({ pillarScores, triggerSupport, wantsFollowup, onDone }: {
 // ─── Main check-in page ────────────────────────────────────────────────────────
 export default function WeeklyCheckinPage() {
   const router = useRouter();
-  const diag = useDiagnostic();
   const [userName, setUserName]         = useState("...");
   const [questions, setQuestions]       = useState<Question[]>([]);
   const [responses, setResponses]       = useState<Record<string, number>>({});
@@ -295,7 +293,6 @@ export default function WeeklyCheckinPage() {
 
   async function loadQuestions() {
     setLoading(true); setLoadError("");
-    diag.step(1, "Loading check-in questions");
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -304,25 +301,19 @@ export default function WeeklyCheckinPage() {
       const { data: prof, error: profErr } = await supabase
         .from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
       if (profErr || !prof) {
-        const msg = profErr?.message ?? "Profile not found.";
-        diag.fail(1, `profiles lookup failed: ${msg}`);
         setLoadError("Profile not found. Please sign in again.");
         setLoading(false); return;
       }
 
       setUserName(prof.full_name);
       setProfileId(prof.id);
-      console.log(`[DIAG] athlete profile_id=${prof.id} team_id=${prof.team_id ?? "NULL"}`);
 
-      diag.step(1, `Fetching questions from DB (team_id=${prof.team_id ?? "null"})`);
       const { data: allQuestions, error: qErr } = await supabase.from("questions").select("*").eq("active", true);
       if (qErr) {
-        diag.fail(1, `questions table error: ${qErr.message}`);
         setLoadError(`Failed to load questions: ${qErr.message}`);
         setLoading(false); return;
       }
       if (!allQuestions || allQuestions.length === 0) {
-        diag.fail(1, "questions table returned 0 rows — admin must add questions first");
         setLoadError("No check-in questions found. Please ask your admin to add questions.");
         setLoading(false); return;
       }
@@ -334,14 +325,12 @@ export default function WeeklyCheckinPage() {
       const selected = selectQuestionsForSession(prof.id, "weekly", allQuestions as Question[], recentUsage ?? []);
       const qs = selected.length > 0 ? selected : (allQuestions as Question[]).slice(0, 8);
 
-      diag.success("questions", `${qs.length} questions loaded`);
       setQuestions(qs);
       const initial: Record<string, number> = {};
       for (const q of qs) initial[q.id] = 5;
       setResponses(initial);
       setCurrentQ(0);
     } catch (e) {
-      diag.fail(1, e);
       setLoadError(String(e));
     }
     setLoading(false);
@@ -357,7 +346,6 @@ export default function WeeklyCheckinPage() {
     if (!profileId) { setError("Session error — please sign in again."); return; }
     setSubmitting(true); setError("");
     const wantsFollowup = consentOverride ?? outreachConsent ?? false;
-    diag.step(2, `Submitting check-in (wants_followup=${wantsFollowup})`);
     try {
       const res = await apiFetch("/api/checkins", {
         method: "POST",
@@ -370,20 +358,14 @@ export default function WeeklyCheckinPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        diag.fail(2, `POST /api/checkins → ${res.status}: ${data.error ?? res.statusText}`);
         setError(`Submission failed: ${data.error ?? res.statusText}`);
         setSubmitting(false);
         return;
       }
       const data = await res.json();
-      diag.success("checkins", `checkin_id=${data.checkin_id} risk=${data.riskLevel}`);
-      if (data.riskLevel === "yellow" || data.riskLevel === "red") {
-        diag.step(3, `Alert creation triggered (severity=${data.riskLevel}) — check Supabase alerts table`);
-      }
       setPillarScores(data.pillarScores);
       setTriggerSupport(data.triggerSupport ?? false);
     } catch (e) {
-      diag.fail(2, e);
       setError(`An error occurred: ${String(e)}`);
     }
     setSubmitting(false);
@@ -416,7 +398,6 @@ export default function WeeklyCheckinPage() {
   if (pillarScores) return (
     <DashboardLayout role="athlete" userName={userName}>
       <ResultView pillarScores={pillarScores} triggerSupport={triggerSupport} wantsFollowup={outreachConsent ?? false} onDone={() => router.push("/athlete/dashboard")} />
-      <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
 
@@ -652,7 +633,6 @@ export default function WeeklyCheckinPage() {
           About 3 minutes · Coaches never see individual responses
         </p>
       </div>
-      <DiagnosticToast toasts={diag.toasts} dismiss={diag.dismiss} />
     </DashboardLayout>
   );
 }
