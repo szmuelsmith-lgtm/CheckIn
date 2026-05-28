@@ -3,10 +3,10 @@
   "configurations": [
     {
       "name": "next-dev",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
-      "cwd": "/Users/samuelsmith/Desktop/check-in"
+      "autoPort": false
     }
   ]
 }

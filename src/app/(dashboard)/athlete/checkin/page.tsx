@@ -419,7 +419,7 @@ export default function WeeklyCheckinPage() {
   const isOutreachStep = showOutreachStep;
   const question       = !isNotesStep && !isOutreachStep ? questions[currentQ] : null;
   const total          = questions.length + 1;
-  const pct            = Math.round((currentQ / total) * 100);
+  const pct            = Math.round(((currentQ + 1) / total) * 100);
   const currentVal     = question ? (responses[question.id] ?? 5) : 5;
 
   return (

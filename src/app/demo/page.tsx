@@ -51,6 +51,7 @@ export default function DemoPage() {
     const supabase = createClient();
     let userId: string | null = null;
 
+    await supabase.auth.signOut();
     const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
       email: role.email,
       password: DEMO_PASSWORD,
