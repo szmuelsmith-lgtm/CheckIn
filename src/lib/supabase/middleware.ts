@@ -55,7 +55,8 @@ export async function updateSession(request: NextRequest) {
     publicPaths.includes(path) ||
     path.startsWith("/auth/") ||
     path.startsWith("/_next/") ||
-    path.startsWith("/api/");
+    path.startsWith("/api/") ||
+    path.startsWith("/dev/");
 
   // Not logged in — redirect to login
   if (!user && !isPublicPath) {
