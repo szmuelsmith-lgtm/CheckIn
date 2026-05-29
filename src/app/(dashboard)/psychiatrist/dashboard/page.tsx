@@ -71,6 +71,8 @@ interface SharedAthlete {
   has_followup:      boolean;
   score_history:     number[];
   pillar_history:    PillarSnapshot[];
+  phq9_total:        number | null;
+  phq9_date:         string | null;
   session_time?:     string;
   session_status?:   SessionStatus;
   tags?:             string[];
@@ -237,11 +239,12 @@ export default function PsychiatristDashboard() {
           const athleteIds = rows.map(r => r.athlete_id);
           const cutoff14   = new Date(Date.now() - 14 * 86400000).toISOString();
 
-          // 3 batch queries instead of 3N
+          // 4 batch queries instead of 4N
           const [
             { data: allCheckins },
             { data: allAlerts },
             { data: allFollowups },
+            { data: allPhq9 },
           ] = await Promise.all([
             supabase.from("checkins")
               .select("athlete_id, completed_at, emotional_score, resilience_score, recovery_score, support_score")
@@ -256,7 +259,22 @@ export default function PsychiatristDashboard() {
               .select("id, athlete_id")
               .in("athlete_id", athleteIds)
               .eq("status", "open"),
+            // Latest PHQ-9 screening per athlete (any time, not 14d limited)
+            supabase.from("checkins")
+              .select("athlete_id, phq9_total, completed_at")
+              .in("athlete_id", athleteIds)
+              .eq("mode", "phq9")
+              .not("phq9_total", "is", null)
+              .order("completed_at", { ascending: false }),
           ]);
+
+          // Latest PHQ-9 total per athlete
+          const phq9ByAthlete = new Map<string, { total: number; date: string }>();
+          for (const row of (allPhq9 ?? []) as { athlete_id: string; phq9_total: number; completed_at: string }[]) {
+            if (!phq9ByAthlete.has(row.athlete_id)) {
+              phq9ByAthlete.set(row.athlete_id, { total: row.phq9_total, date: row.completed_at });
+            }
+          }
 
           type CheckinRow = { athlete_id: string; completed_at: string; emotional_score: number | null; resilience_score: number | null; recovery_score: number | null; support_score: number | null };
           const checkinsByAthlete = new Map<string, CheckinRow[]>();
@@ -292,6 +310,7 @@ export default function PsychiatristDashboard() {
               avg:        avgOf(r.emotional_score, r.resilience_score, r.recovery_score, r.support_score),
             }));
 
+            const phq9Entry = phq9ByAthlete.get(c.athlete_id);
             return {
               athlete_id:        c.athlete_id,
               athlete_name:      athleteObj?.full_name ?? "Unknown",
@@ -309,16 +328,18 @@ export default function PsychiatristDashboard() {
               has_followup:      followupAthletes.has(c.athlete_id),
               score_history,
               pillar_history,
+              phq9_total:        phq9Entry?.total ?? null,
+              phq9_date:         phq9Entry?.date  ?? null,
             };
           });
         }
 
         const DEMO: SharedAthlete[] = [
-          { athlete_id:"d1", athlete_name:"Alex Johnson",    scope:"full",    last_checkin_at: new Date(Date.now()-1*86400000).toISOString(), expires_at:null, avg_score:7.4, emotional_score:8.0, resilience_score:7.2, recovery_score:7.1, support_score:7.3, risk_level:"green",  checkin_count_14d:10, open_alert_id:null,  has_followup:false, score_history:[6.2,6.8,7.0,7.1,7.4,7.2,7.4], pillar_history:[{date:"May 22",emotional:7.5,resilience:6.9,recovery:6.8,support:7.0,avg:7.1},{date:"May 24",emotional:7.8,resilience:7.1,recovery:7.0,support:7.2,avg:7.3},{date:"May 26",emotional:8.0,resilience:7.2,recovery:7.1,support:7.3,avg:7.4}], session_time:"9:00 AM",  session_status:"completed", tags:["Good session","Stress elevated"], last_note:"Athlete reports feeling more balanced this week. Sleep improving." },
-          { athlete_id:"d2", athlete_name:"Jordan Williams", scope:"summary", last_checkin_at: new Date(Date.now()-3*86400000).toISOString(), expires_at:null, avg_score:4.8, emotional_score:4.5, resilience_score:5.0, recovery_score:4.9, support_score:4.8, risk_level:"yellow", checkin_count_14d:5,  open_alert_id:"a-1", has_followup:false, score_history:[6.1,5.8,5.5,5.2,4.9,4.8],   pillar_history:[{date:"May 20",emotional:5.8,resilience:6.0,recovery:5.9,support:5.7,avg:5.9},{date:"May 22",emotional:5.2,resilience:5.5,recovery:5.3,support:5.1,avg:5.3},{date:"May 25",emotional:4.5,resilience:5.0,recovery:4.9,support:4.8,avg:4.8}], session_time:"10:30 AM", session_status:"arrived",   tags:["Academic pressure","Follow-up needed"], last_note:"Reported increased academic stress." },
-          { athlete_id:"d3", athlete_name:"Sam Rivera",      scope:"full",    last_checkin_at: new Date(Date.now()-2*86400000).toISOString(), expires_at:null, avg_score:3.1, emotional_score:2.8, resilience_score:3.5, recovery_score:3.0, support_score:3.1, risk_level:"red",    checkin_count_14d:3,  open_alert_id:"a-2", has_followup:true,  score_history:[5.0,4.2,3.8,3.5,3.1],        pillar_history:[{date:"May 22",emotional:4.2,resilience:4.8,recovery:4.0,support:4.5,avg:4.4},{date:"May 24",emotional:3.5,resilience:4.0,recovery:3.5,support:3.8,avg:3.7},{date:"May 26",emotional:2.8,resilience:3.5,recovery:3.0,support:3.1,avg:3.1}], session_time:"11:15 AM", session_status:"in-session",tags:["Injury concern"],                       last_note:"Discussing impact of ankle injury on team role." },
-          { athlete_id:"d4", athlete_name:"Taylor Brooks",   scope:"summary", last_checkin_at: new Date(Date.now()-5*86400000).toISOString(), expires_at:null, avg_score:8.2, emotional_score:8.5, resilience_score:8.0, recovery_score:8.1, support_score:8.2, risk_level:"green",  checkin_count_14d:12, open_alert_id:null,  has_followup:false, score_history:[7.5,7.8,8.0,8.1,8.2,8.0,8.2], pillar_history:[{date:"May 21",emotional:8.0,resilience:7.8,recovery:7.9,support:8.0,avg:7.9},{date:"May 23",emotional:8.3,resilience:7.9,recovery:8.0,support:8.1,avg:8.1},{date:"May 25",emotional:8.5,resilience:8.0,recovery:8.1,support:8.2,avg:8.2}], session_time:"2:00 PM",  session_status:"pending",   tags:["PHQ-9 completed"],                     last_note:"Routine check-in. Scores stable." },
-          { athlete_id:"d5", athlete_name:"Morgan Lee",      scope:"full",    last_checkin_at: new Date(Date.now()-4*86400000).toISOString(), expires_at:null, avg_score:5.5, emotional_score:5.2, resilience_score:5.8, recovery_score:5.4, support_score:5.6, risk_level:"yellow", checkin_count_14d:7,  open_alert_id:null,  has_followup:false, score_history:[5.0,5.2,5.5,5.3,5.5],        pillar_history:[{date:"May 22",emotional:5.0,resilience:5.5,recovery:5.1,support:5.2,avg:5.2},{date:"May 24",emotional:5.1,resilience:5.7,recovery:5.2,support:5.4,avg:5.4},{date:"May 26",emotional:5.2,resilience:5.8,recovery:5.4,support:5.6,avg:5.5}], session_time:"3:30 PM",  session_status:"pending",   tags:["Team conflict"],                       last_note:"Discussed team dynamics. Recommended journaling." },
+          { athlete_id:"d1", athlete_name:"Alex Johnson",    scope:"full",    last_checkin_at: new Date(Date.now()-1*86400000).toISOString(), expires_at:null, avg_score:7.4, emotional_score:8.0, resilience_score:7.2, recovery_score:7.1, support_score:7.3, risk_level:"green",  checkin_count_14d:10, open_alert_id:null,  has_followup:false, score_history:[6.2,6.8,7.0,7.1,7.4,7.2,7.4], pillar_history:[{date:"May 22",emotional:7.5,resilience:6.9,recovery:6.8,support:7.0,avg:7.1},{date:"May 24",emotional:7.8,resilience:7.1,recovery:7.0,support:7.2,avg:7.3},{date:"May 26",emotional:8.0,resilience:7.2,recovery:7.1,support:7.3,avg:7.4}], phq9_total:3,  phq9_date: new Date(Date.now()-10*86400000).toISOString(), session_time:"9:00 AM",  session_status:"completed", tags:["Good session","Stress elevated"], last_note:"Athlete reports feeling more balanced this week. Sleep improving." },
+          { athlete_id:"d2", athlete_name:"Jordan Williams", scope:"summary", last_checkin_at: new Date(Date.now()-3*86400000).toISOString(), expires_at:null, avg_score:4.8, emotional_score:4.5, resilience_score:5.0, recovery_score:4.9, support_score:4.8, risk_level:"yellow", checkin_count_14d:5,  open_alert_id:"a-1", has_followup:false, score_history:[6.1,5.8,5.5,5.2,4.9,4.8],   pillar_history:[{date:"May 20",emotional:5.8,resilience:6.0,recovery:5.9,support:5.7,avg:5.9},{date:"May 22",emotional:5.2,resilience:5.5,recovery:5.3,support:5.1,avg:5.3},{date:"May 25",emotional:4.5,resilience:5.0,recovery:4.9,support:4.8,avg:4.8}], phq9_total:12, phq9_date: new Date(Date.now()-5*86400000).toISOString(),  session_time:"10:30 AM", session_status:"arrived",   tags:["Academic pressure","Follow-up needed"], last_note:"Reported increased academic stress." },
+          { athlete_id:"d3", athlete_name:"Sam Rivera",      scope:"full",    last_checkin_at: new Date(Date.now()-2*86400000).toISOString(), expires_at:null, avg_score:3.1, emotional_score:2.8, resilience_score:3.5, recovery_score:3.0, support_score:3.1, risk_level:"red",    checkin_count_14d:3,  open_alert_id:"a-2", has_followup:true,  score_history:[5.0,4.2,3.8,3.5,3.1],        pillar_history:[{date:"May 22",emotional:4.2,resilience:4.8,recovery:4.0,support:4.5,avg:4.4},{date:"May 24",emotional:3.5,resilience:4.0,recovery:3.5,support:3.8,avg:3.7},{date:"May 26",emotional:2.8,resilience:3.5,recovery:3.0,support:3.1,avg:3.1}], phq9_total:19, phq9_date: new Date(Date.now()-3*86400000).toISOString(),  session_time:"11:15 AM", session_status:"in-session",tags:["Injury concern"],                       last_note:"Discussing impact of ankle injury on team role." },
+          { athlete_id:"d4", athlete_name:"Taylor Brooks",   scope:"summary", last_checkin_at: new Date(Date.now()-5*86400000).toISOString(), expires_at:null, avg_score:8.2, emotional_score:8.5, resilience_score:8.0, recovery_score:8.1, support_score:8.2, risk_level:"green",  checkin_count_14d:12, open_alert_id:null,  has_followup:false, score_history:[7.5,7.8,8.0,8.1,8.2,8.0,8.2], pillar_history:[{date:"May 21",emotional:8.0,resilience:7.8,recovery:7.9,support:8.0,avg:7.9},{date:"May 23",emotional:8.3,resilience:7.9,recovery:8.0,support:8.1,avg:8.1},{date:"May 25",emotional:8.5,resilience:8.0,recovery:8.1,support:8.2,avg:8.2}], phq9_total:2,  phq9_date: new Date(Date.now()-7*86400000).toISOString(),  session_time:"2:00 PM",  session_status:"pending",   tags:["PHQ-9 completed"],                     last_note:"Routine check-in. Scores stable." },
+          { athlete_id:"d5", athlete_name:"Morgan Lee",      scope:"full",    last_checkin_at: new Date(Date.now()-4*86400000).toISOString(), expires_at:null, avg_score:5.5, emotional_score:5.2, resilience_score:5.8, recovery_score:5.4, support_score:5.6, risk_level:"yellow", checkin_count_14d:7,  open_alert_id:null,  has_followup:false, score_history:[5.0,5.2,5.5,5.3,5.5],        pillar_history:[{date:"May 22",emotional:5.0,resilience:5.5,recovery:5.1,support:5.2,avg:5.2},{date:"May 24",emotional:5.1,resilience:5.7,recovery:5.2,support:5.4,avg:5.4},{date:"May 26",emotional:5.2,resilience:5.8,recovery:5.4,support:5.6,avg:5.5}], phq9_total:null, phq9_date:null,                                                           session_time:"3:30 PM",  session_status:"pending",   tags:["Team conflict"],                       last_note:"Discussed team dynamics. Recommended journaling." },
         ];
 
         const display = shared.length > 0 ? shared : DEMO;
@@ -818,6 +839,65 @@ export default function PsychiatristDashboard() {
                           ))}
                         </div>
                       </div>
+
+                      {/* PHQ-9 score card */}
+                      {(() => {
+                        const total = selected.phq9_total;
+                        const sevLabel = total == null ? null
+                          : total <= 4  ? "None – Minimal"
+                          : total <= 9  ? "Mild"
+                          : total <= 14 ? "Moderate"
+                          : total <= 19 ? "Moderately Severe"
+                          : "Severe";
+                        const sevColor = total == null ? T.textMuted
+                          : total <= 4  ? T.green
+                          : total <= 9  ? T.amber
+                          : total <= 14 ? "#ea580c"
+                          : "#dc2626";
+                        const sevBg = total == null ? T.raised
+                          : total <= 4  ? T.greenLight
+                          : total <= 9  ? T.amberLight
+                          : total <= 14 ? "#fff7ed"
+                          : "#fef2f2";
+                        return (
+                          <div className="rounded-xl p-4" style={{ background: sevBg, border: `1px solid ${sevColor}30` }}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: T.textMuted }}>PHQ-9 Depression Screen</p>
+                                {total == null ? (
+                                  <p className="text-[13px]" style={{ color: T.textMuted }}>No PHQ-9 on file — athlete has not completed the screening.</p>
+                                ) : (
+                                  <>
+                                    <div className="flex items-end gap-1.5">
+                                      <span className="text-[28px] font-bold tabular-nums leading-none" style={{ color: sevColor }}>{total}</span>
+                                      <span className="text-[13px] mb-0.5" style={{ color: T.textMuted }}>/27</span>
+                                    </div>
+                                    <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1"
+                                          style={{ background: sevColor + "20", color: sevColor }}>{sevLabel}</span>
+                                    {selected.phq9_date && (
+                                      <p className="text-[10px] mt-1.5" style={{ color: T.textMuted }}>
+                                        Completed {new Date(selected.phq9_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                              {total != null && total >= 10 && (
+                                <div className="flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: sevColor + "15" }}>
+                                  <AlertCircle className="h-5 w-5" style={{ color: sevColor }} />
+                                </div>
+                              )}
+                            </div>
+                            {total != null && total >= 10 && (
+                              <p className="text-[11px] mt-2 leading-relaxed" style={{ color: sevColor }}>
+                                {total >= 20 ? "Severe range — strongly consider immediate clinical evaluation."
+                                 : total >= 15 ? "Moderately severe — clinical follow-up is recommended."
+                                 : "Moderate range — discuss further evaluation with athlete."}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       <div className="rounded-xl p-4" style={{ background: T.raised, border: `1px solid ${T.border}` }}>
                         <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: T.textMuted }}>Screening Status</p>

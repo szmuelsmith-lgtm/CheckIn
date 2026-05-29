@@ -4,10 +4,11 @@ import { computePillarScores, evaluateSupportTrigger, evaluateRiskLevel } from '
 import { sendRedAlertEmail } from '@/lib/email';
 
 interface CheckinBody {
-  mode: 'weekly' | 'screening';
+  mode: 'weekly' | 'screening' | 'phq9';
   responses: Record<string, number>;
   notes?: string;
   wants_followup?: boolean;
+  phq9_total?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.mode || (body.mode !== 'weekly' && body.mode !== 'screening')) {
+  if (!body.mode || !['weekly', 'screening', 'phq9'].includes(body.mode)) {
     return NextResponse.json({ error: 'Invalid or missing mode' }, { status: 400 });
   }
 
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       resilience_score:  pillarScores.resilience,
       recovery_score:    pillarScores.recovery,
       support_score:     pillarScores.support,
+      phq9_total:        body.phq9_total ?? null,
       wants_followup:    wantsFollowup,
       risk_level:        riskLevel,
       question_ids:      questionIds,
