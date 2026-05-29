@@ -219,6 +219,29 @@ export default function DevPsychPreview() {
                     <div style={{ fontSize: 28, fontWeight: 700, color: T.amber }}>4.8<span style={{ fontSize: 14, color: T.textMuted }}>/10</span></div>
                     <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>Moderate concern — trending downward over 14 days</div>
                   </div>
+
+                  {/* PHQ-9 score card */}
+                  <div style={{ borderRadius: 12, padding: 14, background: "#fff7ed", border: "1px solid #fed7aa" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: T.textMuted, marginBottom: 6 }}>PHQ-9 Depression Screen</div>
+                        <div style={{ display: "flex", alignItems: "flex-end", gap: 4 }}>
+                          <span style={{ fontSize: 32, fontWeight: 700, color: "#ea580c", lineHeight: 1 }}>12</span>
+                          <span style={{ fontSize: 13, color: T.textMuted, marginBottom: 2 }}>/27</span>
+                        </div>
+                        <span style={{ display: "inline-block", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: "#ea580c20", color: "#ea580c", marginTop: 6 }}>Moderate</span>
+                        <div style={{ fontSize: 10, color: T.textMuted, marginTop: 6 }}>Completed May 24</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 36, width: 36, borderRadius: 10, background: "#ea580c15", flexShrink: 0 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: "#ea580c", marginTop: 8, lineHeight: 1.5 }}>
+                      Moderate range — discuss further evaluation with athlete.
+                    </div>
+                  </div>
                 </div>
               )}
 
