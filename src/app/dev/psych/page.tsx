@@ -311,7 +311,7 @@ export default function DevPsychPreview() {
                       <ShieldCheck style={{ width: 16, height: 16, color: T.blue }} />
                       <span style={{ fontSize: 13, fontWeight: 700, color: T.blue }}>FERPA-Compliant Referral</span>
                     </div>
-                    <div style={{ fontSize: 12, color: T.textSub, lineHeight: 1.5, marginBottom: 12 }}>Send a referral summary to this athlete's primary care team. Only aggregate scores and risk level are included — no verbatim responses.</div>
+                    <div style={{ fontSize: 12, color: T.textSub, lineHeight: 1.5, marginBottom: 12 }}>Send a referral summary to this athlete&apos;s primary care team. Only aggregate scores and risk level are included — no verbatim responses.</div>
                     <button style={{ padding: "8px 16px", borderRadius: 8, background: T.blue, color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
                       Send Referral Summary
                     </button>

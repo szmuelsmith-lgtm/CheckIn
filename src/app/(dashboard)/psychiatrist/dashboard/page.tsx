@@ -179,7 +179,6 @@ export default function PsychiatristDashboard() {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
   const [userName,    setUserName]    = useState("...");
-  const [profId,      setProfId]      = useState<string | null>(null);
   const [isDemo,      setIsDemo]      = useState(false);
   const [selectedId,  setSelectedId]  = useState<string | null>(null);
   const [activeTab,   setActiveTab]   = useState<TabId>("overview");
@@ -217,7 +216,6 @@ export default function PsychiatristDashboard() {
           .eq("auth_user_id", user.id).single();
         if (profErr || !prof) { setError("Profile not found."); return; }
         setUserName(prof.full_name);
-        setProfId(prof.id);
         profIdRef.current = prof.id;
 
         type ConsentRow = {
