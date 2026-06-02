@@ -345,7 +345,7 @@ export default function AdminAlertsPage() {
                         {/* Why it fired */}
                         {isWantsFollowup ? (
                           <p className="text-[12px] font-semibold mt-1" style={{ color: "#92400e" }}>
-                            ✋ Athlete requested to be contacted by a psychiatrist
+                            ✋ Athlete requested to be contacted by your team psychiatrist or counselor
                           </p>
                         ) : (
                           <p className="text-[12px] mt-1" style={{ color: T.textMuted }}>

@@ -249,7 +249,7 @@ export default function PrivacyPage() {
                     ))}
                   </select>
                   {targets.length === 0 && (
-                    <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>No psychiatrists available yet.</p>
+                    <p className="text-[11px] mt-1.5" style={{ color: T.textMuted }}>No team psychiatrists or counselors available yet.</p>
                   )}
                 </div>
                 <div>

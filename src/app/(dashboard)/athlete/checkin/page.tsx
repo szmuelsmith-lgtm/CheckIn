@@ -179,7 +179,7 @@ function ResultView({ pillarScores, triggerSupport, wantsFollowup, onDone }: {
           <div>
             <p className="text-[14px] font-semibold" style={{ color: "#14532d" }}>Your request was received</p>
             <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: "#15803d" }}>
-              A licensed psychiatrist — not your coach — will reach out soon. You can check the status on your dashboard.
+              Your team psychiatrist or counselor — not your coach — will reach out soon. You can check the status on your dashboard.
             </p>
           </div>
         </div>
@@ -466,10 +466,10 @@ export default function WeeklyCheckinPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-[17px] font-bold mb-2" style={{ color: T.text }}>
-                    Would it be OK for a psychiatrist to reach out to you?
+                    Would it be OK for your team psychiatrist or counselor to reach out to you?
                   </p>
                   <p className="text-[13px] leading-relaxed" style={{ color: T.textMuted }}>
-                    Your coach will <strong style={{ color: T.textSub }}>never</strong> be told. This is between you and a licensed psychiatrist only.
+                    Your coach will <strong style={{ color: T.textSub }}>never</strong> be told. This is between you and your team psychiatrist or counselor only.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

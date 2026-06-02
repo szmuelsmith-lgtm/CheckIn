@@ -201,7 +201,7 @@ function OnboardingOverlay({ onComplete }: { onComplete: () => void }) {
       icon: <CheckCircle className="h-8 w-8 text-white" />,
       iconBg: "linear-gradient(135deg, #065f46, #059669)",
       title: "You're in control",
-      body: "You choose what to share and with whom. You can request to talk to a psychiatrist any time, right from the check-in. No judgement, no pressure.",
+      body: "You choose what to share and with whom. You can request to talk to your team psychiatrist or counselor any time, right from the check-in. No judgement, no pressure.",
     },
   ];
   const current = steps[step];

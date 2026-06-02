@@ -30,7 +30,7 @@ const ROLES = [
   },
   {
     id: "psychiatrist",
-    label: "Counselor / Psychiatrist",
+    label: "Team Psychiatrist or Counselor",
     email: "checkin.psych.test@mailinator.com",
     name: "Dr. Parker",
     icon: <Stethoscope className="h-6 w-6" />,
