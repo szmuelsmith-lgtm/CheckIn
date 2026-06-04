@@ -15,6 +15,11 @@ create index if not exists messages_recipient_unread on messages(recipient_id, r
 
 alter table messages enable row level security;
 
+-- Drop-then-create so this migration is safe to re-run (CREATE POLICY has no IF NOT EXISTS)
+drop policy if exists "messages_insert_own"         on messages;
+drop policy if exists "messages_select_participant" on messages;
+drop policy if exists "messages_update_read"        on messages;
+
 -- Sender can insert their own messages
 create policy "messages_insert_own"
   on messages for insert
