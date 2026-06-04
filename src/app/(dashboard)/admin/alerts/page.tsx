@@ -27,6 +27,8 @@ interface AlertWithDetails {
   status: "open" | "acknowledged" | "resolved";
   created_at: string;
   resolved_at: string | null;
+  escalated_at: string | null;
+  last_checkin_at: string | null;
   organization_id: string | null;
   athlete: { id: string; full_name: string; team_id: string | null };
   checkin: {
@@ -102,7 +104,7 @@ export default function AdminAlertsPage() {
       // Build query — filter by org if the user has one
       let query = supabase
         .from("alerts")
-        .select(`id, severity, trigger_type, status, created_at, resolved_at, organization_id,
+        .select(`id, severity, trigger_type, status, created_at, resolved_at, escalated_at, last_checkin_at, organization_id,
           athlete:profiles!alerts_athlete_id_fkey(id, full_name, team_id),
           checkin:checkins!alerts_checkin_id_fkey(emotional_score, resilience_score, recovery_score, support_score)`)
         .order("created_at", { ascending: false })
@@ -300,6 +302,8 @@ export default function AdminAlertsPage() {
               const isOpen     = alert.status === "open";
               const isResolved = alert.status === "resolved";
               const isWantsFollowup = alert.trigger_type === "wants_followup";
+              const isSilence       = alert.trigger_type === "no_checkin";
+              const isEscalated     = !!alert.escalated_at && isOpen;
               const severityColor = isSevere ? T.red : T.amber;
               const severityBg    = isSevere ? "#fee2e2" : "#fef3c7";
               const statusLabel   = isOpen ? "Open" : alert.status === "acknowledged" ? "Acknowledged" : "Resolved";
@@ -331,6 +335,12 @@ export default function AdminAlertsPage() {
                             {isSevere ? "HIGH RISK" : "ELEVATED"}
                           </span>
                           <span className="text-[11px] font-medium" style={{ color: statusColor }}>{statusLabel}</span>
+                          {isEscalated && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                                  style={{ background: "#fee2e2", color: T.red }}>
+                              ⚠ ESCALATED
+                            </span>
+                          )}
                           {ageDays(alert.created_at) >= 1 && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                                   style={{
@@ -343,7 +353,11 @@ export default function AdminAlertsPage() {
                         </div>
 
                         {/* Why it fired */}
-                        {isWantsFollowup ? (
+                        {isSilence ? (
+                          <p className="text-[12px] font-semibold mt-1" style={{ color: "#92400e" }}>
+                            🔕 Stopped checking in{alert.last_checkin_at ? ` · last check-in ${ageDays(alert.last_checkin_at)}d ago` : ""} — consider a proactive reach-out
+                          </p>
+                        ) : isWantsFollowup ? (
                           <p className="text-[12px] font-semibold mt-1" style={{ color: "#92400e" }}>
                             ✋ Athlete requested to be contacted by your team psychiatrist or counselor
                           </p>
