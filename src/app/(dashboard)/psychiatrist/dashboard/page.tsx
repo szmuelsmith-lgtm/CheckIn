@@ -189,6 +189,7 @@ export default function PsychiatristDashboard() {
   const [scheduling,  setScheduling]  = useState<string | null>(null);
   const [responded,   setResponded]   = useState<Record<string, "accepted" | "dismissed">>({});
   const [actError,    setActError]    = useState<string | null>(null);
+  const [actSuccess,  setActSuccess]  = useState<string | null>(null);
   const [referring,   setReferring]   = useState<string | null>(null);
   const [referred,    setReferred]    = useState<Record<string, boolean>>({});
   const [mobilePanel, setMobilePanel] = useState<"list" | "workspace">("list");
@@ -437,6 +438,12 @@ export default function PsychiatristDashboard() {
       }
       setResponded(r => ({ ...r, [athlete.athlete_id]: decision }));
       if (decision === "accepted") setContacted(c => ({ ...c, [athlete.athlete_id]: true }));
+      // Visible confirmation — the urgent list only shows 2 at a time, so without
+      // this the next athlete silently fills the slot and the click looks ignored.
+      setActSuccess(decision === "accepted"
+        ? `Outreach started with ${athlete.athlete_name} — they've been moved into your active queue.`
+        : `Dismissed ${athlete.athlete_name} from the urgent list.`);
+      setTimeout(() => setActSuccess(null), 4000);
     } catch (e: unknown) {
       setActError(e instanceof Error ? e.message : "Outreach action failed.");
     }
@@ -597,6 +604,13 @@ export default function PsychiatristDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {actSuccess && (
+              <div className="rounded-xl px-4 py-3 flex items-start gap-2" style={{ background: T.greenLight, border: `1px solid ${T.green}40` }}>
+                <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: T.green }} />
+                <p className="text-[12px] font-medium flex-1" style={{ color: T.green }}>{actSuccess}</p>
               </div>
             )}
 
