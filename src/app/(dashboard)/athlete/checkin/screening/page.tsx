@@ -208,9 +208,9 @@ export default function ScreeningCheckinPage() {
   useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      const { data: prof } = await supabase.from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { userId, profile: prof } = await getMyProfile(supabase);
+      if (!userId) { router.push("/login"); return; }
       if (prof) { setUserName(prof.full_name); setProfileId(prof.id); }
     }
     loadUser();

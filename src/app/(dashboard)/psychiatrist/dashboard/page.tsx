@@ -212,13 +212,9 @@ export default function PsychiatristDashboard() {
         const supabase = createClient();
         supabaseRef.current = supabase;
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: prof, error: profErr } = await supabase
-          .from("profiles").select("id, full_name")
-          .eq("auth_user_id", user.id).single();
-        if (profErr || !prof) { setError("Profile not found."); return; }
+        const { getMyProfile } = await import("@/lib/current-user");
+        const { profile: prof } = await getMyProfile(supabase);
+        if (!prof) { setError("Profile not found."); return; }
         setUserName(prof.full_name);
         profIdRef.current = prof.id;
 

@@ -284,13 +284,8 @@ export default function AthleteDashboard() {
     setLoading(true); setError(false);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("id, full_name, team_id, onboarded")
-        .eq("auth_user_id", user.id)
-        .single();
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { profile: prof } = await getMyProfile(supabase);
       if (!prof) { setLoading(false); return; }
       setUserName(prof.full_name);
       setFirstName(prof.full_name?.split(" ")[0] || "Athlete");
@@ -341,6 +336,8 @@ export default function AthleteDashboard() {
     if (profileId) {
       const supabase = createClient();
       await supabase.from("profiles").update({ onboarded: true }).eq("id", profileId);
+      const { clearMyProfileCache } = await import("@/lib/current-user");
+      clearMyProfileCache(); // profile changed — invalidate the cached copy
     }
   };
 

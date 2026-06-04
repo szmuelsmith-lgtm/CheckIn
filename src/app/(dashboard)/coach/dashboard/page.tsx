@@ -138,8 +138,8 @@ export default function CoachDashboard() {
     setLoading(true); setError(false);
     try {
       const supabase = createClient();
-      const { data: prof } = await supabase.from("profiles").select("id, full_name, team_id")
-        .eq("auth_user_id",(await supabase.auth.getUser()).data.user?.id??"").single();
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { profile: prof } = await getMyProfile(supabase);
       if (prof) {
         setProfile({ full_name:prof.full_name });
         setProfileId(prof.id);

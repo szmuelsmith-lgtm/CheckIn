@@ -167,9 +167,8 @@ export default function AdminAuditLogsPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: prof } = await supabase.from("profiles").select("full_name, role, organization_id").eq("auth_user_id", user.id).single();
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { profile: prof } = await getMyProfile(supabase);
       if (prof) setProfile(prof);
       await loadSystemLogs(0, prof?.organization_id ?? undefined);
       setInitialLoading(false);

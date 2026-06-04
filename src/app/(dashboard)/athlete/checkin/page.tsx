@@ -295,12 +295,10 @@ export default function WeeklyCheckinPage() {
     setLoading(true); setLoadError("");
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-
-      const { data: prof, error: profErr } = await supabase
-        .from("profiles").select("id, full_name, team_id").eq("auth_user_id", user.id).single();
-      if (profErr || !prof) {
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { userId, profile: prof } = await getMyProfile(supabase);
+      if (!userId) { router.push("/login"); return; }
+      if (!prof) {
         setLoadError("Profile not found. Please sign in again.");
         setLoading(false); return;
       }

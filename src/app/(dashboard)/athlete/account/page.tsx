@@ -28,15 +28,17 @@ export default function AccountPage() {
   const [userName, setUserName]   = useState("Athlete");
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      createClient().from("profiles").select("full_name").eq("auth_user_id", user.id).single()
-        .then(({ data }) => { if (data?.full_name) setUserName(data.full_name.split(" ")[0]); });
-    });
+    import("@/lib/current-user").then(({ getMyProfile }) =>
+      getMyProfile(createClient()).then(({ profile }) => {
+        if (profile?.full_name) setUserName(profile.full_name.split(" ")[0]);
+      })
+    );
   }, []);
 
   const handleSignOut = async () => {
     setSignOutError("");
+    const { clearMyProfileCache } = await import("@/lib/current-user");
+    clearMyProfileCache();
     const { error: signOutErr } = await createClient().auth.signOut();
     if (signOutErr) {
       setSignOutError(signOutErr.message ?? "Failed to sign out. Please try again.");

@@ -79,10 +79,8 @@ export default function AthletePreferencesPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: prof } = await supabase
-        .from("profiles").select("id, full_name").eq("auth_user_id", user.id).single();
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { profile: prof } = await getMyProfile(supabase);
       if (!prof) return;
       setProfile(prof);
       const { data: existingPrefs } = await supabase

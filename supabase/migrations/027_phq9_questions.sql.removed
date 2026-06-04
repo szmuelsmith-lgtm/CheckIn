@@ -1,0 +1,132 @@
+-- ============================================================
+-- MIGRATION 027: PHQ-9 Questions + phq9_item metadata
+-- ============================================================
+
+-- 1. Add phq9_item column to questions (which PHQ-9 item 1-9 this maps to)
+ALTER TABLE questions
+  ADD COLUMN IF NOT EXISTS phq9_item INTEGER CHECK (phq9_item BETWEEN 1 AND 9);
+
+-- 2. Add phq9 check-in mode to the enum
+DO $$ BEGIN
+  ALTER TYPE checkin_mode ADD VALUE IF NOT EXISTS 'phq9';
+EXCEPTION WHEN others THEN NULL; END $$;
+
+-- 3. Add phq9_total column to checkins (0–27 raw PHQ-9 sum; null for non-phq9 modes)
+ALTER TABLE checkins
+  ADD COLUMN IF NOT EXISTS phq9_total INTEGER CHECK (phq9_total BETWEEN 0 AND 27);
+
+-- 4. Index for psychiatrist queries on phq9 check-ins
+CREATE INDEX IF NOT EXISTS idx_checkins_phq9 ON checkins(athlete_id, mode, completed_at DESC)
+  WHERE mode = 'phq9';
+
+-- 5. Seed all 9 PHQ-9 questions
+--    Phrased in the app's athlete-first, non-clinical tone.
+--    Scale remains 1–10 (10 = healthiest) to match the rest of the system.
+--    phq9_item tags which PHQ-9 item each question corresponds to.
+--    Mode: phq9 ONLY — these questions must NOT rotate into weekly/screening
+--    check-ins. PHQ-9 scoring requires consistent administration as a set;
+--    mixing individual items into rotation breaks clinical validity.
+
+INSERT INTO questions
+  (pillar, text, sub_text, low_label, high_label, modes, phq9_item)
+VALUES
+
+-- PHQ-9 Item 1: Anhedonia
+(
+  'emotional',
+  'How much interest or genuine enjoyment have you been able to find in the things you usually care about?',
+  'Not performing interest — actually feeling it. Athletics, hobbies, music, time with people — whatever normally lights you up.',
+  'No interest or enjoyment in anything',
+  'Genuinely interested and enjoying things',
+  ARRAY['phq9']::checkin_mode[],
+  1
+),
+
+-- PHQ-9 Item 2: Depressed mood
+(
+  'emotional',
+  'How much of this week have you been able to feel okay, rather than down, heavy, or without hope?',
+  'That low feeling that goes beyond normal stress — heavier, harder to shake, and harder to explain to someone else.',
+  'Feeling down or hopeless most of the time',
+  'Feeling okay and mentally clear most days',
+  ARRAY['phq9']::checkin_mode[],
+  2
+),
+
+-- PHQ-9 Item 3: Sleep disturbance
+(
+  'recovery',
+  'How normal and restful has your sleep been — not struggling to fall asleep, and not sleeping way more than usual?',
+  'Sleep problems work both ways. Trouble falling asleep, waking through the night, or suddenly needing far more sleep than normal are all worth noting.',
+  'Sleep has been really off',
+  'Sleeping normally and waking rested',
+  ARRAY['phq9']::checkin_mode[],
+  3
+),
+
+-- PHQ-9 Item 4: Fatigue / low energy
+(
+  'recovery',
+  'How much energy have you had this week — not just for training, but for everything else in your day?',
+  'That deeper tired that a single good night doesn''t fix. Has your energy felt noticeably depleted and hard to rebuild?',
+  'Exhausted with almost no energy',
+  'Energy feeling solid and normal',
+  ARRAY['phq9']::checkin_mode[],
+  4
+),
+
+-- PHQ-9 Item 5: Appetite changes
+(
+  'recovery',
+  'How normal has your appetite felt this week — not too low, not driven to overeat?',
+  'Not a nutrition check — just whether your hunger and relationship with food has felt off in either direction, high or low.',
+  'Barely eating, or eating way too much',
+  'Appetite feels normal and healthy',
+  ARRAY['phq9']::checkin_mode[],
+  5
+),
+
+-- PHQ-9 Item 6: Worthlessness / failure feelings
+(
+  'resilience',
+  'How well have you been able to hold a fair view of yourself — without feeling like a failure or like you''ve let the people who matter down?',
+  'Not ordinary self-doubt. That deeper sense of being fundamentally not enough, or of having failed someone important to you.',
+  'Feeling like a failure, letting everyone down',
+  'Fair and grounded view of myself',
+  ARRAY['phq9']::checkin_mode[],
+  6
+),
+
+-- PHQ-9 Item 7: Concentration
+(
+  'resilience',
+  'How well have you been able to concentrate — reading, studying, listening, staying present in practice and conversation?',
+  'Everyday concentration, not just sport focus. Reading a paragraph and absorbing it, following a conversation without drifting.',
+  'Can''t concentrate on almost anything',
+  'Concentrating well when it matters',
+  ARRAY['phq9']::checkin_mode[],
+  7
+),
+
+-- PHQ-9 Item 8: Psychomotor changes
+(
+  'recovery',
+  'How normal has your body pace felt — not noticeably slowed down, and not unusually restless or unable to sit still?',
+  'When struggling, some people feel physically slowed and heavy. Others feel agitated and can''t settle. Either direction is worth noticing.',
+  'Noticeably slowed down or very restless',
+  'Moving and feeling physically normal',
+  ARRAY['phq9']::checkin_mode[],
+  8
+),
+
+-- PHQ-9 Item 9: Self-harm / suicidal ideation — SAFETY ITEM
+-- Low score on this question will trigger the existing crisis resource flow (any pillar < 3).
+(
+  'emotional',
+  'Have you been feeling safe — free from thoughts of hurting yourself or feeling like things would be better without you?',
+  'This question matters a lot. If you''re having these thoughts, please reach out — text or call 988, free and confidential, 24/7.',
+  'Having thoughts of hurting myself',
+  'Feeling completely safe',
+  ARRAY['phq9']::checkin_mode[],
+  9
+);

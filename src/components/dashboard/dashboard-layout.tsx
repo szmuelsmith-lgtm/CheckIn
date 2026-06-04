@@ -9,6 +9,7 @@ import { InstallPrompt } from "./install-prompt";
 import { UserRole } from "@/types/database";
 import { Settings, LogOut, Anchor } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getMyProfile, clearMyProfileCache } from "@/lib/current-user";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -25,15 +26,9 @@ export function DashboardLayout({ children, role: hintRole, userName, dark }: Da
   useEffect(() => {
     async function loadRole() {
       const supabase = createClient();
-      // getSession() reads the locally-stored session (no network round-trip),
-      // vs getUser() which revalidates with the auth server on every page load.
-      // Safe here: this only drives the nav display; real authorization is
-      // enforced by RLS on every data query and by the auth middleware.
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) { router.push("/login"); return; }
-      const { data: profile } = await supabase
-        .from("profiles").select("role, full_name").eq("auth_user_id", user.id).single();
+      // Shared cached lookup (getSession + one fetch per session) — pages that
+      // mount alongside this layout reuse the same result instead of re-fetching.
+      const { profile } = await getMyProfile(supabase);
       if (!profile) { router.push("/login"); return; }
       setVerifiedRole(profile.role as UserRole);
       setVerifiedName(profile.full_name);
@@ -44,6 +39,7 @@ export function DashboardLayout({ children, role: hintRole, userName, dark }: Da
 
   const handleSignOut = async () => {
     const supabase = createClient();
+    clearMyProfileCache();
     await supabase.auth.signOut();
     router.push("/login");
   };

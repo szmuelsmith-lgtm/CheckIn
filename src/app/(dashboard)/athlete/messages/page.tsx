@@ -66,12 +66,8 @@ export default function AthleteMessagesPage() {
       const supabase = createClient();
       supabaseRef.current = supabase;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: prof } = await supabase
-        .from("profiles").select("id, full_name")
-        .eq("auth_user_id", user.id).single();
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { profile: prof } = await getMyProfile(supabase);
       if (!prof) { setError("Profile not found."); setLoadingThreads(false); return; }
       setUserName(prof.full_name);
       setProfileId(prof.id);

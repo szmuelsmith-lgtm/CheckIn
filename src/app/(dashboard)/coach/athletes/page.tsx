@@ -89,15 +89,9 @@ export default function CoachTeamPulsePage() {
     async function load() {
       setLoadError(null);
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: prof, error: profError } = await supabase
-        .from("profiles")
-        .select("id, full_name, team_id")
-        .eq("auth_user_id", user.id)
-        .single();
-      if (profError || !prof) { setLoadError("Failed to load your profile. Please try again."); setLoading(false); return; }
+      const { getMyProfile } = await import("@/lib/current-user");
+      const { profile: prof } = await getMyProfile(supabase);
+      if (!prof) { setLoadError("Failed to load your profile. Please try again."); setLoading(false); return; }
       setProfile(prof);
 
       if (prof.team_id) {
