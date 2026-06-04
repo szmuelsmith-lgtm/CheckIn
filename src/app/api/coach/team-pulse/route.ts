@@ -98,9 +98,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ weeks: [], total_athletes: athleteCount });
   }
 
-  // Bucket by ISO week (Monday start)
-  type Bucket = { emotional: number[]; resilience: number[]; recovery: number[]; support: number[]; count: number; };
+  // Bucket by ISO week (Monday start).
+  // Use only the LATEST check-in per athlete per week so one athlete
+  // submitting multiple times doesn't inflate the participation rate above 100%.
+  type Bucket = { emotional: number[]; resilience: number[]; recovery: number[]; support: number[]; athleteIds: Set<string>; };
   const weekMap = new Map<string, Bucket>();
+  // Track latest check-in per (athlete, week) to deduplicate
+  const latestPerAthleteWeek = new Map<string, typeof checkins[0]>();
 
   for (const c of checkins) {
     const date  = new Date(c.completed_at);
@@ -108,13 +112,21 @@ export async function POST(request: NextRequest) {
     const diff  = date.getDate() - day + (day === 0 ? -6 : 1);
     const mon   = new Date(date);
     mon.setDate(diff);
-    const key = mon.toISOString().split('T')[0];
-
-    if (!weekMap.has(key)) {
-      weekMap.set(key, { emotional: [], resilience: [], recovery: [], support: [], count: 0 });
+    const weekKey = mon.toISOString().split('T')[0];
+    const dedupeKey = `${c.athlete_id}::${weekKey}`;
+    const existing = latestPerAthleteWeek.get(dedupeKey);
+    if (!existing || c.completed_at > existing.completed_at) {
+      latestPerAthleteWeek.set(dedupeKey, c);
     }
-    const b = weekMap.get(key)!;
-    b.count++;
+  }
+
+  for (const [dedupeKey, c] of latestPerAthleteWeek) {
+    const weekKey = dedupeKey.split('::')[1];
+    if (!weekMap.has(weekKey)) {
+      weekMap.set(weekKey, { emotional: [], resilience: [], recovery: [], support: [], athleteIds: new Set() });
+    }
+    const b = weekMap.get(weekKey)!;
+    b.athleteIds.add(c.athlete_id);
     if (c.emotional_score  != null) b.emotional.push(c.emotional_score);
     if (c.resilience_score != null) b.resilience.push(c.resilience_score);
     if (c.recovery_score   != null) b.recovery.push(c.recovery_score);
@@ -132,7 +144,7 @@ export async function POST(request: NextRequest) {
         resilience:   avg(b.resilience),
         recovery:     avg(b.recovery),
         support:      avg(b.support),
-        checkinCount: b.count,
+        checkinCount: b.athleteIds.size,
         totalAthletes: athleteCount,
       };
     });

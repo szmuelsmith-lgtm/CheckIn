@@ -411,7 +411,8 @@ export default function PsychiatristDashboard() {
       .select("id, sender_id, recipient_id, body, sent_at, read_at")
       .or(`and(sender_id.eq.${myId},recipient_id.eq.${selectedId}),and(sender_id.eq.${selectedId},recipient_id.eq.${myId})`)
       .order("sent_at", { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error: msgErr }) => {
+        if (msgErr) { setLoadingMsgs(false); return; } // messages table not yet migrated
         setMessages((data ?? []) as Message[]);
         setLoadingMsgs(false);
         // Mark unread messages as read
@@ -427,7 +428,7 @@ export default function PsychiatristDashboard() {
     setSendingMsg(true);
     const body = msgInput.trim();
     setMsgInput("");
-    const { error } = await supabase.from("messages").insert({
+    const { error } = await supabase.from("messages").insert({  // requires migration 026
       sender_id:    profIdRef.current,
       recipient_id: selectedId,
       body,

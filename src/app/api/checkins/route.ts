@@ -76,25 +76,28 @@ export async function POST(request: NextRequest) {
 
   // Insert checkin record — use generated_id so we don't need a read-back
   const generatedId = crypto.randomUUID();
+  // Omit phq9_total when null — column may not exist until migration 027 is applied
+  const checkinPayload: Record<string, unknown> = {
+    id:                generatedId,
+    athlete_id:        profile.id,
+    team_id:           profile.team_id,
+    mode:              body.mode,
+    is_private:        true,
+    emotional_score:   pillarScores.emotional,
+    resilience_score:  pillarScores.resilience,
+    recovery_score:    pillarScores.recovery,
+    support_score:     pillarScores.support,
+    wants_followup:    wantsFollowup,
+    risk_level:        riskLevel,
+    question_ids:      questionIds,
+    responses:         body.responses,
+    notes_private:     body.notes ?? null,
+  };
+  if (body.phq9_total != null) checkinPayload.phq9_total = body.phq9_total;
+
   const { error: checkinError } = await serviceClient
     .from('checkins')
-    .insert({
-      id:                generatedId,
-      athlete_id:        profile.id,
-      team_id:           profile.team_id,
-      mode:              body.mode,
-      is_private:        true,
-      emotional_score:   pillarScores.emotional,
-      resilience_score:  pillarScores.resilience,
-      recovery_score:    pillarScores.recovery,
-      support_score:     pillarScores.support,
-      phq9_total:        body.phq9_total ?? null,
-      wants_followup:    wantsFollowup,
-      risk_level:        riskLevel,
-      question_ids:      questionIds,
-      responses:         body.responses,
-      notes_private:     body.notes ?? null,
-    });
+    .insert(checkinPayload);
 
   if (checkinError) {
     console.error('checkin insert error:', JSON.stringify(checkinError));

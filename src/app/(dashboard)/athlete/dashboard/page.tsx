@@ -328,13 +328,15 @@ export default function AthleteDashboard() {
         setCoachMessage(msgData?.[0] ?? null);
       }
 
-      // Unread messages from counselors
-      const { count } = await supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", prof.id)
-        .is("read_at", null);
-      setUnreadMsgs(count ?? 0);
+      // Unread messages from counselors (graceful: table may not exist yet)
+      try {
+        const { count, error: msgErr } = await supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("recipient_id", prof.id)
+          .is("read_at", null);
+        if (!msgErr) setUnreadMsgs(count ?? 0);
+      } catch { /* messages table not yet migrated — silent */ }
     } catch { setError(true); }
     finally { setLoading(false); }
   }, []);
