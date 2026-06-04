@@ -7,7 +7,7 @@ import type { Pillar } from "@/types/database";
 import Link from "next/link";
 import {
   ClipboardCheck, TrendingUp, TrendingDown, Minus, Heart, Lock,
-  ArrowRight, Zap, Shield, Users, ClipboardList, Phone, MessageSquare,
+  ArrowRight, Zap, Shield, Users, Phone, MessageSquare,
   CheckCircle, Clock, Anchor, BookOpen, Sparkles, MessageCircle,
 } from "lucide-react";
 
@@ -276,7 +276,7 @@ export default function AthleteDashboard() {
   const [openFollowup,  setOpenFollowup]  = useState<FollowupRow | null>(null);
   const [coachMessage,  setCoachMessage]  = useState<CoachMessage | null>(null);
   const [onboarded,     setOnboarded]     = useState<boolean>(true); // default true to avoid flash
-  const [unreadMsgs,    setUnreadMsgs]    = useState(0);
+  const [unreadMsgs]    = useState(0); // badge stays hidden until migration 026 (messages table) is applied
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(false);
 
