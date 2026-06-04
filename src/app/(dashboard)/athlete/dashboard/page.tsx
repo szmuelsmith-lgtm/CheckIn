@@ -626,7 +626,6 @@ export default function AthleteDashboard() {
         {/* Secondary links */}
         <div className="grid grid-cols-4 gap-3">
           {([
-            { href:"/athlete/checkin/phq9",      icon:<ClipboardList className="h-4 w-4"/>, label:"PHQ-9",      color:"#7c3aed", bg:"#f5f3ff" },
             { href:"/athlete/checkin/screening", icon:<ClipboardCheck className="h-4 w-4"/>, label:"Screening", color:"#0891b2", bg:"#ecfeff" },
             { href:"/athlete/resources",         icon:<Sparkles      className="h-4 w-4"/>, label:"Resources",  color:"#db2777", bg:"#fdf2f8" },
             { href:"/athlete/privacy",           icon:<Lock          className="h-4 w-4"/>, label:"Privacy",    color:T.textMuted, bg:T.raised },

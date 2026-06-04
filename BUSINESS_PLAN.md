@@ -143,7 +143,7 @@ Check-In is a **native iOS app** (App Store, bundle ID `com.athleteanchor.checki
 
 Once per week, athletes receive a native push notification and complete a ~3-minute check-in. When the platform detects a pattern of concern, a team psychiatrist or counselor is notified and initiates outreach — privately, with no coach involvement. The athlete never had to identify themselves as struggling. They just had to answer the questions.
 
-An Android version is available via the same Capacitor codebase. Beyond weekly check-ins, the platform includes a formal clinical screening tool (PHQ-9 and extended screening mode), secure in-app messaging between athletes and their team psychiatrist or counselor, and a session management system for clinicians tracking appointments and outcomes.
+An Android version is available via the same Capacitor codebase. Beyond weekly check-ins, the platform includes secure in-app messaging between athletes and their team psychiatrist or counselor, and a session management system for clinicians tracking appointments and outcomes.
 
 ### 4.2 The Three-Tier Privacy Model
 
@@ -207,7 +207,7 @@ RED alerts trigger **instant email notifications** to all clinical staff and adm
 |---|---|
 | **Athlete** | Weekly check-ins (rotating question bank), private journal, secure messaging with team psychiatrist or counselor, privacy preferences, personal trend charts, export/delete own data |
 | **Coach** | Team completion rates, risk color distribution, assigned follow-up tasks — no individual data |
-| **team psychiatrist or counselor** | Alert queue by risk level, full pillar score history (with athlete consent), secure messaging with athletes, session status tracking (arrived/in-session/completed/no-show), assign & track follow-ups, PHQ-9 and extended formal screening tools |
+| **team psychiatrist or counselor** | Alert queue by risk level, full pillar score history (with athlete consent), secure messaging with athletes, session status tracking (arrived/in-session/completed/no-show), assign & track follow-ups, formal screening tools |
 | **Admin** | Institutional settings, user provisioning, invite codes, immutable audit logs, NCAA compliance export, resource library, follow-up resolution analytics |
 
 ---
@@ -293,7 +293,7 @@ With student-athletes now compensated as partial university assets, institutions
 | Competitor | Focus | Weakness vs. Check-In |
 |---|---|---|
 | **Teamworks** | D1 operations: scheduling, compliance, NIL, personnel | No mental wellness module; $15K–$100K+ annual enterprise pricing; serves only D1; 98% D1 penetration means their market is saturated |
-| **Annual Screenings (status quo)** | Point-in-time assessment (PHQ-9, GAD-7, BAM) | No ongoing signal; no follow-up workflow; no audit trail; athletes game annual screenings |
+| **Annual Screenings (status quo)** | Point-in-time assessment (annual screenings) | No ongoing signal; no follow-up workflow; no audit trail; athletes game annual screenings |
 | **Qualtrics / Google Forms** | Generic survey delivery | No privacy tiers; no risk scoring; no follow-up; no FERPA-aligned architecture; no NCAA-specific compliance |
 | **Calm / Headspace / BetterHelp** | Consumer mental wellness / telehealth | Consumer-facing; no institutional oversight; no coach dashboard; no compliance documentation; no risk routing |
 | **Flourish (mental wellness app)** | Student wellness tracking | Not athletics-specific; no three-tier privacy model; limited institutional customization |

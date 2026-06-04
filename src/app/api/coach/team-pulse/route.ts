@@ -81,14 +81,14 @@ export async function POST(request: NextRequest) {
   const service = createServiceSupabaseClient();
   const { data: checkins, error: checkinsError } = await service
     .from('checkins')
-    .select('emotional_score, resilience_score, recovery_score, support_score, completed_at')
+    .select('athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at')
     .in('athlete_id', athleteIds)
     .eq('mode', 'weekly')
     .gte('completed_at', eightWeeksAgo)
     .order('completed_at', { ascending: true });
 
-  // Note: athlete_id is intentionally NOT selected — response must never expose
-  // which specific athlete submitted which score.
+  // Note: athlete_id is selected for server-side deduplication only — it is
+  // never included in the JSON response returned to the coach client.
 
   if (checkinsError) {
     return NextResponse.json({ error: 'Failed to fetch checkins' }, { status: 500 });
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  for (const [dedupeKey, c] of latestPerAthleteWeek) {
+  for (const [dedupeKey, c] of Array.from(latestPerAthleteWeek)) {
     const weekKey = dedupeKey.split('::')[1];
     if (!weekMap.has(weekKey)) {
       weekMap.set(weekKey, { emotional: [], resilience: [], recovery: [], support: [], athleteIds: new Set() });

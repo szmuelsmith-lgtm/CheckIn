@@ -1,5 +1,5 @@
 export type UserRole = "athlete" | "coach" | "support" | "admin" | "psychiatrist";
-export type CheckinMode = "weekly" | "screening" | "phq9";
+export type CheckinMode = "weekly" | "screening";
 export type Pillar = "emotional" | "resilience" | "recovery" | "support";
 export type ConsentScope = "summary" | "full";
 export type ConsentTargetRole = "psychiatrist";
@@ -22,7 +22,6 @@ export interface Question {
   max_val: number;
   modes: CheckinMode[];
   active: boolean;
-  phq9_item: number | null;
   created_at: string;
 }
 
@@ -113,7 +112,6 @@ export interface Checkin {
   resilience_score: number | null;
   recovery_score: number | null;
   support_score: number | null;
-  phq9_total: number | null;
   question_ids: string[];
   responses: Record<string, number>;
   notes_private: string | null;
@@ -121,22 +119,6 @@ export interface Checkin {
   created_at: string;
 }
 
-// PHQ-9 severity levels (total score 0–27)
-export type Phq9Severity = "none-minimal" | "mild" | "moderate" | "moderately-severe" | "severe";
-export function phq9Severity(total: number): Phq9Severity {
-  if (total <= 4)  return "none-minimal";
-  if (total <= 9)  return "mild";
-  if (total <= 14) return "moderate";
-  if (total <= 19) return "moderately-severe";
-  return "severe";
-}
-export const PHQ9_SEVERITY_LABEL: Record<Phq9Severity, string> = {
-  "none-minimal":     "None – Minimal",
-  "mild":             "Mild",
-  "moderate":         "Moderate",
-  "moderately-severe":"Moderately Severe",
-  "severe":           "Severe",
-};
 
 export interface Journal {
   id: string;

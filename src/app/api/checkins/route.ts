@@ -4,11 +4,10 @@ import { computePillarScores, evaluateSupportTrigger, evaluateRiskLevel } from '
 import { sendRedAlertEmail } from '@/lib/email';
 
 interface CheckinBody {
-  mode: 'weekly' | 'screening' | 'phq9';
+  mode: 'weekly' | 'screening';
   responses: Record<string, number>;
   notes?: string;
   wants_followup?: boolean;
-  phq9_total?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!body.mode || !['weekly', 'screening', 'phq9'].includes(body.mode)) {
+  if (!body.mode || !['weekly', 'screening'].includes(body.mode)) {
     return NextResponse.json({ error: 'Invalid or missing mode' }, { status: 400 });
   }
 
@@ -74,30 +73,26 @@ export async function POST(request: NextRequest) {
   // Auth and role have already been verified above using the user's own client.
   const serviceClient = createServiceSupabaseClient();
 
-  // Insert checkin record — use generated_id so we don't need a read-back
+  // Insert checkin record
   const generatedId = crypto.randomUUID();
-  // Omit phq9_total when null — column may not exist until migration 027 is applied
-  const checkinPayload: Record<string, unknown> = {
-    id:                generatedId,
-    athlete_id:        profile.id,
-    team_id:           profile.team_id,
-    mode:              body.mode,
-    is_private:        true,
-    emotional_score:   pillarScores.emotional,
-    resilience_score:  pillarScores.resilience,
-    recovery_score:    pillarScores.recovery,
-    support_score:     pillarScores.support,
-    wants_followup:    wantsFollowup,
-    risk_level:        riskLevel,
-    question_ids:      questionIds,
-    responses:         body.responses,
-    notes_private:     body.notes ?? null,
-  };
-  if (body.phq9_total != null) checkinPayload.phq9_total = body.phq9_total;
-
   const { error: checkinError } = await serviceClient
     .from('checkins')
-    .insert(checkinPayload);
+    .insert({
+      id:                generatedId,
+      athlete_id:        profile.id,
+      team_id:           profile.team_id,
+      mode:              body.mode,
+      is_private:        true,
+      emotional_score:   pillarScores.emotional,
+      resilience_score:  pillarScores.resilience,
+      recovery_score:    pillarScores.recovery,
+      support_score:     pillarScores.support,
+      wants_followup:    wantsFollowup,
+      risk_level:        riskLevel,
+      question_ids:      questionIds,
+      responses:         body.responses,
+      notes_private:     body.notes ?? null,
+    });
 
   if (checkinError) {
     console.error('checkin insert error:', JSON.stringify(checkinError));
