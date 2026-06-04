@@ -134,7 +134,8 @@ export default function AthleteMessagesPage() {
       .select("id, sender_id, recipient_id, body, sent_at, read_at")
       .or(`and(sender_id.eq.${myId},recipient_id.eq.${selectedId}),and(sender_id.eq.${selectedId},recipient_id.eq.${myId})`)
       .order("sent_at", { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error: msgErr }) => {
+        if (msgErr) { setLoadingMsgs(false); return; } // messages table not yet migrated
         setMessages((data ?? []) as Message[]);
         setLoadingMsgs(false);
         setTimeout(() => bottomRef.current?.scrollIntoView(), 50);
