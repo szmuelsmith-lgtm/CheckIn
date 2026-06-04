@@ -48,9 +48,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, flagged: 0 });
   }
 
-  // 2. Latest check-in (completed_at + risk_level) per athlete, chunked to stay
-  //    under PostgREST's URL length cap.
-  const CHUNK = 200;
+  // 2. Latest check-in (completed_at + risk_level) per athlete.
+  //    CHUNK kept small AND the row cap lifted with .range() so athletes with
+  //    many check-ins can't exhaust PostgREST's default 1000-row budget and
+  //    starve later athletes in the chunk (which previously caused some to be
+  //    skipped and re-flagged across runs).
+  const CHUNK = 100;
   type LastCheckin = { completed_at: string; risk_level: string | null };
   const lastByAthlete = new Map<string, LastCheckin>();
   const ids = athletes.map(a => a.id);
@@ -60,7 +63,8 @@ export async function POST(request: NextRequest) {
       .from("checkins")
       .select("athlete_id, completed_at, risk_level")
       .in("athlete_id", chunk)
-      .order("completed_at", { ascending: false });
+      .order("completed_at", { ascending: false })
+      .range(0, 49999);
     for (const r of (rows ?? []) as { athlete_id: string; completed_at: string; risk_level: string | null }[]) {
       if (!lastByAthlete.has(r.athlete_id)) {
         lastByAthlete.set(r.athlete_id, { completed_at: r.completed_at, risk_level: r.risk_level });
@@ -77,7 +81,8 @@ export async function POST(request: NextRequest) {
       .select("athlete_id")
       .in("athlete_id", chunk)
       .eq("trigger_type", "no_checkin")
-      .eq("status", "open");
+      .eq("status", "open")
+      .range(0, 19999);
     for (const a of (openAlerts ?? []) as { athlete_id: string }[]) alreadyOpen.add(a.athlete_id);
   }
 
