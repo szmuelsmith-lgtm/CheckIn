@@ -100,7 +100,8 @@ export async function POST(request: NextRequest) {
   }
   const checkin = { id: generatedId };
 
-  // Insert question_usage rows
+  // question_usage + audit_log are independent and non-fatal — run them in
+  // parallel (not sequentially) so the check-in response returns faster.
   const usageRows = questionIds.map(qid => ({
     athlete_id:  profile.id,
     question_id: qid,
@@ -108,29 +109,19 @@ export async function POST(request: NextRequest) {
     used_at:     new Date().toISOString(),
   }));
 
-  const { error: usageError } = await serviceClient
-    .from('question_usage')
-    .insert(usageRows);
-
-  if (usageError) {
-    // Non-fatal: log but don't fail the request
-    console.error('Failed to insert question_usage:', usageError);
-  }
-
-  // Insert audit log
-  const { error: auditError } = await serviceClient
-    .from('audit_logs')
-    .insert({
+  const [usageRes, auditRes] = await Promise.all([
+    serviceClient.from('question_usage').insert(usageRows),
+    serviceClient.from('audit_logs').insert({
       actor_profile_id: profile.id,
       action:           'checkin_submitted',
       target_type:      'checkin',
       target_id:        checkin.id,
       metadata:         { mode: body.mode },
-    });
+    }),
+  ]);
 
-  if (auditError) {
-    console.error('Failed to insert audit_log:', auditError);
-  }
+  if (usageRes.error) console.error('Failed to insert question_usage:', usageRes.error);
+  if (auditRes.error) console.error('Failed to insert audit_log:', auditRes.error);
 
   // Auto-create alert for yellow/red risk levels
   if (riskLevel === 'yellow' || riskLevel === 'red') {
