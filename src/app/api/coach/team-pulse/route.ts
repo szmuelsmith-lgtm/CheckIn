@@ -24,11 +24,6 @@ interface WeeklyPulse {
   totalAthletes: number;
 }
 
-function avg(arr: number[]): number | null {
-  if (arr.length < 5) return null; // k-anonymity
-  return Math.round((arr.reduce((s, v) => s + v, 0) / arr.length) * 10) / 10;
-}
-
 export async function POST(request: NextRequest) {
   const authed = createRequestSupabaseClient(request);
 
@@ -55,99 +50,57 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ insufficient_data: true, athlete_count: 0, no_team: true });
   }
 
-  // Fetch team athletes (auth'd client — coach has RLS access to profiles in own org)
-  const { data: athletes, error: athletesError } = await authed
+  // Count team athletes cheaply (head request — pulls no rows, scales to any org size).
+  const { count: athleteCountRaw, error: countError } = await authed
     .from('profiles')
-    .select('id')
+    .select('id', { count: 'exact', head: true })
     .eq('team_id', profile.team_id)
     .eq('role', 'athlete')
     .eq('organization_id', profile.organization_id ?? '');
 
-  if (athletesError) {
-    return NextResponse.json({ error: 'Failed to fetch athletes' }, { status: 500 });
+  if (countError) {
+    return NextResponse.json({ error: 'Failed to count athletes' }, { status: 500 });
   }
-
-  const athleteCount = (athletes ?? []).length;
+  const athleteCount = athleteCountRaw ?? 0;
 
   if (athleteCount < 5) {
     return NextResponse.json({ insufficient_data: true, athlete_count: athleteCount });
   }
 
-  const athleteIds  = athletes!.map(a => a.id);
-  const eightWeeksAgo = new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString();
-
-  // Service role: coaches have no direct RLS SELECT on checkins — all access goes
-  // through this server route which returns only aggregated weekly buckets.
+  // All aggregation happens in Postgres via coach_team_pulse(): dedup to the
+  // latest check-in per athlete per week, average per pillar, and apply
+  // k-anonymity (NULL pillars when <5 athletes). No rows are pulled into the
+  // app, so this is correct and fast for an org of any size.
   const service = createServiceSupabaseClient();
-  const { data: checkins, error: checkinsError } = await service
-    .from('checkins')
-    .select('athlete_id, emotional_score, resilience_score, recovery_score, support_score, completed_at')
-    .in('athlete_id', athleteIds)
-    .eq('mode', 'weekly')
-    .gte('completed_at', eightWeeksAgo)
-    .order('completed_at', { ascending: true });
+  const { data: rows, error: rpcError } = await service.rpc('coach_team_pulse', {
+    p_team_id: profile.team_id,
+    p_weeks:   8,
+  });
 
-  // Note: athlete_id is selected for server-side deduplication only — it is
-  // never included in the JSON response returned to the coach client.
-
-  if (checkinsError) {
-    return NextResponse.json({ error: 'Failed to fetch checkins' }, { status: 500 });
+  if (rpcError) {
+    return NextResponse.json({ error: 'Failed to aggregate team pulse' }, { status: 500 });
   }
 
-  if (!checkins || checkins.length === 0) {
-    return NextResponse.json({ weeks: [], total_athletes: athleteCount });
-  }
+  type PulseRow = {
+    week_key: string; emotional: number | null; resilience: number | null;
+    recovery: number | null; support: number | null;
+    checkin_count: number; total_athletes: number;
+  };
 
-  // Bucket by ISO week (Monday start).
-  // Use only the LATEST check-in per athlete per week so one athlete
-  // submitting multiple times doesn't inflate the participation rate above 100%.
-  type Bucket = { emotional: number[]; resilience: number[]; recovery: number[]; support: number[]; athleteIds: Set<string>; };
-  const weekMap = new Map<string, Bucket>();
-  // Track latest check-in per (athlete, week) to deduplicate
-  const latestPerAthleteWeek = new Map<string, typeof checkins[0]>();
-
-  for (const c of checkins) {
-    const date  = new Date(c.completed_at);
-    const day   = date.getDay();
-    const diff  = date.getDate() - day + (day === 0 ? -6 : 1);
-    const mon   = new Date(date);
-    mon.setDate(diff);
-    const weekKey = mon.toISOString().split('T')[0];
-    const dedupeKey = `${c.athlete_id}::${weekKey}`;
-    const existing = latestPerAthleteWeek.get(dedupeKey);
-    if (!existing || c.completed_at > existing.completed_at) {
-      latestPerAthleteWeek.set(dedupeKey, c);
-    }
-  }
-
-  for (const [dedupeKey, c] of Array.from(latestPerAthleteWeek)) {
-    const weekKey = dedupeKey.split('::')[1];
-    if (!weekMap.has(weekKey)) {
-      weekMap.set(weekKey, { emotional: [], resilience: [], recovery: [], support: [], athleteIds: new Set() });
-    }
-    const b = weekMap.get(weekKey)!;
-    b.athleteIds.add(c.athlete_id);
-    if (c.emotional_score  != null) b.emotional.push(c.emotional_score);
-    if (c.resilience_score != null) b.resilience.push(c.resilience_score);
-    if (c.recovery_score   != null) b.recovery.push(c.recovery_score);
-    if (c.support_score    != null) b.support.push(c.support_score);
-  }
-
-  const weeks: WeeklyPulse[] = Array.from(weekMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, b]) => {
-      const d = new Date(key);
-      return {
-        weekKey:      key,
-        weekLabel:    `${d.getMonth() + 1}/${d.getDate()}`,
-        emotional:    avg(b.emotional),
-        resilience:   avg(b.resilience),
-        recovery:     avg(b.recovery),
-        support:      avg(b.support),
-        checkinCount: b.athleteIds.size,
-        totalAthletes: athleteCount,
-      };
-    });
+  const weeks: WeeklyPulse[] = ((rows ?? []) as PulseRow[]).map(r => {
+    // week_key is 'YYYY-MM-DD' (Monday). Parse parts directly to avoid TZ drift.
+    const [, m, d] = r.week_key.split('-');
+    return {
+      weekKey:       r.week_key,
+      weekLabel:     `${Number(m)}/${Number(d)}`,
+      emotional:     r.emotional,
+      resilience:    r.resilience,
+      recovery:      r.recovery,
+      support:       r.support,
+      checkinCount:  Number(r.checkin_count),
+      totalAthletes: athleteCount,
+    };
+  });
 
   return NextResponse.json({ weeks, total_athletes: athleteCount });
 }
