@@ -27,11 +27,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Optional org scope — bound the sweep to one organization (see silence route).
+  let organizationId: string | null = null;
+  try {
+    const body = await request.json();
+    if (body && typeof body.organization_id === "string") organizationId = body.organization_id;
+  } catch { /* no body — global */ }
+
   const svc = createServiceSupabaseClient();
   const cutoff = new Date(Date.now() - SLA_HOURS * 3600000).toISOString();
 
   // Open red alerts, not yet escalated, older than the SLA window.
-  const { data: stale, error } = await svc
+  let staleQuery = svc
     .from("alerts")
     .select("id, created_at, organization_id")
     .eq("severity", "red")
@@ -39,6 +46,8 @@ export async function POST(request: NextRequest) {
     .is("escalated_at", null)
     .lt("created_at", cutoff)
     .range(0, 4999);
+  if (organizationId) staleQuery = staleQuery.eq("organization_id", organizationId);
+  const { data: stale, error } = await staleQuery;
   if (error) {
     return NextResponse.json({ error: "Failed to scan alerts" }, { status: 500 });
   }

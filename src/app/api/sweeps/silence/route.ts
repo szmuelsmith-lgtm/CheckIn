@@ -30,17 +30,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Optional org scope. Pass { organization_id } to bound the sweep to a single
+  // organization — required for correctness at scale (a global scan would hit the
+  // DB's max-rows cap). Production cron should invoke once per organization.
+  let organizationId: string | null = null;
+  try {
+    const body = await request.json();
+    if (body && typeof body.organization_id === "string") organizationId = body.organization_id;
+  } catch { /* no body — global (bounded by max-rows; intended for small deployments) */ }
+
   const svc = createServiceSupabaseClient();
   const now = Date.now();
   const concernCutoff = new Date(now - CONCERN_DAYS * 86400000).toISOString();
   const longCutoff    = new Date(now - LONG_DAYS * 86400000).toISOString();
 
-  // 1. All athletes (lift the 1k cap; one team or many).
-  const { data: athletes, error: athErr } = await svc
+  // 1. Athletes in scope.
+  let athletesQuery = svc
     .from("profiles")
     .select("id, team_id, organization_id")
     .eq("role", "athlete")
     .range(0, 19999);
+  if (organizationId) athletesQuery = athletesQuery.eq("organization_id", organizationId);
+  const { data: athletes, error: athErr } = await athletesQuery;
   if (athErr) {
     return NextResponse.json({ error: "Failed to load athletes" }, { status: 500 });
   }
