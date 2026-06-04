@@ -187,6 +187,9 @@ export default function PsychiatristDashboard() {
   const [scheduled,   setScheduled]   = useState<Record<string, boolean>>({});
   const [responding,  setResponding]  = useState<string | null>(null);
   const [scheduling,  setScheduling]  = useState<string | null>(null);
+  const [fuFormOpen,  setFuFormOpen]  = useState(false);
+  const [fuReason,    setFuReason]    = useState("");
+  const [fuDate,      setFuDate]      = useState("");
   const [responded,   setResponded]   = useState<Record<string, "accepted" | "dismissed">>({});
   const [actError,    setActError]    = useState<string | null>(null);
   const [actSuccess,  setActSuccess]  = useState<string | null>(null);
@@ -475,27 +478,34 @@ export default function PsychiatristDashboard() {
     setContacted(c => ({ ...c, [athlete.athlete_id]: true }));
   }
 
-  async function handleSchedule(athlete: SharedAthlete) {
+  async function handleSchedule(athlete: SharedAthlete, reason?: string, dueDate?: string) {
     setScheduling(athlete.athlete_id);
     setActError(null);
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const finalReason = (reason ?? "").trim() || "Counselor-scheduled follow-up session";
+    const finalDue    = dueDate || tomorrow;
     try {
       const supabase = supabaseRef.current;
       if (!athlete.athlete_id.startsWith("d") && supabase) {
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-        const { error } = await supabase.from("followups").insert({ athlete_id: athlete.athlete_id, alert_id: athlete.open_alert_id ?? null, assigned_to_profile_id: profIdRef.current, assigned_by_profile_id: profIdRef.current, reason: "Psychiatrist-scheduled follow-up session", status: "open", due_date: tomorrow });
+        const { error } = await supabase.from("followups").insert({ athlete_id: athlete.athlete_id, alert_id: athlete.open_alert_id ?? null, assigned_to_profile_id: profIdRef.current, assigned_by_profile_id: profIdRef.current, reason: finalReason, status: "open", due_date: finalDue });
         if (error) {
           setActError(error.code === "42501" ? "Permission denied — check that consent is active." : `Could not schedule: ${error.message}`);
           setScheduling(null);
-          return;
+          return false;
         }
         if (athlete.open_alert_id) await supabase.from("alerts").update({ status: "acknowledged", assigned_to_profile_id: profIdRef.current }).eq("id", athlete.open_alert_id);
-        await supabase.from("audit_logs").insert({ actor_profile_id: profIdRef.current, action: "followup_scheduled", target_type: "athlete", target_id: athlete.athlete_id, metadata: { due_date: tomorrow } });
+        await supabase.from("audit_logs").insert({ actor_profile_id: profIdRef.current, action: "followup_scheduled", target_type: "athlete", target_id: athlete.athlete_id, metadata: { due_date: finalDue, reason: finalReason } });
       }
       setScheduled(s => ({ ...s, [athlete.athlete_id]: true }));
+      setActSuccess(`Follow-up created for ${athlete.athlete_name} — due ${finalDue}.`);
+      setTimeout(() => setActSuccess(null), 4000);
+      return true;
     } catch (e: unknown) {
       setActError(e instanceof Error ? e.message : "Failed to schedule follow-up.");
+      return false;
+    } finally {
+      setScheduling(null);
     }
-    setScheduling(null);
   }
 
   const sorted      = [...athletes].sort((a, b) => (RISK_ORDER[a.risk_level ?? "green"] ?? 3) - (RISK_ORDER[b.risk_level ?? "green"] ?? 3));
@@ -647,7 +657,7 @@ export default function PsychiatristDashboard() {
                   const sc       = athlete.session_status ? STATUS_CONFIG[athlete.session_status] : null;
                   return (
                     <button key={athlete.athlete_id}
-                            onClick={() => { setSelectedId(athlete.athlete_id); setActiveTab("overview"); setMobilePanel("workspace"); setMessages([]); }}
+                            onClick={() => { setSelectedId(athlete.athlete_id); setActiveTab("overview"); setMobilePanel("workspace"); setMessages([]); setFuFormOpen(false); }}
                             className="w-full text-left transition-colors"
                             style={{ borderTop: idx > 0 ? `1px solid ${T.borderSub}` : undefined, background: isActive ? T.blueLight : undefined }}>
                       {risk && risk !== "green" && <div className="h-0.5" style={{ background: RISK_COLOR[risk] }} />}
@@ -1032,21 +1042,45 @@ export default function PsychiatristDashboard() {
                             </button>
                           )}
 
-                          {(scheduled[selected.athlete_id] || selected.has_followup) ? (
-                            <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-[12px] font-semibold"
-                                 style={{ background: T.blueLight, color: T.blue, border: `1px solid ${T.blueBorder}` }}>
-                              <Check className="h-4 w-4" /> Follow-up scheduled
-                            </div>
-                          ) : (
-                            <button onClick={() => handleSchedule(selected)} disabled={scheduling === selected.athlete_id}
-                                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[12px] font-semibold border transition-colors disabled:opacity-50"
-                                    style={{ background: T.surface, borderColor: T.border, color: T.textSub }}>
-                              {scheduling === selected.athlete_id
-                                ? <span className="h-3.5 w-3.5 rounded-full border-2 animate-spin" style={{ borderColor: T.border, borderTopColor: T.textSub }} />
-                                : <><Calendar className="h-4 w-4" /> Schedule follow-up</>}
-                            </button>
-                          )}
+                          <button onClick={() => { setFuFormOpen(o => !o); setFuReason(""); setFuDate(new Date(Date.now() + 86400000).toISOString().split("T")[0]); }}
+                                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[12px] font-semibold border transition-colors"
+                                  style={{ background: fuFormOpen ? T.blueLight : T.surface, borderColor: fuFormOpen ? T.blueBorder : T.border, color: fuFormOpen ? T.blue : T.textSub }}>
+                            <Calendar className="h-4 w-4" />
+                            {(scheduled[selected.athlete_id] || selected.has_followup) ? "New follow-up" : "Schedule follow-up"}
+                          </button>
                         </div>
+
+                        {/* Inline follow-up creator — counselor sets reason + due date */}
+                        {fuFormOpen && (
+                          <div className="mt-3 rounded-xl p-4 space-y-3" style={{ background: T.raised, border: `1px solid ${T.border}` }}>
+                            <div>
+                              <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1" style={{ color: T.textMuted }}>Reason</label>
+                              <textarea value={fuReason} onChange={e => setFuReason(e.target.value)} rows={2}
+                                        placeholder="e.g. Check in after this week's session; review coping strategies"
+                                        className="w-full text-[13px] rounded-lg px-3 py-2 resize-none outline-none"
+                                        style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.text }} />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-semibold uppercase tracking-wider block mb-1" style={{ color: T.textMuted }}>Due date</label>
+                              <input type="date" value={fuDate} onChange={e => setFuDate(e.target.value)}
+                                     className="text-[13px] rounded-lg px-3 py-2 outline-none"
+                                     style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.text }} />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={async () => { const ok = await handleSchedule(selected, fuReason, fuDate); if (ok) setFuFormOpen(false); }}
+                                      disabled={scheduling === selected.athlete_id}
+                                      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[12px] font-bold text-white disabled:opacity-50"
+                                      style={{ background: `linear-gradient(135deg, ${T.blueDark}, ${T.blue})` }}>
+                                {scheduling === selected.athlete_id
+                                  ? <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                                  : <><Check className="h-3.5 w-3.5" /> Create follow-up</>}
+                              </button>
+                              <button onClick={() => setFuFormOpen(false)}
+                                      className="px-4 py-2 rounded-lg text-[12px] font-semibold border"
+                                      style={{ background: T.surface, borderColor: T.border, color: T.textMuted }}>Cancel</button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="rounded-xl p-4" style={{ background: T.blueLight, border: `1px solid ${T.blueBorder}` }}>
