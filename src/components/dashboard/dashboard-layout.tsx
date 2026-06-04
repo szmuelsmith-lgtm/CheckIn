@@ -25,7 +25,12 @@ export function DashboardLayout({ children, role: hintRole, userName, dark }: Da
   useEffect(() => {
     async function loadRole() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      // getSession() reads the locally-stored session (no network round-trip),
+      // vs getUser() which revalidates with the auth server on every page load.
+      // Safe here: this only drives the nav display; real authorization is
+      // enforced by RLS on every data query and by the auth middleware.
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { router.push("/login"); return; }
       const { data: profile } = await supabase
         .from("profiles").select("role, full_name").eq("auth_user_id", user.id).single();
