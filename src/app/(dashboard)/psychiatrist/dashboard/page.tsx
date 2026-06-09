@@ -539,7 +539,7 @@ export default function PsychiatristDashboard() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color: T.text }}>Psychiatrist Dashboard</h1>
+              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color: T.text }}>Counselor Dashboard</h1>
               {isDemo && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: T.blueLight, color: T.blue, border: `1px solid ${T.blueBorder}` }}>Demo</span>}
             </div>
             <p className="text-[13px]" style={{ color: T.textMuted }}>

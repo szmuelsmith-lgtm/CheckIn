@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   ClipboardCheck, TrendingUp, TrendingDown, Minus, Heart, Lock,
   ArrowRight, Zap, Shield, Users, Phone, MessageSquare,
-  CheckCircle, Clock, Anchor, BookOpen, Sparkles, MessageCircle,
+  CheckCircle, Clock, Anchor, BookOpen, Sparkles, MessageCircle, Flame,
 } from "lucide-react";
 
 const T = {
@@ -74,6 +74,20 @@ function deriveStatus(scores: Record<Pillar, number | null>, daysSince: number |
   if (avg >= 7)   return { message:"You're doing well this week",  sub:"Your wellness scores are in a healthy range.",            dot:T.green, bg:T.greenLight, border:T.greenBorder, textCol:T.greenDeep };
   if (avg >= 4.5) return { message:"Some areas need attention",   sub:"A few pillars show signs of stress. Small steps help.",   dot:T.amber, bg:T.amberLight, border:T.amberBorder, textCol:"#92400e" };
   return             { message:"Support is available",            sub:"You may be going through a tough time. You're not alone.", dot:T.red,   bg:T.redLight,   border:T.redBorder,   textCol:"#991b1b" };
+}
+
+function computeStreak(history: CheckinRow[]): number {
+  if (history.length === 0) return 0;
+  const getWeek = (iso: string) => Math.floor(new Date(iso).getTime() / (7 * 86400000));
+  const uniqueWeeks = Array.from(new Set(history.map(c => getWeek(c.completed_at)))).sort((a, b) => b - a);
+  const thisWeek = Math.floor(Date.now() / (7 * 86400000));
+  let streak = 0;
+  let expected = thisWeek;
+  for (const w of uniqueWeeks) {
+    if (w >= expected - 1) { streak++; expected = w - 1; }
+    else break;
+  }
+  return streak;
 }
 
 function Sparkline({ values, color }: { values: number[]; color: string }) {
@@ -183,7 +197,7 @@ function OnboardingOverlay({ onComplete }: { onComplete: () => void }) {
       icon: <Anchor className="h-8 w-8 text-white" strokeWidth={2.5} />,
       iconBg: "linear-gradient(135deg, #065f46, #059669)",
       title: "Welcome to Check-In",
-      body: "A private, 2-minute wellness check-in designed for student athletes. It takes less time than a warm-up, and it's completely confidential.",
+      body: "A private, 2-minute wellness check-in designed for student-athletes. It takes less time than a warm-up, and it's completely confidential.",
     },
     {
       icon: <Heart className="h-8 w-8 text-white" />,
@@ -201,7 +215,7 @@ function OnboardingOverlay({ onComplete }: { onComplete: () => void }) {
       icon: <CheckCircle className="h-8 w-8 text-white" />,
       iconBg: "linear-gradient(135deg, #065f46, #059669)",
       title: "You're in control",
-      body: "You choose what to share and with whom. You can request to talk to your team psychiatrist or counselor any time, right from the check-in. No judgement, no pressure.",
+      body: "You choose what to share and with whom. You can request to talk to your team psychiatrist or counselor any time, right from the check-in. No judgment, no pressure.",
     },
   ];
   const current = steps[step];
@@ -356,6 +370,7 @@ export default function AthleteDashboard() {
   const status       = deriveStatus(pillarScores, daysSince);
   const hasData      = history.length > 0;
   const checkedToday = daysSince === 0;
+  const streak       = computeStreak(history);
   const greeting     = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 17 ? "Good afternoon" : "Good evening";
 
   // Detect critical scores — any pillar < 3
@@ -405,7 +420,15 @@ export default function AthleteDashboard() {
           <p className="text-[12px] font-medium mb-0.5" style={{ color:T.textMuted }}>
             {new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" })}
           </p>
-          <h1 className="text-[24px] font-bold tracking-tight" style={{ color:T.text }}>{greeting}, {firstName}</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-[24px] font-bold tracking-tight" style={{ color:T.text }}>{greeting}, {firstName}</h1>
+            {streak >= 2 && (
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1 rounded-full"
+                    style={{ background:T.amberLight, border:`1px solid ${T.amberBorder}`, color:T.amber }}>
+                <Flame className="h-3.5 w-3.5" />{streak}-week streak
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Status */}
@@ -616,6 +639,7 @@ export default function AthleteDashboard() {
         {/* Secondary links */}
         <div className="grid grid-cols-4 gap-3">
           {([
+            { href:"/athlete/journal",           icon:<BookOpen      className="h-4 w-4"/>, label:"Journal",   color:T.amber,    bg:T.amberLight },
             { href:"/athlete/checkin/screening", icon:<ClipboardCheck className="h-4 w-4"/>, label:"Screening", color:"#0891b2", bg:"#ecfeff" },
             { href:"/athlete/resources",         icon:<Sparkles      className="h-4 w-4"/>, label:"Resources",  color:"#db2777", bg:"#fdf2f8" },
             { href:"/athlete/privacy",           icon:<Lock          className="h-4 w-4"/>, label:"Privacy",    color:T.textMuted, bg:T.raised },

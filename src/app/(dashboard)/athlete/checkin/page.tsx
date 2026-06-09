@@ -403,8 +403,8 @@ export default function WeeklyCheckinPage() {
   const isNotesStep    = currentQ >= questions.length && !showOutreachStep;
   const isOutreachStep = showOutreachStep;
   const question       = !isNotesStep && !isOutreachStep ? questions[currentQ] : null;
-  const total          = questions.length + 1;
-  const pct            = Math.round(((currentQ + 1) / total) * 100);
+  const total          = questions.length + 2; // questions + notes + outreach
+  const pct            = isOutreachStep ? 100 : Math.round(((currentQ + 1) / total) * 100);
   const currentVal     = question ? (responses[question.id] ?? 5) : 5;
 
   return (
@@ -432,7 +432,9 @@ export default function WeeklyCheckinPage() {
         {/* Progress bar */}
         <div className="animate-fade-in">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium" style={{ color: T.textMuted }}>{currentQ + 1} of {total}</span>
+            <span className="text-[11px] font-medium" style={{ color: T.textMuted }}>
+              {isOutreachStep ? total : currentQ + 1} of {total}
+            </span>
             <span className="text-[11px] font-semibold" style={{ color: T.green }}>{pct}%</span>
           </div>
           <div className="h-2 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
@@ -504,6 +506,14 @@ export default function WeeklyCheckinPage() {
                     {error}
                   </p>
                 )}
+                <button
+                  onClick={() => setShowOutreachStep(false)}
+                  disabled={submitting}
+                  className="w-full h-10 text-[13px] font-medium rounded-2xl flex items-center justify-center gap-1 disabled:opacity-40"
+                  style={{ color: T.textMuted }}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />Back to notes
+                </button>
               </div>
 
             ) : !isNotesStep && question ? (
@@ -528,8 +538,11 @@ export default function WeeklyCheckinPage() {
                     min={1} max={10} step={1}
                     value={currentVal}
                     onChange={(e) => setResponses(r => ({ ...r, [question.id]: parseInt(e.target.value) }))}
-                    className="w-full"
-                    style={{ accentColor: PILLAR_COLOR[question.pillar] }}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer focus:outline-none"
+                    style={{
+                      background: `linear-gradient(to right, ${PILLAR_COLOR[question.pillar]} 0%, ${PILLAR_COLOR[question.pillar]} ${((currentVal - 1) / 9) * 100}%, #e8edf2 ${((currentVal - 1) / 9) * 100}%, #e8edf2 100%)`,
+                      accentColor: PILLAR_COLOR[question.pillar],
+                    }}
                   />
                   <div className="flex justify-between text-[11px] mt-2" style={{ color: T.textMuted }}>
                     <span>Not at all</span>
@@ -629,7 +642,7 @@ export default function WeeklyCheckinPage() {
         </div>
 
         <p className="text-center text-[11px]" style={{ color: "#94a3b8" }}>
-          About 3 minutes · Coaches never see individual responses
+          About 2 minutes · Coaches never see individual responses
         </p>
       </div>
     </DashboardLayout>
