@@ -280,7 +280,7 @@ export default function LoginPage() {
 
         <p className="text-center text-[13px] mt-5" style={{ color: "#64748b" }}>
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-semibold hover:underline" style={{ color: "#059669" }}>
+          <Link href="/signup" className="font-semibold hover:underline inline-flex items-center py-2 px-1 -my-2 -mx-1" style={{ color: "#059669" }}>
             Sign up
           </Link>
         </p>
@@ -289,7 +289,7 @@ export default function LoginPage() {
         <div className="mt-5 pt-5" style={{ borderTop: "1px solid #f1f5f9" }}>
           <button
             onClick={() => setShowDemo(d => !d)}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-2xl text-[13px] font-semibold transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-[13px] font-semibold transition-colors"
             style={{ color: "#94a3b8" }}
           >
             Beta tester? Quick login
