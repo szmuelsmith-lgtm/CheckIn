@@ -22,12 +22,13 @@ const T = {
   text:        "#111827",
   textSub:     "#374151",
   textMuted:   "#6b7280",
-  indigo:      "#4f46e5",
-  indigoLight: "#eef2ff",
-  indigoBorder:"#c7d2fe",
-  green:       "#16a34a",
-  greenLight:  "#f0fdf4",
-  greenDeep:   "#14532d",
+  // Primary accent — brand emerald (was indigo; greened to match athlete app)
+  indigo:      "#059669",
+  indigoLight: "#ecfdf5",
+  indigoBorder:"#a7f3d0",
+  green:       "#059669",
+  greenLight:  "#ecfdf5",
+  greenDeep:   "#065f46",
   amber:       "#d97706",
   amberLight:  "#fefce8",
   red:         "#dc2626",
@@ -37,13 +38,13 @@ const T = {
 const shadow = "0 1px 3px 0 rgba(0,0,0,0.06),0 1px 2px 0 rgba(0,0,0,0.04)";
 
 const PILLAR_COLOR: Record<Pillar, string> = {
-  emotional:"#16a34a", resilience:"#2563eb", recovery:"#7c3aed", support:"#0891b2",
+  emotional:"#059669", resilience:"#2563eb", recovery:"#7c3aed", support:"#0891b2",
 };
 const PILLAR_TRACK: Record<Pillar, string> = {
-  emotional:"#dcfce7", resilience:"#dbeafe", recovery:"#ede9fe", support:"#cffafe",
+  emotional:"#d1fae5", resilience:"#dbeafe", recovery:"#ede9fe", support:"#cffafe",
 };
 const PILLAR_BADGE_BG: Record<Pillar, string> = {
-  emotional:"#f0fdf4", resilience:"#eff6ff", recovery:"#f5f3ff", support:"#ecfeff",
+  emotional:"#ecfdf5", resilience:"#eff6ff", recovery:"#f5f3ff", support:"#ecfeff",
 };
 const PILLAR_ICON: Record<Pillar, React.ReactNode> = {
   emotional:<Heart className="h-3.5 w-3.5"/>, resilience:<Zap className="h-3.5 w-3.5"/>,
@@ -54,7 +55,7 @@ const PILLAR_LABEL: Record<Pillar, string> = {
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const LEVEL_DOT: Record<PillarLevel, string> = {
-  stable:"#16a34a", moderate:"#d97706", elevated:"#f97316", high:"#dc2626",
+  stable:"#059669", moderate:"#d97706", elevated:"#f97316", high:"#dc2626",
 };
 const PILLARS: Pillar[] = ["emotional","resilience","recovery","support"];
 type PillarDistribution = Record<PillarLevel, number>;
@@ -221,7 +222,7 @@ export default function CoachDashboard() {
     : 0;
 
   const teamStatus = !overallAvg ? null
-    : overallAvg >= 7  ? { label:"Team is doing well",        color:T.green,   bg:T.greenLight,  border:"#bbf7d0",  textCol:T.greenDeep }
+    : overallAvg >= 7  ? { label:"Team is doing well",        color:T.green,   bg:T.greenLight,  border:"#a7f3d0",  textCol:T.greenDeep }
     : overallAvg >= 5  ? { label:"Some areas need attention", color:T.amber,   bg:T.amberLight,  border:"#fde68a",  textCol:"#92400e"   }
     :                    { label:"Team needs support",         color:T.red,     bg:T.redLight,    border:"#fecaca",  textCol:"#991b1b"   };
 
@@ -261,8 +262,8 @@ export default function CoachDashboard() {
                 label="Total Athletes"
                 value={data.athlete_count}
                 icon={<Users className="h-4 w-4" aria-hidden />}
-                iconColor="#2563eb"
-                iconBg="#eff6ff"
+                iconColor={T.green}
+                iconBg={T.greenLight}
               />
 
               <MetricCard
@@ -449,7 +450,7 @@ export default function CoachDashboard() {
             </div>
 
             {/* Privacy footer */}
-            <div className="rounded-xl px-4 py-3.5" style={{ background:T.greenLight, border:"1px solid #bbf7d0" }}>
+            <div className="rounded-xl px-4 py-3.5" style={{ background:T.greenLight, border:"1px solid #a7f3d0" }}>
               <p className="text-[11px] text-center" style={{ color:T.greenDeep }}>
                 All data is aggregated and anonymized. Individual responses are never visible to coaches.
               </p>
