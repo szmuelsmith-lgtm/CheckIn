@@ -1,71 +1,70 @@
 -- ============================================================
--- PRUNE LOAD-TEST DATA — keep ONLY the demo org, delete the rest.
+-- PRUNE LOAD-TEST DATA — keep ONLY the demo org. (v2, no COMMIT)
 -- ============================================================
--- The production DB carries ~1.02M synthetic profiles and ~2.17M synthetic
--- check-ins across 103 load-test orgs. This shrinks every table back to the
--- single real demo org (b4c5313a…), so queries get snappy.
+-- The Supabase SQL editor runs a script inside one transaction, so a
+-- procedure with COMMIT fails ("invalid transaction termination"). This
+-- version is plain sequential DELETEs — no procedure, no COMMIT.
 --
--- SAFE BY DESIGN:
---   • Batched with COMMIT between chunks → no long table locks, no statement
---     timeout, and the app stays usable while it runs.
---   • Fully RE-RUNNABLE: if it stops early (editor cutoff, etc.), just run the
---     last line `CALL public.prune_loadtest_data();` again until it finishes.
---   • Demo org fully preserved: 17 profiles, 169 check-ins, all of its alerts,
---     follow-ups, messages, consent, and audit history stay intact.
---   • Deletes cascade from profiles; a trigger auto-cleans profile_meta.
+-- Speed trick: we temporarily disable the profile_meta sync trigger so the
+-- 1M-row profile delete doesn't fire it a million times, then clean
+-- profile_meta directly and re-enable the trigger.
 --
--- HOW TO RUN: paste this whole script into the Supabase SQL editor and Run.
--- Expect ~2–5 minutes. Watch the NOTICES for progress.
+-- Demo org (b4c5313a…) is fully preserved: 17 profiles, 169 check-ins, and
+-- all of its alerts, follow-ups, messages, consent, and audit history.
+--
+-- HOW TO RUN: paste the whole thing into the Supabase SQL editor and Run.
+-- Expect ~1–3 minutes. If the editor reports a timeout, see the BATCHED
+-- FALLBACK at the bottom.
 -- ============================================================
 
-CREATE OR REPLACE PROCEDURE public.prune_loadtest_data()
-LANGUAGE plpgsql AS $$
-DECLARE
-  keep_org uuid := 'b4c5313a-fbbd-4a95-9226-4417d24d7291';
-  n     int;
-  total bigint;
-BEGIN
-  -- 1) Check-ins for non-demo athletes (the ~2.17M-row table). Batched.
-  total := 0;
-  LOOP
-    DELETE FROM checkins WHERE id IN (
-      SELECT id FROM checkins
-      WHERE athlete_id NOT IN (SELECT id FROM profiles WHERE organization_id = keep_org)
-      LIMIT 50000
-    );
-    GET DIAGNOSTICS n = ROW_COUNT;
-    total := total + n;
-    COMMIT;
-    EXIT WHEN n = 0;
-  END LOOP;
-  RAISE NOTICE 'Pruned % check-ins', total;
+SET statement_timeout = 0;
 
-  -- 2) Non-demo profiles. Cascades remaining children (alerts, follow-ups,
-  --    messages, consent, journals, prefs, question_usage); the sync trigger
-  --    removes the matching profile_meta rows. Batched.
-  total := 0;
-  LOOP
-    DELETE FROM profiles WHERE id IN (
-      SELECT id FROM profiles WHERE organization_id <> keep_org LIMIT 10000
-    );
-    GET DIAGNOSTICS n = ROW_COUNT;
-    total := total + n;
-    COMMIT;
-    EXIT WHEN n = 0;
-  END LOOP;
-  RAISE NOTICE 'Pruned % profiles', total;
+-- Keep the demo org from firing the per-row profile_meta trigger during the bulk delete.
+ALTER TABLE profiles DISABLE TRIGGER trg_sync_profile_meta;
 
-  -- 3) Safety net: any profile_meta the trigger somehow missed.
-  DELETE FROM profile_meta WHERE auth_user_id NOT IN (SELECT auth_user_id FROM profiles);
-  COMMIT;
+-- 1) Check-ins belonging to non-demo athletes (the ~2.17M-row table).
+DELETE FROM checkins
+WHERE athlete_id NOT IN (
+  SELECT id FROM profiles WHERE organization_id = 'b4c5313a-fbbd-4a95-9226-4417d24d7291'
+);
 
-  -- 4) Non-demo teams + organizations.
-  DELETE FROM teams         WHERE organization_id <> keep_org;
-  DELETE FROM organizations WHERE id              <> keep_org;
-  COMMIT;
+-- 2) Non-demo profiles. Cascades remaining children (alerts, follow-ups,
+--    messages, consent, journals, prefs, question_usage).
+DELETE FROM profiles
+WHERE organization_id <> 'b4c5313a-fbbd-4a95-9226-4417d24d7291';
 
-  RAISE NOTICE 'Prune complete — demo org preserved.';
-END $$;
+-- 3) Clean profile_meta directly (trigger is off).
+DELETE FROM profile_meta
+WHERE auth_user_id NOT IN (SELECT auth_user_id FROM profiles);
 
-CALL public.prune_loadtest_data();
-DROP PROCEDURE public.prune_loadtest_data();
+-- 4) Non-demo teams + organizations.
+DELETE FROM teams         WHERE organization_id <> 'b4c5313a-fbbd-4a95-9226-4417d24d7291';
+DELETE FROM organizations WHERE id              <> 'b4c5313a-fbbd-4a95-9226-4417d24d7291';
+
+-- Restore the trigger.
+ALTER TABLE profiles ENABLE TRIGGER trg_sync_profile_meta;
+
+
+-- ============================================================
+-- BATCHED FALLBACK — only if the script above times out.
+-- Run statement A repeatedly until it reports "0 rows", then B repeatedly
+-- until "0 rows", then run C and D once. Each run is its own fast transaction.
+-- (Leave the trigger DISABLED from step above until after B + C + D, then
+--  run the ENABLE TRIGGER line.)
+-- ============================================================
+--
+-- A) DELETE FROM checkins WHERE ctid IN (
+--      SELECT ctid FROM checkins
+--      WHERE athlete_id NOT IN (SELECT id FROM profiles WHERE organization_id = 'b4c5313a-fbbd-4a95-9226-4417d24d7291')
+--      LIMIT 300000);
+--
+-- B) DELETE FROM profiles WHERE ctid IN (
+--      SELECT ctid FROM profiles
+--      WHERE organization_id <> 'b4c5313a-fbbd-4a95-9226-4417d24d7291'
+--      LIMIT 100000);
+--
+-- C) DELETE FROM profile_meta WHERE auth_user_id NOT IN (SELECT auth_user_id FROM profiles);
+--    DELETE FROM teams WHERE organization_id <> 'b4c5313a-fbbd-4a95-9226-4417d24d7291';
+--    DELETE FROM organizations WHERE id <> 'b4c5313a-fbbd-4a95-9226-4417d24d7291';
+--
+-- D) ALTER TABLE profiles ENABLE TRIGGER trg_sync_profile_meta;

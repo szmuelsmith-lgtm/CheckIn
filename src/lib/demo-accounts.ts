@@ -21,7 +21,7 @@ export const DEMO_ACCOUNTS = [
   },
   {
     id:       "psychiatrist" as const,
-    label:    "team psychiatrist or counselor",
+    label:    "Team Psychiatrist or Counselor",
     email:    "checkin.psych.test@mailinator.com",
     redirect: "/psychiatrist/dashboard",
     color:    "#7c3aed",

@@ -241,7 +241,7 @@ export default function PrivacyPage() {
                     <option value="">Select a person...</option>
                     {targets.map(t => (
                       <option key={t.id} value={t.id}>
-                        {t.full_name} ({t.role === "psychiatrist" ? "Psychiatrist" : "Psychiatrist"})
+                        {t.full_name} (Team Psychiatrist or Counselor)
                       </option>
                     ))}
                   </select>
