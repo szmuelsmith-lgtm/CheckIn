@@ -139,6 +139,9 @@
   .animate-fade-in {
     animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
+  .animate-pulse-hint {
+    animation: pulseSoft 1.8s ease-in-out infinite;
+  }
 
   /* Staggered delays */
   .delay-75  { animation-delay: 75ms; }
@@ -193,7 +196,8 @@ input[type="range"]::-moz-range-track {
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in-up,
   .animate-scale-in,
-  .animate-fade-in {
+  .animate-fade-in,
+  .animate-pulse-hint {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
