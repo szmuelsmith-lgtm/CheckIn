@@ -26,19 +26,20 @@ const T = {
   text:         "#111827",
   textSub:      "#374151",
   textMuted:    "#6b7280",
-  indigo:       "#4f46e5",
-  indigoDark:   "#3730a3",
-  indigoLight:  "#eef2ff",
-  indigoBorder: "#c7d2fe",
+  // Primary accent — brand emerald (was indigo; greened to match athlete app)
+  indigo:       "#059669",
+  indigoDark:   "#065f46",
+  indigoLight:  "#ecfdf5",
+  indigoBorder: "#a7f3d0",
   red:          "#dc2626",
   redLight:     "#fef2f2",
   redBorder:    "#fecaca",
   amber:        "#d97706",
   amberLight:   "#fefce8",
   amberBorder:  "#fde68a",
-  green:        "#16a34a",
-  greenLight:   "#f0fdf4",
-  greenBorder:  "#bbf7d0",
+  green:        "#059669",
+  greenLight:   "#ecfdf5",
+  greenBorder:  "#a7f3d0",
 };
 
 const shadow   = "0 1px 3px 0 rgba(0,0,0,0.07),0 1px 2px 0 rgba(0,0,0,0.04)";
@@ -663,10 +664,10 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-3 text-[10px] font-semibold">
                   {[
-                    { color:"#4f46e5", label:"Emotional"  },
-                    { color:"#7c3aed", label:"Resilience" },
-                    { color:"#0d9488", label:"Recovery"   },
-                    { color:"#d97706", label:"Support"    },
+                    { color:"#059669", label:"Emotional"  },
+                    { color:"#2563eb", label:"Resilience" },
+                    { color:"#7c3aed", label:"Recovery"   },
+                    { color:"#0891b2", label:"Support"    },
                   ].map(p => (
                     <div key={p.label} className="flex items-center gap-1">
                       <div className="h-2 w-4 rounded-full" style={{ background: p.color }} />
@@ -682,10 +683,10 @@ export default function AdminDashboard() {
                     <XAxis dataKey="week" tick={{ fontSize: 10, fill: T.textMuted }} axisLine={false} tickLine={false} />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: T.textMuted }} axisLine={false} tickLine={false} ticks={[0, 2.5, 5, 7.5, 10]} />
                     <Tooltip content={<ChartTooltip />} />
-                    <Line type="monotone" dataKey="emotional"  name="Emotional"  stroke="#4f46e5" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="resilience" name="Resilience" stroke="#7c3aed" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="recovery"   name="Recovery"   stroke="#0d9488" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="support"    name="Support"    stroke="#d97706" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="emotional"  name="Emotional"  stroke="#059669" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="resilience" name="Resilience" stroke="#2563eb" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="recovery"   name="Recovery"   stroke="#7c3aed" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="support"    name="Support"    stroke="#0891b2" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

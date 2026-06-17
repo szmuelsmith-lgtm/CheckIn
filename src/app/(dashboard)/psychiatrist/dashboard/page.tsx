@@ -26,12 +26,13 @@ const T = {
   text:        "#0f172a",
   textSub:     "#334155",
   textMuted:   "#64748b",
-  blue:        "#4f46e5",
-  blueDark:    "#3730a3",
-  blueLight:   "#eef2ff",
-  blueBorder:  "#c7d2fe",
-  green:       "#16a34a",
-  greenLight:  "#f0fdf4",
+  // Primary accent — brand emerald (was indigo-blue; greened to match athlete app)
+  blue:        "#059669",
+  blueDark:    "#065f46",
+  blueLight:   "#ecfdf5",
+  blueBorder:  "#a7f3d0",
+  green:       "#059669",
+  greenLight:  "#ecfdf5",
   amber:       "#d97706",
   amberLight:  "#fefce8",
   red:         "#dc2626",
@@ -106,7 +107,7 @@ const QUICK_TAGS = [
 ];
 
 const PILLAR_CFG = [
-  { key: "emotional",  label: "Emotional",  color: "#16a34a", stroke: "#16a34a" },
+  { key: "emotional",  label: "Emotional",  color: "#059669", stroke: "#059669" },
   { key: "resilience", label: "Resilience", color: "#2563eb", stroke: "#2563eb" },
   { key: "recovery",   label: "Recovery",   color: "#7c3aed", stroke: "#7c3aed" },
   { key: "support",    label: "Support",    color: "#0891b2", stroke: "#0891b2" },
@@ -539,7 +540,7 @@ export default function PsychiatristDashboard() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color: T.text }}>Psychiatrist Dashboard</h1>
+              <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight" style={{ color: T.text }}>Counselor Dashboard</h1>
               {isDemo && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: T.blueLight, color: T.blue, border: `1px solid ${T.blueBorder}` }}>Demo</span>}
             </div>
             <p className="text-[13px]" style={{ color: T.textMuted }}>
@@ -830,7 +831,7 @@ export default function PsychiatristDashboard() {
                         <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: T.textMuted }}>Pillar Scores — Latest Check-In</p>
                         <div className="space-y-3">
                           {[
-                            { label: "Emotional",  score: selected.emotional_score,  color: "#16a34a", track: "#dcfce7" },
+                            { label: "Emotional",  score: selected.emotional_score,  color: "#059669", track: "#d1fae5" },
                             { label: "Resilience", score: selected.resilience_score, color: "#2563eb", track: "#dbeafe" },
                             { label: "Recovery",   score: selected.recovery_score,   color: "#7c3aed", track: "#ede9fe" },
                             { label: "Support",    score: selected.support_score,    color: "#0891b2", track: "#cffafe" },
@@ -1031,7 +1032,7 @@ export default function PsychiatristDashboard() {
                           ) : (
                             <button onClick={() => handleContact(selected)} disabled={responding === selected.athlete_id}
                                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[12px] font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                                    style={{ background: `linear-gradient(135deg, ${T.blueDark}, ${T.blue})`, boxShadow: "0 2px 8px rgba(75,156,211,0.3)" }}>
+                                    style={{ background: `linear-gradient(135deg, ${T.blueDark}, ${T.blue})`, boxShadow: "0 2px 8px rgba(5,150,105,0.3)" }}>
                               {responding === selected.athlete_id
                                 ? <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
                                 : <><Phone className="h-4 w-4" /> Contact</>}
@@ -1095,7 +1096,7 @@ export default function PsychiatristDashboard() {
                         ) : (
                           <button onClick={() => handleReferral(selected)} disabled={referring === selected.athlete_id}
                                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                                  style={{ background: T.blue, boxShadow: "0 1px 4px rgba(75,156,211,0.4)" }}>
+                                  style={{ background: T.blue, boxShadow: "0 1px 4px rgba(5,150,105,0.4)" }}>
                             {referring === selected.athlete_id
                               ? <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
                               : <><ArrowUpRight className="h-3.5 w-3.5" /> Send referral summary</>}

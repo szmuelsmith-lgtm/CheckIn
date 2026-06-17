@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api-url";
 import { createClient } from "@/lib/supabase/client";
 import { PILLAR_LABELS } from "@/lib/pillar-scoring";
 import { selectQuestionsForSession } from "@/lib/question-engine";
+import { hapticSelection, hapticImpact, hapticSuccess } from "@/lib/haptics";
 import type { Question, Pillar, PillarScores } from "@/types/database";
 import {
   CheckCircle, ChevronRight, ChevronLeft,
@@ -278,6 +279,7 @@ export default function WeeklyCheckinPage() {
   const [userName, setUserName]         = useState("...");
   const [questions, setQuestions]       = useState<Question[]>([]);
   const [responses, setResponses]       = useState<Record<string, number>>({});
+  const [touched, setTouched]           = useState<Set<string>>(new Set());
   const [currentQ, setCurrentQ]         = useState(0);
   const [notes, setNotes]               = useState("");
   const [loading, setLoading]           = useState(true);
@@ -328,6 +330,7 @@ export default function WeeklyCheckinPage() {
       const initial: Record<string, number> = {};
       for (const q of qs) initial[q.id] = 5;
       setResponses(initial);
+      setTouched(new Set());
       setCurrentQ(0);
     } catch (e) {
       setLoadError(String(e));
@@ -364,6 +367,7 @@ export default function WeeklyCheckinPage() {
       const data = await res.json();
       setPillarScores(data.pillarScores);
       setTriggerSupport(data.triggerSupport ?? false);
+      hapticSuccess();
     } catch (e) {
       setError(`An error occurred: ${String(e)}`);
     }
@@ -403,9 +407,16 @@ export default function WeeklyCheckinPage() {
   const isNotesStep    = currentQ >= questions.length && !showOutreachStep;
   const isOutreachStep = showOutreachStep;
   const question       = !isNotesStep && !isOutreachStep ? questions[currentQ] : null;
-  const total          = questions.length + 1;
-  const pct            = Math.round(((currentQ + 1) / total) * 100);
+  const total          = questions.length + 2; // questions + notes + outreach
+  const pct            = isOutreachStep ? 100 : Math.round(((currentQ + 1) / total) * 100);
   const currentVal     = question ? (responses[question.id] ?? 5) : 5;
+  const isTouched      = question ? touched.has(question.id) : true;
+
+  function answerCurrent(qid: string, val: number) {
+    setResponses(r => ({ ...r, [qid]: val }));
+    if (!touched.has(qid)) setTouched(prev => new Set(prev).add(qid));
+    hapticSelection();
+  }
 
   return (
     <DashboardLayout role="athlete" userName={userName}>
@@ -432,10 +443,20 @@ export default function WeeklyCheckinPage() {
         {/* Progress bar */}
         <div className="animate-fade-in">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium" style={{ color: T.textMuted }}>{currentQ + 1} of {total}</span>
+            <span className="text-[11px] font-medium" style={{ color: T.textMuted }}>
+              {isOutreachStep ? total : currentQ + 1} of {total}
+            </span>
             <span className="text-[11px] font-semibold" style={{ color: T.green }}>{pct}%</span>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: T.borderSub }}>
+          <div
+            className="h-2 rounded-full overflow-hidden"
+            style={{ background: T.borderSub }}
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Check-in progress: step ${isOutreachStep ? total : currentQ + 1} of ${total}`}
+          >
             <div
               className="h-full rounded-full"
               style={{
@@ -472,7 +493,7 @@ export default function WeeklyCheckinPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => { setOutreachConsent(true); handleSubmit(true); }}
+                    onClick={() => { hapticImpact("medium"); setOutreachConsent(true); handleSubmit(true); }}
                     disabled={submitting}
                     className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[14px] transition-opacity disabled:opacity-60 active:opacity-80"
                     style={{
@@ -486,7 +507,7 @@ export default function WeeklyCheckinPage() {
                       : <>✓ Yes, please</>}
                   </button>
                   <button
-                    onClick={() => { setOutreachConsent(false); handleSubmit(false); }}
+                    onClick={() => { hapticImpact("medium"); setOutreachConsent(false); handleSubmit(false); }}
                     disabled={submitting}
                     className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-[14px] transition-opacity disabled:opacity-60 active:opacity-80"
                     style={{ background: T.raised, border: `1px solid ${T.border}`, color: T.textSub }}
@@ -504,6 +525,14 @@ export default function WeeklyCheckinPage() {
                     {error}
                   </p>
                 )}
+                <button
+                  onClick={() => setShowOutreachStep(false)}
+                  disabled={submitting}
+                  className="w-full h-10 text-[13px] font-medium rounded-2xl flex items-center justify-center gap-1 disabled:opacity-40"
+                  style={{ color: T.textMuted }}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />Back to notes
+                </button>
               </div>
 
             ) : !isNotesStep && question ? (
@@ -527,9 +556,16 @@ export default function WeeklyCheckinPage() {
                     type="range"
                     min={1} max={10} step={1}
                     value={currentVal}
-                    onChange={(e) => setResponses(r => ({ ...r, [question.id]: parseInt(e.target.value) }))}
-                    className="w-full"
-                    style={{ accentColor: PILLAR_COLOR[question.pillar] }}
+                    onChange={(e) => answerCurrent(question.id, parseInt(e.target.value))}
+                    aria-label={question.text}
+                    aria-valuetext={isTouched ? `${currentVal} of 10 — ${valueLabel(currentVal)}` : "Not answered yet"}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer focus:outline-none"
+                    style={{
+                      background: isTouched
+                        ? `linear-gradient(to right, ${PILLAR_COLOR[question.pillar]} 0%, ${PILLAR_COLOR[question.pillar]} ${((currentVal - 1) / 9) * 100}%, #e8edf2 ${((currentVal - 1) / 9) * 100}%, #e8edf2 100%)`
+                        : "#e8edf2",
+                      accentColor: PILLAR_COLOR[question.pillar],
+                    }}
                   />
                   <div className="flex justify-between text-[11px] mt-2" style={{ color: T.textMuted }}>
                     <span>Not at all</span>
@@ -537,26 +573,39 @@ export default function WeeklyCheckinPage() {
                   </div>
                 </div>
 
-                {/* Score display */}
+                {/* Score display — muted until the athlete actually moves the slider,
+                    so untouched defaults never masquerade as a real answer. */}
                 <div
                   className="flex items-center justify-center gap-4 py-4 rounded-2xl"
                   style={{ background: T.raised }}
+                  aria-live="polite"
                 >
-                  <span
-                    className="text-[56px] font-bold tabular-nums leading-none"
-                    style={{
-                      color: valueColor(currentVal),
-                      transition: "color 0.3s ease",
-                    }}
-                  >
-                    {currentVal}
-                  </span>
-                  <span
-                    className="text-[15px] font-medium max-w-[100px] leading-snug"
-                    style={{ color: T.textMuted }}
-                  >
-                    {valueLabel(currentVal)}
-                  </span>
+                  {isTouched ? (
+                    <>
+                      <span
+                        className="text-[56px] font-bold tabular-nums leading-none"
+                        style={{
+                          color: valueColor(currentVal),
+                          transition: "color 0.3s ease",
+                        }}
+                      >
+                        {currentVal}
+                      </span>
+                      <span
+                        className="text-[15px] font-medium max-w-[100px] leading-snug"
+                        style={{ color: T.textMuted }}
+                      >
+                        {valueLabel(currentVal)}
+                      </span>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3 animate-pulse-hint">
+                      <span className="text-[40px] font-bold leading-none" style={{ color: "#cbd5e1" }}>—</span>
+                      <span className="text-[14px] font-medium" style={{ color: T.textMuted }}>
+                        Slide to answer
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -609,15 +658,18 @@ export default function WeeklyCheckinPage() {
 
               {!isNotesStep ? (
                 <button
-                  onClick={() => setCurrentQ(q => q + 1)}
-                  className="flex items-center gap-1.5 h-10 px-5 text-[13px] font-bold text-white rounded-2xl"
+                  onClick={() => { hapticImpact("light"); setCurrentQ(q => q + 1); }}
+                  disabled={!isTouched}
+                  aria-disabled={!isTouched}
+                  title={isTouched ? undefined : "Slide to answer first"}
+                  className="flex items-center gap-1.5 h-10 px-5 text-[13px] font-bold text-white rounded-2xl transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
                   style={{ background: "linear-gradient(135deg, #065f46, #059669)", boxShadow: "0 2px 8px rgba(5,150,105,0.25)" }}
                 >
                   Next<ChevronRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowOutreachStep(true)}
+                  onClick={() => { hapticImpact("light"); setShowOutreachStep(true); }}
                   className="flex items-center gap-1.5 h-10 px-5 text-[13px] font-bold text-white rounded-2xl"
                   style={{ background: "linear-gradient(135deg, #065f46, #059669)", boxShadow: "0 2px 8px rgba(5,150,105,0.25)" }}
                 >
@@ -629,7 +681,7 @@ export default function WeeklyCheckinPage() {
         </div>
 
         <p className="text-center text-[11px]" style={{ color: "#94a3b8" }}>
-          About 3 minutes · Coaches never see individual responses
+          About 2 minutes · Coaches never see individual responses
         </p>
       </div>
     </DashboardLayout>

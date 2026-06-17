@@ -19,21 +19,18 @@ export function AthleteTabBar() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
       style={{
-        background: "rgba(255,255,255,0.92)",
+        background: "rgba(255,255,255,0.95)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        /* no border — soft top shadow only */
-        boxShadow: "0 -1px 0 rgba(0,0,0,0.05), 0 -4px 24px rgba(0,0,0,0.04)",
+        boxShadow: "0 -1px 0 rgba(0,0,0,0.06), 0 -4px 24px rgba(0,0,0,0.04)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
       role="tablist"
       aria-label="Main navigation"
     >
       <div
         className="flex items-center max-w-lg mx-auto px-3"
-        style={{
-          height: "60px",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
+        style={{ height: "60px" }}
       >
         {TABS.map((tab) => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/");

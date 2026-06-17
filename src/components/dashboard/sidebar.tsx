@@ -56,7 +56,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   athlete:       "Athlete",
   coach:         "Coach",
   admin:         "Admin",
-  psychiatrist:  "team psychiatrist or counselor",
+  psychiatrist:  "Team Psychiatrist or Counselor",
   support:       "Support",
 };
 
